@@ -4,6 +4,25 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  react:
+    '@types/react':
+      specifier: ^19.2.7
+      version: 19.2.7
+    '@types/react-dom':
+      specifier: ^19.2.3
+      version: 19.2.3
+    react:
+      specifier: ^19.2.3
+      version: 19.2.3
+    react-dom:
+      specifier: ^19.2.3
+      version: 19.2.3
+  typescript:
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
+
 importers:
 
   .:
@@ -12,7 +31,7 @@ importers:
         specifier: ^2.3.3
         version: 2.7.1
       typescript:
-        specifier: ^5.7.2
+        specifier: catalog:typescript
         version: 5.9.3
 
   apps/web:
@@ -30,10 +49,10 @@ importers:
         specifier: ^1.142.7
         version: 1.142.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
       react:
-        specifier: ^19.0.0
+        specifier: catalog:react
         version: 19.2.3
       react-dom:
-        specifier: ^19.0.0
+        specifier: catalog:react
         version: 19.2.3(react@19.2.3)
       tailwind-merge:
         specifier: ^2.6.0
@@ -49,10 +68,10 @@ importers:
         specifier: ^22.5.4
         version: 22.19.3
       '@types/react':
-        specifier: ^19.0.8
+        specifier: catalog:react
         version: 19.2.7
       '@types/react-dom':
-        specifier: ^19.0.3
+        specifier: catalog:react
         version: 19.2.3(@types/react@19.2.7)
       '@vitejs/plugin-react':
         specifier: ^4.6.0
@@ -61,7 +80,7 @@ importers:
         specifier: ^4.1.18
         version: 4.1.18
       typescript:
-        specifier: ^5.7.2
+        specifier: catalog:typescript
         version: 5.9.3
       vite:
         specifier: ^7.1.7
@@ -73,19 +92,19 @@ importers:
   packages/api:
     devDependencies:
       typescript:
-        specifier: ^5.7.2
+        specifier: catalog:typescript
         version: 5.9.3
 
   packages/core:
     devDependencies:
       typescript:
-        specifier: ^5.7.2
+        specifier: catalog:typescript
         version: 5.9.3
 
   packages/ui:
     devDependencies:
       typescript:
-        specifier: ^5.7.2
+        specifier: catalog:typescript
         version: 5.9.3
 
 packages:
