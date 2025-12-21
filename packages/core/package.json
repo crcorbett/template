@@ -4,18 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./seo": {
+    "./*": {
       "import": {
-        "@packages/source": "./seo.ts",
-        "types": "./dist/seo.d.ts",
-        "default": "./dist/seo.js"
-      }
-    },
-    "./user": {
-      "import": {
-        "@packages/source": "./user.ts",
-        "types": "./dist/user.d.ts",
-        "default": "./dist/user.js"
+        "@packages/source": "./*.ts",
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
       }
     },
     "./package.json": "./package.json"
