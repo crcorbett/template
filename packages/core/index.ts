@@ -1,2 +1,2 @@
-export { seo } from './seo'
-export type { User } from './user'
+export { seo } from "./seo";
+export type { User } from "./user";
