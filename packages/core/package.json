@@ -6,12 +6,11 @@
   "exports": {
     "./*": {
       "import": {
-        "@packages/source": "./*.ts",
-        "types": "./dist/*.d.ts",
-        "default": "./dist/*.js"
+        "@packages/source": "./src/*.ts",
+        "types": "./dist/src/*.d.ts",
+        "default": "./dist/src/*.js"
       }
-    },
-    "./package.json": "./package.json"
+    }
   },
   "scripts": {
     "build": "tsc",
