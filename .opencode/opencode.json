@@ -6,7 +6,8 @@
   "mcp": {
     "playwright": {
       "type": "local",
-      "command": ["npx", "@playwright/mcp@latest"]
+      "command": ["npx", "@playwright/mcp@latest"],
+      "enabled": false
     },
     "deepwiki": {
       "type": "remote",
