@@ -146,6 +146,13 @@ jobs:
           echo "$OPENCODE_AUTH_JSON" > ~/.local/share/opencode/auth.json
           chmod 600 ~/.local/share/opencode/auth.json
 
+          # Debug: show config (without secrets)
+          echo "=== OpenCode Config ==="
+          cat ~/.config/opencode/opencode.json 2>/dev/null || cat ~/.config/opencode/opencode.jsonc 2>/dev/null || echo "No config found"
+          echo ""
+          echo "=== Auth JSON structure ==="
+          jq 'keys' ~/.local/share/opencode/auth.json 2>/dev/null || echo "No auth.json or invalid JSON"
+
       - name: Collect Context
         id: context
         env:
