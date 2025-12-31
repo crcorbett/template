@@ -19,7 +19,7 @@ jobs:
          startsWith(github.event.comment.body, '/oc') ||
          contains(github.event.comment.body, ' /opencode') ||
          startsWith(github.event.comment.body, '/opencode')) &&
-        github.event.comment.user.login != github.actor &&
+        github.event.comment.user.login != 'opencode[bot]' &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
       )
 
