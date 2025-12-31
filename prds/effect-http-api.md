@@ -30,20 +30,8 @@ We will use the **declarative HttpApi approach** rather than the lower-level Htt
 ## Proposed Architecture
 
 ```
-packages/
-├── api/                      # NEW: Shared API contracts
-│   ├── src/
-│   │   ├── schemas/          # Effect Schema definitions
-│   │   │   ├── user.ts
-│   │   │   ├── post.ts
-│   │   │   └── index.ts
-│   │   ├── errors.ts         # Shared error types
-│   │   ├── api.ts            # HttpApi + HttpApiGroup definitions
-│   │   └── index.ts
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── server/                   # NEW: Bun Effect HTTP server
+apps/
+├── api/                      # NEW: Bun Effect HTTP server
 │   ├── src/
 │   │   ├── handlers/         # HttpApiBuilder group implementations
 │   │   │   ├── users.ts
@@ -56,22 +44,34 @@ packages/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── core/                     # EXISTING: Core utilities
-└── ui/                       # EXISTING: UI components
-
-apps/
 └── web/                      # EXISTING: TanStack Start
     └── src/
         └── lib/
             └── api-client.ts # NEW: HttpApiClient wrapper
+
+packages/
+├── types/                    # NEW: Shared types and API contracts
+│   ├── src/
+│   │   ├── schemas/          # Effect Schema definitions
+│   │   │   ├── user.ts
+│   │   │   ├── post.ts
+│   │   │   └── index.ts
+│   │   ├── errors.ts         # Shared error types
+│   │   ├── api.ts            # HttpApi + HttpApiGroup definitions
+│   │   └── index.ts
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── core/                     # EXISTING: Core utilities
+└── ui/                       # EXISTING: UI components
 ```
 
 ## Implementation Details
 
-### 1. Shared API Package (`@packages/api`)
+### 1. Shared Types Package (`@packages/types`)
 
 ```typescript
-// packages/api/src/schemas/user.ts
+// packages/types/src/schemas/user.ts
 import { Schema } from "effect"
 
 export const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -88,7 +88,7 @@ export class User extends Schema.Class<User>("User")({
   createdAt: Schema.DateTimeUtc
 }) {}
 
-// packages/api/src/errors.ts
+// packages/types/src/errors.ts
 import { Schema } from "effect"
 
 export class UserNotFound extends Schema.TaggedError<UserNotFound>()(
@@ -96,7 +96,7 @@ export class UserNotFound extends Schema.TaggedError<UserNotFound>()(
   { userId: Schema.Number }
 ) {}
 
-// packages/api/src/api.ts
+// packages/types/src/api.ts
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "@effect/platform"
 import { Schema } from "effect"
 import { User, UserIdFromString } from "./schemas/user.js"
@@ -129,13 +129,13 @@ export class Api extends HttpApi.make("api")
 {}
 ```
 
-### 2. Server Implementation (`@packages/server`)
+### 2. API Server Application (`apps/api`)
 
 ```typescript
-// packages/server/src/handlers/users.ts
+// apps/api/src/handlers/users.ts
 import { HttpApiBuilder } from "@effect/platform"
 import { Effect } from "effect"
-import { Api } from "@packages/api"
+import { Api } from "@packages/types"
 import { UsersService } from "../services/users.js"
 
 export const UsersHandlers = HttpApiBuilder.group(Api, "users", (handlers) =>
@@ -149,10 +149,10 @@ export const UsersHandlers = HttpApiBuilder.group(Api, "users", (handlers) =>
   })
 )
 
-// packages/server/src/api.ts
+// apps/api/src/api.ts
 import { HttpApiBuilder } from "@effect/platform"
 import { Layer } from "effect"
-import { Api } from "@packages/api"
+import { Api } from "@packages/types"
 import { UsersHandlers } from "./handlers/users.js"
 import { UsersServiceLive } from "./services/users.js"
 
@@ -161,7 +161,7 @@ export const ApiLive = HttpApiBuilder.api(Api).pipe(
   Layer.provide(UsersServiceLive)
 )
 
-// packages/server/src/main.ts
+// apps/api/src/main.ts
 import { HttpApiBuilder, HttpMiddleware, HttpServer } from "@effect/platform"
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
 import { Layer } from "effect"
@@ -183,7 +183,7 @@ BunRuntime.runMain(Layer.launch(HttpLive))
 // apps/web/src/lib/api-client.ts
 import { FetchHttpClient, HttpApiClient } from "@effect/platform"
 import { Effect } from "effect"
-import { Api } from "@packages/api"
+import { Api } from "@packages/types"
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001"
 
@@ -211,10 +211,10 @@ export const getUsers = createServerFn({ method: "GET" })
 
 ## Dependencies
 
-### @packages/api
+### @packages/types
 ```json
 {
-  "name": "@packages/api",
+  "name": "@packages/types",
   "dependencies": {
     "@effect/platform": "^0.77.0",
     "effect": "^3.13.0"
@@ -222,14 +222,14 @@ export const getUsers = createServerFn({ method: "GET" })
 }
 ```
 
-### @packages/server
+### apps/api
 ```json
 {
-  "name": "@packages/server",
+  "name": "api",
   "dependencies": {
     "@effect/platform": "^0.77.0",
     "@effect/platform-bun": "^0.56.0",
-    "@packages/api": "workspace:*",
+    "@packages/types": "workspace:*",
     "effect": "^3.13.0"
   }
 }
@@ -240,7 +240,7 @@ export const getUsers = createServerFn({ method: "GET" })
 {
   "dependencies": {
     "@effect/platform": "^0.77.0",
-    "@packages/api": "workspace:*",
+    "@packages/types": "workspace:*",
     "effect": "^3.13.0"
   }
 }
@@ -255,15 +255,15 @@ export const getUsers = createServerFn({ method: "GET" })
 bun run dev
 
 # Or individually
-bun run dev --filter=@packages/server  # API on :3001
-bun run dev --filter=web               # Web on :3000
+bun run dev --filter=api   # API on :3001
+bun run dev --filter=web   # Web on :3000
 ```
 
 ### Adding New Endpoints
 
-1. **Define schema** in `@packages/api/src/schemas/`
-2. **Add endpoint** to appropriate `HttpApiGroup` in `@packages/api/src/api.ts`
-3. **Implement handler** in `@packages/server/src/handlers/`
+1. **Define schema** in `@packages/types/src/schemas/`
+2. **Add endpoint** to appropriate `HttpApiGroup` in `@packages/types/src/api.ts`
+3. **Implement handler** in `apps/api/src/handlers/`
 4. **Use in web app** - client is automatically typed!
 
 ## Benefits
@@ -278,8 +278,8 @@ bun run dev --filter=web               # Web on :3000
 ## Related Issues
 
 - [DEV-5](https://linear.app/coopers-projects/issue/DEV-5) - Research (this document)
-- [DEV-6](https://linear.app/coopers-projects/issue/DEV-6) - Create @packages/api
-- [DEV-7](https://linear.app/coopers-projects/issue/DEV-7) - Create @packages/server
+- [DEV-6](https://linear.app/coopers-projects/issue/DEV-6) - Create @packages/types
+- [DEV-7](https://linear.app/coopers-projects/issue/DEV-7) - Create apps/api
 - [DEV-8](https://linear.app/coopers-projects/issue/DEV-8) - Integrate HttpApiClient in web app
 - [DEV-9](https://linear.app/coopers-projects/issue/DEV-9) - Turbo pipeline configuration
 
