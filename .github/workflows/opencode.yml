@@ -65,7 +65,6 @@ jobs:
       - name: Setup OpenCode with oh-my-opencode
         env:
           OPENCODE_AUTH_JSON: ${{ secrets.OPENCODE_AUTH_JSON }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           export PATH="$HOME/.opencode/bin:$PATH"
 
@@ -85,13 +84,22 @@ jobs:
           fi
           opencode --version
 
-          # Install oh-my-opencode and run install
+          # Install oh-my-opencode and run install (uses OAuth via Claude Max subscription)
           bun add -g oh-my-opencode
           bunx oh-my-opencode install --no-tui --claude=max20 --chatgpt=no --gemini=no
 
-          # Copy project .opencode config to global config
-          if [[ -d ".opencode" ]]; then
-            cp -r .opencode/* ~/.config/opencode/ 2>/dev/null || true
+          # Merge project .opencode config into global config (don't overwrite plugin/provider)
+          if [[ -f ".opencode/opencode.json" ]]; then
+            GLOBAL_CONFIG=~/.config/opencode/opencode.json
+            PROJECT_CONFIG=.opencode/opencode.json
+            
+            # Merge: project MCP settings into global config, preserving plugin and provider
+            if [[ -f "$GLOBAL_CONFIG" ]]; then
+              jq -s '.[0] * {mcp: (.[0].mcp + .[1].mcp), tools: (.[0].tools + .[1].tools)}' \
+                "$GLOBAL_CONFIG" "$PROJECT_CONFIG" > /tmp/merged.json && mv /tmp/merged.json "$GLOBAL_CONFIG"
+            else
+              cp "$PROJECT_CONFIG" "$GLOBAL_CONFIG"
+            fi
           fi
 
           # Add GitHub Actions prompt append to oh-my-opencode config
@@ -141,17 +149,20 @@ jobs:
             jq --arg append "$PROMPT_APPEND" '.agents.Sisyphus.prompt_append = $append' "$OMO_JSON" > /tmp/omo.json && mv /tmp/omo.json "$OMO_JSON"
           fi
 
-          # Setup auth from secret
+          # Setup auth.json from secret (OAuth tokens from Claude Max subscription)
           mkdir -p ~/.local/share/opencode
           echo "$OPENCODE_AUTH_JSON" > ~/.local/share/opencode/auth.json
           chmod 600 ~/.local/share/opencode/auth.json
 
-          # Debug: show config (without secrets)
+          # Debug: show configs and auth status
           echo "=== OpenCode Config ==="
-          cat ~/.config/opencode/opencode.json 2>/dev/null || cat ~/.config/opencode/opencode.jsonc 2>/dev/null || echo "No config found"
+          cat ~/.config/opencode/opencode.json 2>/dev/null || echo "No config found"
           echo ""
-          echo "=== Auth JSON structure ==="
-          jq 'keys' ~/.local/share/opencode/auth.json 2>/dev/null || echo "No auth.json or invalid JSON"
+          echo "=== oh-my-opencode Config ==="
+          cat ~/.config/opencode/oh-my-opencode.json 2>/dev/null || echo "No OMO config found"
+          echo ""
+          echo "=== Auth Status ==="
+          jq 'to_entries | .[] | {provider: .key, type: .value.type, has_tokens: (.value.access != null and .value.access != ""), expires: (.value.expires | . / 1000 | strftime("%Y-%m-%d %H:%M:%S UTC"))}' ~/.local/share/opencode/auth.json 2>/dev/null || echo "No auth.json or invalid JSON"
 
       - name: Collect Context
         id: context
@@ -217,7 +228,6 @@ jobs:
       - name: Run OpenCode
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           USER_COMMENT: ${{ steps.context.outputs.comment }}
           COMMENT_AUTHOR: ${{ steps.context.outputs.author }}
           CONTEXT_TYPE: ${{ steps.context.outputs.type }}
