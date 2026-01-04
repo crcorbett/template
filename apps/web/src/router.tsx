@@ -1,4 +1,5 @@
 import { createRouter } from "@tanstack/react-router";
+
 import { DefaultCatchBoundary } from "./components/default-catch-boundary";
 import { NotFound } from "./components/not-found";
 import { routeTree } from "./routeTree.gen";

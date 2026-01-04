@@ -60,7 +60,7 @@ Phantom dependencies are dangerous because:
 
 ## Why pnpm Didn't Catch It
 
-pnpm is famous for its strict `node_modules` structure that *should* prevent phantom dependencies. So why didn't it catch this?
+pnpm is famous for its strict `node_modules` structure that _should_ prevent phantom dependencies. So why didn't it catch this?
 
 ### pnpm's Module Resolution
 
@@ -160,6 +160,7 @@ After this change, `bun run check-types` passed.
 It's easy to think of `@types/*` packages as "IDE helpers" rather than real dependencies. They're not — they're required for TypeScript compilation.
 
 **Rule**: If you import types from a package, you need either:
+
 - The package itself (if it ships types)
 - The corresponding `@types/*` package
 
@@ -188,6 +189,7 @@ bunx depcheck packages/ui
 ```
 
 Output:
+
 ```
 Missing dependencies
 * @types/react
@@ -234,12 +236,12 @@ When adding a new package, use this checklist:
 
 ## Summary
 
-| Aspect | pnpm | Bun |
-|--------|------|-----|
-| Module structure | Symlinked, semi-isolated | Flat, hoisted |
-| Phantom dep protection | Partial (bypassed by TS type resolution) | None (flat hoisting) |
-| Our phantom dep | Hidden by hoisting | Exposed by different hoisting |
-| Verdict | Not a pnpm bug — a TS type resolution quirk | Migration revealed latent bug |
+| Aspect                 | pnpm                                        | Bun                           |
+| ---------------------- | ------------------------------------------- | ----------------------------- |
+| Module structure       | Symlinked, semi-isolated                    | Flat, hoisted                 |
+| Phantom dep protection | Partial (bypassed by TS type resolution)    | None (flat hoisting)          |
+| Our phantom dep        | Hidden by hoisting                          | Exposed by different hoisting |
+| Verdict                | Not a pnpm bug — a TS type resolution quirk | Migration revealed latent bug |
 
 **The real lesson**: Explicit is better than implicit. Declare every dependency your code actually uses, including type packages. Don't rely on hoisting behavior — it varies between package managers and versions.
 

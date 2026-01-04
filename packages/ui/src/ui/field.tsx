@@ -73,7 +73,7 @@ function Field({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: Field uses role="group" intentionally for form field grouping semantics without fieldset styling
+    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- Field uses role="group" intentionally for form field grouping semantics without fieldset styling
     <div
       className={cn(fieldVariants({ orientation }), className)}
       data-orientation={orientation}

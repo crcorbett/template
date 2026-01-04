@@ -1,7 +1,8 @@
 "use client";
 
-import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
+
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
@@ -10,7 +11,7 @@ import { Textarea } from "@/ui/textarea";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: InputGroup uses role="group" intentionally for input grouping semantics without fieldset styling
+    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- InputGroup uses role="group" intentionally for input grouping semantics without fieldset styling
     <div
       className={cn(
         "group/input-group relative flex h-7 w-full min-w-0 items-center rounded-md border border-input bg-input/20 outline-none transition-colors has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-start]]:h-auto has-[>textarea]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:flex-col has-[textarea]:rounded-md has-data-[align=block-end]:rounded-md has-data-[align=block-start]:rounded-md has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot=input-group-control]:focus-visible]:ring-[2px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/30 has-[[data-slot][aria-invalid=true]]:ring-[2px] has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:bg-input/30 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-start]]:[&>input]:pl-1.5 [[data-slot=combobox-content]_&]:focus-within:border-inherit [[data-slot=combobox-content]_&]:focus-within:ring-0",
@@ -50,9 +51,7 @@ function InputGroupAddon({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: InputGroupAddon uses role="group" intentionally for input grouping semantics without fieldset styling
-    // biome-ignore lint/a11y/useKeyWithClickEvents: onClick only focuses the input for UX, not an interactive action
-    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onClick only focuses the input for UX, not an interactive action
+    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- onClick only focuses the input for UX, not an interactive action
     <div
       className={cn(inputGroupAddonVariants({ align }), className)}
       data-align={align}

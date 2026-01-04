@@ -8,15 +8,15 @@
   "exports": {
     ".": {
       "import": {
-        "@packages/source": "./src/index.ts",
         "types": "./dist/src/index.d.ts",
+        "@packages/source": "./src/index.ts",
         "default": "./dist/src/index.js"
       }
     },
     "./*": {
       "import": {
-        "@packages/source": "./src/*.ts",
         "types": "./dist/src/*.d.ts",
+        "@packages/source": "./src/*.ts",
         "default": "./dist/src/*.js"
       }
     },
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
-    "typescript": "catalog:typescript",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "typescript": "catalog:typescript"
   }
 }

@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { PostErrorComponent } from "$/components/post-error";
 import { fetchPost } from "$/utils/posts";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/posts_/$post-id/deep")({
   loader: async ({ params }) =>

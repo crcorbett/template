@@ -5,11 +5,13 @@
 ## Quick Reference: Automatic vs Manual
 
 Bun **automatically** handles these when running `bun install`:
+
 - ✅ Lockfile conversion (`pnpm-lock.yaml` → `bun.lock`)
 - ✅ Workspace configuration (`pnpm-workspace.yaml` → `package.json`)
 - ✅ Catalog migration (preserves `catalog:` protocol)
 
 You **manually** need to:
+
 - ❌ Update `packageManager` field
 - ❌ Add `@types/bun`
 - ❌ Update turbo version
@@ -75,8 +77,9 @@ You **manually** need to:
 - [ ] Update [`apps/web/vite.config.ts`](../apps/web/vite.config.ts):
   - [ ] Add import: `import { nitro } from "nitro/vite"`
   - [ ] Add to plugins array: `nitro({ preset: "bun" })`
-  
+
   Final plugins should look like:
+
   ```typescript
   plugins: [
     tailwindcss(),
@@ -137,6 +140,7 @@ You **manually** need to:
   - [ ] Update script commands to use `bun run`
 
 Example workflow:
+
 ```yaml
 - name: Setup Bun
   uses: oven-sh/setup-bun@v2
@@ -162,6 +166,7 @@ Example workflow:
 > See [PRD Section 9: Rollback Procedure](./bun-migration.md#9-rollback-procedure)
 
 If critical issues occur:
+
 ```bash
 # Restore pnpm files from git
 git checkout main -- package.json pnpm-workspace.yaml pnpm-lock.yaml

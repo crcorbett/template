@@ -1,4 +1,5 @@
 import type { User } from "@packages/core/user";
+
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/users")({

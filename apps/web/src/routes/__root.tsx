@@ -1,5 +1,9 @@
 /// <reference types="vite/client" />
 
+import type * as React from "react";
+
+import { DefaultCatchBoundary } from "$/components/default-catch-boundary";
+import { NotFound } from "$/components/not-found";
 import { seo } from "@packages/core/seo";
 import baseCss from "@packages/ui/styles/base.css?url";
 import {
@@ -9,9 +13,6 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import type * as React from "react";
-import { DefaultCatchBoundary } from "$/components/default-catch-boundary";
-import { NotFound } from "$/components/not-found";
 
 export const Route = createRootRoute({
   head: () => ({

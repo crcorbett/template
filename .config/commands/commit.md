@@ -52,72 +52,72 @@ Changes should be **well-scoped** - each commit should represent a single logica
 
 ## Conventional Commit Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting, no code change |
+| Type       | Description                             |
+| ---------- | --------------------------------------- |
+| `feat`     | New feature                             |
+| `fix`      | Bug fix                                 |
+| `docs`     | Documentation only                      |
+| `style`    | Formatting, no code change              |
 | `refactor` | Code change that neither fixes nor adds |
-| `perf` | Performance improvement |
-| `test` | Adding/updating tests |
-| `chore` | Maintenance, deps, configs |
-| `ci` | CI/CD changes |
-| `build` | Build system changes |
-| `revert` | Reverting previous commit |
+| `perf`     | Performance improvement                 |
+| `test`     | Adding/updating tests                   |
+| `chore`    | Maintenance, deps, configs              |
+| `ci`       | CI/CD changes                           |
+| `build`    | Build system changes                    |
+| `revert`   | Reverting previous commit               |
 
 ## Gitmoji Reference
 
-| Emoji | Type | Use When |
-|-------|------|----------|
-| ✨ | feat | Introduce new features |
-| 🐛 | fix | Fix a bug |
-| 🚑️ | fix | Critical hotfix |
-| 🔥 | chore | Remove code or files |
-| 📝 | docs | Add or update documentation |
-| 💄 | style | Add or update UI and style files |
-| 🎨 | refactor | Improve structure/format of code |
-| ♻️ | refactor | Refactor code |
-| ⚡️ | perf | Improve performance |
-| ✅ | test | Add, update, or pass tests |
-| 🧪 | test | Add a failing test |
-| 🔧 | chore | Add or update configuration files |
-| 🔨 | chore | Add or update development scripts |
-| ➕ | chore | Add a dependency |
-| ➖ | chore | Remove a dependency |
-| ⬆️ | chore | Upgrade dependencies |
-| ⬇️ | chore | Downgrade dependencies |
-| 📌 | chore | Pin dependencies to specific versions |
-| 🚀 | chore | Deploy stuff |
-| 👷 | ci | Add or update CI build system |
-| 💚 | ci | Fix CI Build |
-| 🔒️ | fix | Fix security issues |
-| 🚨 | fix | Fix compiler/linter warnings |
-| 🏷️ | feat | Add or update types |
-| 🗃️ | feat | Perform database related changes |
-| 🚚 | refactor | Move or rename resources |
-| 🏗️ | refactor | Make architectural changes |
-| ✏️ | fix | Fix typos |
-| 💡 | docs | Add or update comments in source code |
-| 🙈 | chore | Add or update .gitignore file |
-| 🎉 | feat | Begin a project |
-| 🔖 | chore | Release / Version tags |
-| 🚧 | chore | Work in progress |
-| 💩 | chore | Write bad code that needs improvement |
-| ⏪️ | revert | Revert changes |
-| 🔀 | chore | Merge branches |
-| 📦️ | build | Add or update compiled files or packages |
-| 👽️ | fix | Update code due to external API changes |
-| 🍱 | chore | Add or update assets |
-| ♿️ | feat | Improve accessibility |
-| 💬 | feat | Add or update text and literals |
-| 🔊 | feat | Add or update logs |
-| 🔇 | chore | Remove logs |
-| 🩹 | fix | Simple fix for a non-critical issue |
-| ⚰️ | chore | Remove dead code |
-| 🧱 | chore | Infrastructure related changes |
-| 🧵 | feat | Add or update code related to multithreading |
-| 🦺 | feat | Add or update code related to validation |
+| Emoji | Type     | Use When                                     |
+| ----- | -------- | -------------------------------------------- |
+| ✨    | feat     | Introduce new features                       |
+| 🐛    | fix      | Fix a bug                                    |
+| 🚑️    | fix      | Critical hotfix                              |
+| 🔥    | chore    | Remove code or files                         |
+| 📝    | docs     | Add or update documentation                  |
+| 💄    | style    | Add or update UI and style files             |
+| 🎨    | refactor | Improve structure/format of code             |
+| ♻️    | refactor | Refactor code                                |
+| ⚡️    | perf     | Improve performance                          |
+| ✅    | test     | Add, update, or pass tests                   |
+| 🧪    | test     | Add a failing test                           |
+| 🔧    | chore    | Add or update configuration files            |
+| 🔨    | chore    | Add or update development scripts            |
+| ➕    | chore    | Add a dependency                             |
+| ➖    | chore    | Remove a dependency                          |
+| ⬆️    | chore    | Upgrade dependencies                         |
+| ⬇️    | chore    | Downgrade dependencies                       |
+| 📌    | chore    | Pin dependencies to specific versions        |
+| 🚀    | chore    | Deploy stuff                                 |
+| 👷    | ci       | Add or update CI build system                |
+| 💚    | ci       | Fix CI Build                                 |
+| 🔒️    | fix      | Fix security issues                          |
+| 🚨    | fix      | Fix compiler/linter warnings                 |
+| 🏷️    | feat     | Add or update types                          |
+| 🗃️    | feat     | Perform database related changes             |
+| 🚚    | refactor | Move or rename resources                     |
+| 🏗️    | refactor | Make architectural changes                   |
+| ✏️    | fix      | Fix typos                                    |
+| 💡    | docs     | Add or update comments in source code        |
+| 🙈    | chore    | Add or update .gitignore file                |
+| 🎉    | feat     | Begin a project                              |
+| 🔖    | chore    | Release / Version tags                       |
+| 🚧    | chore    | Work in progress                             |
+| 💩    | chore    | Write bad code that needs improvement        |
+| ⏪️    | revert   | Revert changes                               |
+| 🔀    | chore    | Merge branches                               |
+| 📦️    | build    | Add or update compiled files or packages     |
+| 👽️    | fix      | Update code due to external API changes      |
+| 🍱    | chore    | Add or update assets                         |
+| ♿️    | feat     | Improve accessibility                        |
+| 💬    | feat     | Add or update text and literals              |
+| 🔊    | feat     | Add or update logs                           |
+| 🔇    | chore    | Remove logs                                  |
+| 🩹    | fix      | Simple fix for a non-critical issue          |
+| ⚰️    | chore    | Remove dead code                             |
+| 🧱    | chore    | Infrastructure related changes               |
+| 🧵    | feat     | Add or update code related to multithreading |
+| 🦺    | feat     | Add or update code related to validation     |
 
 ## Execution Steps
 
@@ -134,6 +134,7 @@ Changes should be **well-scoped** - each commit should represent a single logica
 ## Example Output
 
 For a commit adding a new feature:
+
 ```
 ✨ feat: add user authentication flow
 
@@ -143,6 +144,7 @@ For a commit adding a new feature:
 ```
 
 For a commit fixing a bug:
+
 ```
 🐛 fix: resolve race condition in data fetching
 

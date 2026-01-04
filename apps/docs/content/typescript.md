@@ -112,6 +112,7 @@ export default defineConfig({
 ```
 
 When TypeScript or Vite resolves `@packages/core/seo`:
+
 - It finds the `@packages/source` condition
 - Resolves directly to `./src/seo.ts`
 - Types are always current—no build step needed
@@ -171,15 +172,15 @@ When TypeScript or Vite resolves `@packages/core/seo`:
 
 #### Key Settings Explained
 
-| Setting | Value | Purpose |
-|---------|-------|---------|
-| `moduleResolution` | `"Bundler"` | Modern resolution for bundler-based workflows (Vite) |
-| `composite` | `true` | Enables project references and incremental builds |
-| `declaration` | `true` | Generates `.d.ts` files for packages |
-| `declarationMap` | `true` | Enables "Go to Definition" to jump to source |
-| `customConditions` | `["@packages/source"]` | **The live types magic** |
-| `verbatimModuleSyntax` | `true` | Enforces explicit `type` imports/exports |
-| `noUncheckedIndexedAccess` | `true` | Safer array/object access |
+| Setting                    | Value                  | Purpose                                              |
+| -------------------------- | ---------------------- | ---------------------------------------------------- |
+| `moduleResolution`         | `"Bundler"`            | Modern resolution for bundler-based workflows (Vite) |
+| `composite`                | `true`                 | Enables project references and incremental builds    |
+| `declaration`              | `true`                 | Generates `.d.ts` files for packages                 |
+| `declarationMap`           | `true`                 | Enables "Go to Definition" to jump to source         |
+| `customConditions`         | `["@packages/source"]` | **The live types magic**                             |
+| `verbatimModuleSyntax`     | `true`                 | Enforces explicit `type` imports/exports             |
+| `noUncheckedIndexedAccess` | `true`                 | Safer array/object access                            |
 
 The `${configDir}` placeholder resolves to the directory containing the extending tsconfig, keeping `outDir` relative to each package.
 
@@ -244,6 +245,7 @@ Application configs have slightly different needs:
 ```
 
 **Key differences from packages:**
+
 - `noEmit: true` — Apps are bundled by Vite, TypeScript only type-checks
 - `composite: false` — Apps consume packages but aren't consumed themselves
 - `paths` — Optional local aliases for cleaner imports
@@ -274,6 +276,7 @@ Each package's `package.json` uses conditional exports to support both developme
 ```
 
 This allows imports like:
+
 ```typescript
 import { seo } from "@packages/core/seo";
 import { User } from "@packages/core/user";
@@ -306,6 +309,7 @@ import { User } from "@packages/core/user";
 ```
 
 This allows both:
+
 ```typescript
 import { Button } from "@packages/ui";         // Root export
 import { Dialog } from "@packages/ui/dialog";  // Subpath export
@@ -360,16 +364,17 @@ export default defineConfig({
 
 We evaluated several approaches from Colin's article:
 
-| Approach | Pros | Cons | Our Decision |
-|----------|------|------|--------------|
-| **Project References** | Native TS feature, good for large codebases | Must mirror `dependencies`, complex setup | Used for IDE support only |
-| **tsconfig paths** | Simple to set up | Fragile, must sync with package.json | Used for local aliases only |
-| **publishConfig** | Clean separation | pnpm-only, risky if `npm publish` used | Rejected |
-| **Custom Conditions** | Works everywhere, explicit, production-safe | Requires tooling setup | **Chosen** |
+| Approach               | Pros                                        | Cons                                      | Our Decision                |
+| ---------------------- | ------------------------------------------- | ----------------------------------------- | --------------------------- |
+| **Project References** | Native TS feature, good for large codebases | Must mirror `dependencies`, complex setup | Used for IDE support only   |
+| **tsconfig paths**     | Simple to set up                            | Fragile, must sync with package.json      | Used for local aliases only |
+| **publishConfig**      | Clean separation                            | pnpm-only, risky if `npm publish` used    | Rejected                    |
+| **Custom Conditions**  | Works everywhere, explicit, production-safe | Requires tooling setup                    | **Chosen**                  |
 
 ### Why `@packages/source` as the Condition Name?
 
 The condition name should be:
+
 1. **Unique** — Won't collide with third-party packages
 2. **Scoped** — Only applies to our workspace packages
 3. **Descriptive** — Clear intent
@@ -380,13 +385,13 @@ The condition name should be:
 
 Our base config enables every strict option. This catches more bugs at compile time:
 
-| Setting | Catches |
-|---------|---------|
-| `strictNullChecks` | Null/undefined reference errors |
-| `noUncheckedIndexedAccess` | Array out-of-bounds access |
+| Setting                      | Catches                                    |
+| ---------------------------- | ------------------------------------------ |
+| `strictNullChecks`           | Null/undefined reference errors            |
+| `noUncheckedIndexedAccess`   | Array out-of-bounds access                 |
 | `exactOptionalPropertyTypes` | Difference between `undefined` and missing |
-| `noImplicitReturns` | Missing return statements |
-| `noUnusedLocals` | Dead code |
+| `noImplicitReturns`          | Missing return statements                  |
+| `noUnusedLocals`             | Dead code                                  |
 
 The short-term cost of satisfying these rules pays off in fewer runtime errors.
 
@@ -405,6 +410,7 @@ import { seo } from "@packages/core/seo";
 ```
 
 It resolves directly to the source file `packages/core/src/seo.ts`, seeing:
+
 - Actual implementation
 - JSDoc comments
 - Full type definitions in context
@@ -414,6 +420,7 @@ Without live types, the AI might see stale or incomplete type information from c
 ### Faster Iteration Cycles
 
 When an AI suggests changes to a shared package, you see the effects immediately:
+
 1. AI modifies `packages/core/src/seo.ts`
 2. Type errors/updates propagate instantly to `apps/web`
 3. No rebuild step required
@@ -435,6 +442,7 @@ For AI agents working in this codebase:
 ### Adding a New Package
 
 1. Create the package structure:
+
 ```
 packages/my-package/
 ├── src/
@@ -444,6 +452,7 @@ packages/my-package/
 ```
 
 2. Minimal `tsconfig.json`:
+
 ```jsonc
 {
   "extends": "../../tsconfig.base.json",
@@ -452,6 +461,7 @@ packages/my-package/
 ```
 
 3. Configure `package.json` exports:
+
 ```jsonc
 {
   "name": "@packages/my-package",
@@ -476,6 +486,7 @@ packages/my-package/
 ```
 
 4. Add to root `tsconfig.json` references:
+
 ```jsonc
 {
   "references": [
@@ -490,6 +501,7 @@ packages/my-package/
 When one package depends on another:
 
 1. Add workspace dependency:
+
 ```jsonc
 // packages/ui/package.json
 {
@@ -500,6 +512,7 @@ When one package depends on another:
 ```
 
 2. Import normally:
+
 ```typescript
 // packages/ui/src/button.tsx
 import { User } from "@packages/core/user";
@@ -516,6 +529,7 @@ bun run build
 ```
 
 This runs Turborepo, which:
+
 1. Builds packages in dependency order (`dependsOn: ["^build"]`)
 2. Compiles TypeScript to `dist/` in each package
 3. Bundles apps with Vite
@@ -531,6 +545,7 @@ Production builds use the `default` export condition, resolving to compiled `.js
 **Symptom**: Changes to a package don't reflect in consuming code.
 
 **Solutions**:
+
 1. Check that the consuming app's `vite.config.ts` includes `conditions: ["@packages/source"]`
 2. Restart the TypeScript server (VS Code: `TypeScript: Restart TS Server`)
 3. Verify the package's `exports` has `@packages/source` first
@@ -540,6 +555,7 @@ Production builds use the `default` export condition, resolving to compiled `.js
 **Symptom**: Import shows red squiggles despite file existing.
 
 **Solutions**:
+
 1. Check the export pattern matches your import path
 2. Ensure `moduleResolution` is set to `"Bundler"`
 3. Verify `tsconfig.json` extends the base config
@@ -549,6 +565,7 @@ Production builds use the `default` export condition, resolving to compiled `.js
 **Symptom**: IDE becomes sluggish in large workspaces.
 
 **Solutions**:
+
 1. Ensure `skipLibCheck: true` is set
 2. Check that `exclude` includes `dist/` and `node_modules/`
 3. Consider using project references for very large codebases
@@ -558,6 +575,7 @@ Production builds use the `default` export condition, resolving to compiled `.js
 **Symptom**: Types resolve in development but `tsc` fails.
 
 **Solutions**:
+
 1. Check that `dist/` directories exist for all packages (run `bun run build` once)
 2. Verify `declaration` and `composite` are enabled in packages
 3. Ensure export conditions have valid `types` and `default` paths
