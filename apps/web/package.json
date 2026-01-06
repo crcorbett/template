@@ -4,7 +4,7 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "dev": "bun --bun vite dev",
+    "dev": "bun --bun vite dev --host",
     "build": "bun --bun vite build && tsc --noEmit",
     "preview": "bun --bun vite preview",
     "start": "bun run .output/server/index.mjs"
