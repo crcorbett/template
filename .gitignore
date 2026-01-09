@@ -67,3 +67,4 @@ playwright/.cache/
 
 # Sentry
 .env.sentry-build-plugin
+.vercel

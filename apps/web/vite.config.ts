@@ -24,7 +24,16 @@ export default defineConfig(({ command }) => ({
     }),
     // Nitro disabled in dev due to HTTP/2 + Transfer-Encoding bug with Bun
     // https://github.com/TanStack/router/issues/6050
-    command === "build" ? nitro({ preset: "bun" }) : null,
+    command === "build"
+      ? nitro({
+          preset: "vercel",
+          vercel: {
+            functions: {
+              runtime: "bun1.x",
+            },
+          },
+        })
+      : null,
     viteReact(),
   ],
 }));
