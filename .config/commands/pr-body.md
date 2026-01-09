@@ -7,7 +7,9 @@ Generate a PR body for the current branch's changes. Follow the three-layer stru
 ## Structure
 
 ### Layer 1: Executive Summary (30 seconds)
+
 Start with 1-2 sentences answering:
+
 - What changed?
 - What's the user-visible impact?
 
@@ -17,6 +19,7 @@ Start with 1-2 sentences answering:
 Explain WHY the bug happened, not just what was wrong.
 
 **Approach**
+
 - What strategy did you take?
 - Key implementation details (with code snippets if helpful)
 
@@ -33,10 +36,12 @@ What alternatives were considered? Why this approach?
 
 **Verification**
 How can someone verify this works? Include commands:
+
 ```
 bash
 pnpm test
 ```
+
 **Files changed**
 Brief description of each file's changes.
 
