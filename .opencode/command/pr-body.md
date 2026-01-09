@@ -1,0 +1,1 @@
+../../.config/commands/pr-body.md
