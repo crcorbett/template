@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "bunVersion": "1.x",
   "installCommand": "bun install",
-  "buildCommand": "turbo run build --filter=web",
-  "framework": "tanstack-start"
+  "buildCommand": "turbo run build --filter=web && cp -r apps/web/.vercel/output .vercel/output",
+  "framework": null
 }
