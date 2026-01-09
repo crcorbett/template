@@ -39,6 +39,13 @@
         "vite-tsconfig-paths": "^5.1.4",
       },
     },
+    "packages/api": {
+      "name": "@packages/api",
+      "version": "0.0.1",
+      "devDependencies": {
+        "typescript": "catalog:typescript",
+      },
+    },
     "packages/core": {
       "name": "@packages/core",
       "version": "0.0.1",
@@ -373,6 +380,8 @@
     "@oxlint/win32-arm64": ["@oxlint/win32-arm64@1.36.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-GlWCBjUJY2QgvBFuNRkiRJu7K/djLmM0UQKfZV8IN+UXbP/JbjZHWKRdd4LXlQmzoz7M5Hd6p+ElCej8/90FCg=="],
 
     "@oxlint/win32-x64": ["@oxlint/win32-x64@1.36.0", "", { "os": "win32", "cpu": "x64" }, "sha512-J+Vc00Utcf8p77lZPruQgb0QnQXuKnFogN88kCnOqs2a83I+vTBB8ILr0+L9sTwVRvIDMSC0pLdeQH4svWGFZg=="],
+
+    "@packages/api": ["@packages/api@workspace:packages/api"],
 
     "@packages/core": ["@packages/core@workspace:packages/core"],
 
