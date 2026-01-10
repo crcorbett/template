@@ -1,28 +1,28 @@
 # Changesets
 
-Changesets manages versioning and changelogs for packages in this monorepo.
+Changesets manages versioning and changelogs for all packages and apps in this monorepo.
 
 ## What Gets Versioned
 
 ```
 packages/
-├── core/     # @packages/core - versioned
-├── ui/       # @packages/ui - versioned
-└── api/      # @packages/api - versioned
+├── core/     # @packages/core - versioned, changelog for devs
+├── ui/       # @packages/ui - versioned, changelog for devs
+└── api/      # @packages/api - versioned, changelog for devs
 
 apps/
-├── web/      # private, not versioned
-├── docs/     # private, not versioned
-└── admin/    # private, not versioned
+├── web/      # versioned, changelog for release notes
+├── docs/     # versioned, changelog for release notes
+└── admin/    # versioned, changelog for release notes
 ```
 
-Apps are `private: true` so changesets ignores them. Only publishable packages participate.
+All packages and apps participate in changesets. Apps use changelogs for consumer-facing release notes; packages use them for internal dev tracking.
 
 ## Workflow
 
 ### 1. Add a Changeset
 
-After making changes to a package:
+After making changes:
 
 ```bash
 bun run changeset:add
@@ -30,7 +30,7 @@ bun run changeset:add
 
 This prompts you to:
 
-1. Select which packages changed
+1. Select which packages/apps changed
 2. Choose bump type (major/minor/patch)
 3. Write a summary
 
@@ -41,9 +41,10 @@ Creates a file like `.changeset/purple-cats-dance.md`:
 ```markdown
 ---
 "@packages/core": minor
+"web": patch
 ---
 
-Add new utility functions for date handling
+Add new utility functions and update web app to use them
 ```
 
 ### 3. Commit with PR
@@ -62,20 +63,32 @@ This:
 
 - Consumes all pending changesets
 - Bumps versions in `package.json`
-- Generates/updates `CHANGELOG.md` in each package
+- Generates/updates `CHANGELOG.md` in each package/app
 - Deletes processed changeset files
+
+## App Release Tags
+
+After versioning, tag app releases with the date:
+
+```bash
+git tag "web@2024-01-10"
+git tag "admin@2024-01-10"
+```
+
+This links deployments to specific points in history. The CHANGELOG.md in each app tracks what changed.
 
 ## Multi-Package Changes
 
-If one change affects multiple packages:
+If one change affects multiple packages/apps:
 
 ```markdown
 ---
 "@packages/core": minor
 "@packages/ui": patch
+"web": patch
 ---
 
-Add theme system to core and update UI components to use it
+Add theme system to core, update UI components, integrate in web app
 ```
 
 ## Internal Dependencies
@@ -95,3 +108,10 @@ Config has `updateInternalDependencies: "patch"` - if `@packages/ui` depends on 
 - `patch` - Bug fixes, minor changes
 - `minor` - New features (backwards compatible)
 - `major` - Breaking changes
+
+## Changelog Audiences
+
+| Type     | Changelog For   | Example Entry                               |
+| -------- | --------------- | ------------------------------------------- |
+| Apps     | Consumers/users | "Added dark mode toggle in settings"        |
+| Packages | Internal devs   | "Add `useTheme` hook, deprecate `getTheme`" |
