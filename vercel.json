@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "bun install",
-  "buildCommand": "turbo run build --filter=web && mkdir -p .vercel && cp -r apps/web/.vercel/output .vercel/",
+  "bunVersion": "1.x",
   "framework": null
 }
