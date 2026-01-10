@@ -2,12 +2,15 @@
 
 Create a new PRD (spec + tasks) for the ralph-loop plugin.
 
+**Important: This command only creates the spec and task files. It does NOT begin executing the tasks.**
+
 ## Instructions
 
 1. Check `/prds/` for existing PRDs to determine the next number
 2. Create two files:
    - `{n}.{name}-spec.md` - Specification (ralph-loop reads this)
    - `{n}.{name}-tasks.json` - Task list for tracking
+3. **Do NOT begin executing tasks** - only create the files and stop
 
 ## Spec File Format
 
@@ -31,7 +34,7 @@ The spec file starts with the task instruction and completion promise that ralph
   "prd_id": {n},
   "title": "{Title}",
   "completion_promise": "DONE",
-  "status": "in_progress",
+  "status": "pending",
   "tasks": [
     {
       "id": "{n}.1",
@@ -45,9 +48,11 @@ The spec file starts with the task instruction and completion promise that ralph
 }
 ```
 
-## Commit Policy
+**Note:** Set `status` to `"pending"` for both the PRD and all tasks since execution will begin later.
 
-**Commit after each completed task.** Group related changes logically:
+## Commit Policy (for later execution)
+
+When tasks are executed later, **commit after each completed task.** Group related changes logically:
 
 - Use conventional commit format: `feat:`, `fix:`, `refactor:`, `chore:`, `test:`
 - Each commit should be atomic and buildable
