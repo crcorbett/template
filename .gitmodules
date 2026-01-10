@@ -2,3 +2,7 @@
 	path = .context/tanstack-router
 	url = https://github.com/TanStack/router.git
 	ignore = all
+[submodule ".context/fumadocs"]
+	path = .context/fumadocs
+	url = https://github.com/fuma-nama/fumadocs.git
+	ignore = all
