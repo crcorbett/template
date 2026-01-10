@@ -1,25 +1,25 @@
- {
-    "hooks": {
-      "PostToolUse": [
-        {
-          "matcher": "Edit|Write|MultiEdit|Update",
-          "hooks": [
-            {
-              "type": "command",
-              "command": "turbo fix || true"
-            }
-          ]
-        }
-      ],
-      "Stop": [
-        {
-          "hooks": [
-            {
-              "type": "command",
-              "command": "turbo check-types || true"
-            }
-          ]
-        }
-      ]
-    }
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|Update",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "turbo fix || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "turbo check-types || true"
+          }
+        ]
+      }
+    ]
   }
+}
