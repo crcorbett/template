@@ -53,6 +53,7 @@ The spec file starts with the task instruction and completion promise that ralph
 - Each commit should be atomic and buildable
 
 Example workflow:
+
 1. Complete task 2.1 → commit: `feat: add theme token types`
 2. Complete task 2.2 → commit: `feat: implement dark theme`
 3. Complete task 2.3 → commit: `refactor: use theme tokens in components`
