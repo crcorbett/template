@@ -66,13 +66,30 @@ This:
 - Generates/updates `CHANGELOG.md` in each package/app
 - Deletes processed changeset files
 
-## App Release Tags
+## CI/CD Workflow
 
-After versioning, tag app releases with the date:
+The release process is automated via GitHub Actions (`.github/workflows/release.yml`):
 
-```bash
-git tag "web@2024-01-10"
-git tag "admin@2024-01-10"
+```
+Developer:
+1. Make changes
+2. Run `bun run changeset:add`
+3. Write summary, commit with PR
+
+CI (on merge to main):
+1. Detects pending changesets
+2. Opens "Version Packages" PR with bumped versions + changelogs
+3. When that PR merges → creates date-based tags for apps
+```
+
+### App Release Tags
+
+Apps are tagged with dates (created automatically by CI):
+
+```
+web@2024-01-10
+docs@2024-01-10
+admin@2024-01-10
 ```
 
 This links deployments to specific points in history. The CHANGELOG.md in each app tracks what changed.
