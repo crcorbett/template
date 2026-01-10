@@ -7,9 +7,30 @@ description: CI workflow configuration and customization
 
 The main CI workflow runs on every push to `main` and on pull requests.
 
+<Mermaid
+  chart="
+flowchart LR
+    subgraph Trigger
+        PR[Pull Request]
+        Push[Push to main]
+    end
+    subgraph CI Pipeline
+        Checkout[Checkout Code]
+        Setup[Setup Bun]
+        Install[Install Dependencies]
+        Types[Type Check]
+        Lint[Lint & Format]
+        Build[Build]
+    end
+    PR --> Checkout
+    Push --> Checkout
+    Checkout --> Setup --> Install --> Types --> Lint --> Build
+"
+/>
+
 ## Workflow Configuration
 
-```yaml title=".github/workflows/ci.yml"
+```yaml title=".github/workflows/ci.yml" lineNumbers
 name: CI
 
 on:

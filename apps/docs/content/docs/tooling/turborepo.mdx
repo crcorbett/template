@@ -18,7 +18,7 @@ Turborepo is a high-performance build system for JavaScript/TypeScript monorepos
 
 The `turbo.json` file defines the task pipeline:
 
-```json title="turbo.json"
+```json title="turbo.json" lineNumbers
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
@@ -224,7 +224,7 @@ For watch tasks, disable caching:
 
 ### GitHub Actions
 
-```yaml
+```yaml title=".github/workflows/ci.yml"
 - name: Build
   run: bun turbo build
 

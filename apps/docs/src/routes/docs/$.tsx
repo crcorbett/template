@@ -13,6 +13,7 @@ import {
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { useMemo } from "react";
 
+import { Mermaid } from "@/components/mdx/mermaid";
 import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
 
@@ -40,6 +41,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
           <MDX
             components={{
               ...defaultMdxComponents,
+              Mermaid,
             }}
           />
         </DocsBody>

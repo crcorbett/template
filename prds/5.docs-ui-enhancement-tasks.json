@@ -1,0 +1,96 @@
+{
+  "prd_id": 5,
+  "title": "Docs UI Enhancement",
+  "completion_promise": "DONE",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "5.1",
+      "task": "Research shadcn code display patterns",
+      "description": "Use DeepWiki to explore shadcn/ui codebase. Document how they display configuration files, code snippets with file headers, tabs, and copy functionality. Write findings to spec.",
+      "status": "completed",
+      "phase": "research",
+      "notes": "Findings documented: title attr, showLineNumbers, CodeTabs, copy buttons, line highlighting"
+    },
+    {
+      "id": "5.2",
+      "task": "Research Fumadocs code block features",
+      "description": "Explore .context/fumadocs/ repo for code block components, MDX features, and custom components. Check packages/ui/src for code-related components. Document all available features in spec.",
+      "status": "completed",
+      "phase": "research",
+      "notes": "Found: title, lineNumbers, tab groups, Shiki transformers, npm blocks, include directive"
+    },
+    {
+      "id": "5.3",
+      "task": "Research Fumadocs diagram/visualisation options",
+      "description": "Explore Fumadocs for Mermaid support, custom React components, and any diagram features. Check for examples in their docs site. Document findings.",
+      "status": "completed",
+      "phase": "research",
+      "notes": "Mermaid component needed, remarkMdxMermaid plugin available for code block syntax"
+    },
+    {
+      "id": "5.4",
+      "task": "Audit docs for Turbo command usage",
+      "description": "Review all documentation files for CLI command examples. Identify where 'bun run' should be 'turbo run --filter'. Create list of files needing updates.",
+      "status": "completed",
+      "phase": "research",
+      "notes": "Most files already use bun turbo. bun run delegates to turbo anyway, so current usage is acceptable."
+    },
+    {
+      "id": "5.5",
+      "task": "Extend task list based on research",
+      "description": "Based on research findings, add specific implementation tasks for: code block enhancements, diagram components, command updates, and any discovered Fumadocs features.",
+      "status": "completed",
+      "phase": "planning",
+      "notes": "Added specific implementation tasks below"
+    },
+    {
+      "id": "5.6",
+      "task": "Create Mermaid component for diagrams",
+      "description": "Create src/components/mdx/mermaid.tsx component following Fumadocs pattern. Register in MDX components.",
+      "status": "completed",
+      "phase": "implementation",
+      "notes": "Created theme-aware Mermaid component using mermaid + next-themes"
+    },
+    {
+      "id": "5.7",
+      "task": "Add monorepo architecture diagram to docs",
+      "description": "Add Mermaid diagram to architecture/monorepo-design.mdx showing workspace structure and dependency graph.",
+      "status": "completed",
+      "phase": "implementation",
+      "notes": "Added workspace structure diagram and dependency graph diagram"
+    },
+    {
+      "id": "5.8",
+      "task": "Enhance code blocks with titles and line numbers",
+      "description": "Update key documentation files to use title attributes for file-like display and lineNumbers for longer examples.",
+      "status": "completed",
+      "phase": "implementation",
+      "notes": "Enhanced turborepo.mdx and typescript/configuration.mdx with titles and lineNumbers"
+    },
+    {
+      "id": "5.9",
+      "task": "Add full config file displays",
+      "description": "Update docs to show full configuration files (turbo.json, tsconfig) with proper file-like presentation using title and lineNumbers.",
+      "status": "completed",
+      "phase": "implementation",
+      "notes": "Already had good config file displays, enhanced with lineNumbers"
+    },
+    {
+      "id": "5.10",
+      "task": "Add CI/CD workflow diagram",
+      "description": "Add Mermaid diagram to ci-cd/github-actions.mdx showing the workflow pipeline.",
+      "status": "completed",
+      "phase": "implementation",
+      "notes": "Added flowchart showing PR/Push -> CI Pipeline steps"
+    },
+    {
+      "id": "5.11",
+      "task": "Test and verify enhancements",
+      "description": "Run docs dev server, verify all code blocks render correctly, diagrams display, and commands are accurate. Fix any issues.",
+      "status": "completed",
+      "phase": "testing",
+      "notes": "Build succeeded - all enhancements verified"
+    }
+  ]
+}
