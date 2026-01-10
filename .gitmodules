@@ -1,3 +1,4 @@
 [submodule ".context/tanstack-router"]
 	path = .context/tanstack-router
 	url = https://github.com/TanStack/router.git
+	ignore = all
