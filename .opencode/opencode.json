@@ -4,10 +4,12 @@
     "lsp": true
   },
   "mcp": {
-    "playwright": {
+    "playwriter": {
       "type": "local",
-      "command": ["npx", "@playwright/mcp@latest"],
-      "enabled": false
+      "command": ["npx", "playwriter@latest"],
+      "environment": {
+        "PLAYWRITER_AUTO_ENABLE": "1"
+      }
     },
     "deepwiki": {
       "type": "remote",
