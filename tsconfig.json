@@ -8,6 +8,7 @@
   "include": [],
   "references": [
     { "path": "./apps/web" },
+    { "path": "./apps/docs" },
     { "path": "./packages/core" },
     { "path": "./packages/api" },
     { "path": "./packages/ui" }
