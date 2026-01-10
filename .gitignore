@@ -71,4 +71,4 @@ playwright/.cache/
 .claude/ralph-loop.local.md
 
 # Temporary files
-tmp/
+tmp
