@@ -45,28 +45,28 @@ The monorepo uses Bun workspaces defined in the root `package.json`:
 This tells Bun to treat every folder in `apps/` and `packages/` as a separate package.
 
 <Mermaid
-  chart="
+  chart='
 graph TD
-    root[monorepo root]
+    root["monorepo root"]
     root --> apps
     root --> packages
-    root --> config[config files]
-    subgraph apps[apps/]
-        web[web]
-        admin[admin]
-        docs[docs]
+    root --> config["config files"]
+    subgraph apps["apps/"]
+        web["web"]
+        admin["admin"]
+        docs["docs"]
     end
-    subgraph packages[packages/]
-        core[core]
-        ui[ui]
-        api[api]
+    subgraph packages["packages/"]
+        core["core"]
+        ui["ui"]
+        api["api"]
     end
-    subgraph config[Configuration]
-        turbo[turbo.json]
-        tsconfig[tsconfig.json]
-        pkgjson[package.json]
+    subgraph config["Configuration"]
+        turbo["turbo.json"]
+        tsconfig["tsconfig.json"]
+        pkgjson["package.json"]
     end
-"
+'
 />
 
 ### Apps Directory
@@ -100,17 +100,17 @@ Packages can be published to npm or kept internal.
 Dependencies flow from apps to packages. Here's a visual representation:
 
 <Mermaid
-  chart="
+  chart='
 graph LR
     subgraph Applications
-        web[apps/web]
-        admin[apps/admin]
-        docs[apps/docs]
+        web["apps/web"]
+        admin["apps/admin"]
+        docs["apps/docs"]
     end
     subgraph Packages
-        core[@packages/core]
-        ui[@packages/ui]
-        api[@packages/api]
+        core["packages/core"]
+        ui["packages/ui"]
+        api["packages/api"]
     end
     web --> core
     web --> ui
@@ -119,7 +119,7 @@ graph LR
     admin --> ui
     docs --> core
     ui --> core
-"
+'
 />
 
 Packages can depend on each other, but avoid circular dependencies.
