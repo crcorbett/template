@@ -231,3 +231,8 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
 5. **Service Pattern**: Define services as `Context.Tag` classes. Use `Layer.succeed` or `Layer.effect` for implementations. Compose with `Layer.provide`.
 
 - Updated: prd.json item 2 (category: architectural) → passes: true
+
+## Iteration 3
+- Completed: Create Docker Compose setup for PostgreSQL
+- Changes: Created docker-compose.yml with PostgreSQL 17, health checks, persistent volume. Added .env.example with all required env vars (DB connection, Better Auth, OAuth providers). .gitignore already had .env patterns.
+- Updated: prd.json item 3 (category: architectural) → passes: true

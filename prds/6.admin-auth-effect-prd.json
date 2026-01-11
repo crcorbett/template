@@ -42,7 +42,8 @@
         "Step 6: Update .gitignore for .env files",
         "Step 7: Verify PostgreSQL starts and accepts connections"
       ],
-      "passes": false
+      "notes": "Use postgres 17",
+      "passes": true
     },
     {
       "category": "architectural",
