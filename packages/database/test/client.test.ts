@@ -8,11 +8,10 @@
  * 4. getDatabaseUrl returns expected format
  *
  * Note: Integration tests requiring actual database connection are in integration.test.ts
+import { getDatabaseUrl, PgPool, SqlLive } from "@packages/database";
+import { Effect } from "effect";
  */
 import { describe, expect, it, afterEach } from "vitest";
-import { Effect } from "effect";
-
-import { getDatabaseUrl, PgPool, SqlLive } from "@packages/database";
 
 // =============================================================================
 // getDatabaseUrl Tests

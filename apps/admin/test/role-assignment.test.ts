@@ -6,10 +6,11 @@
  * 2. Permission derivation from roles
  * 3. Multiple role handling
  * 4. Role hierarchy behavior
- */
-import { describe, expect, it } from "vitest";
-import { Effect, Schema } from "effect";
-
+import {
+  getUserRoles,
+  hasPermission,
+  PermissionsService,
+} from "$/lib/effect/services/permissions";
 import {
   UserId,
   RoleId,
@@ -24,12 +25,9 @@ import {
   ALL_ROLES,
   ALL_PERMISSIONS,
 } from "@packages/types";
-
-import {
-  getUserRoles,
-  hasPermission,
-  PermissionsService,
-} from "$/lib/effect/services/permissions";
+import { Effect, Schema } from "effect";
+ */
+import { describe, expect, it } from "vitest";
 
 import {
   createMockPermissionsLayer,
@@ -236,9 +234,7 @@ describe("Permission Derivation from Roles", () => {
   describe("Admin role permissions", () => {
     it("should have all permissions", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -257,9 +253,7 @@ describe("Permission Derivation from Roles", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "users:write"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = hasPermission(userId, permission);
@@ -274,9 +268,7 @@ describe("Permission Derivation from Roles", () => {
   describe("Editor role permissions", () => {
     it("should have posts permissions but not users permissions", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["editor" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["editor" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -298,9 +290,7 @@ describe("Permission Derivation from Roles", () => {
   describe("Viewer role permissions", () => {
     it("should only have posts:read", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -372,9 +362,7 @@ describe("Multiple Role Assignment", () => {
 describe("hasAnyRole", () => {
   it("should return true when user has at least one required role", async () => {
     const userId = createMockUserId(TEST_USER_ID);
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["editor" as const]],
-    ]);
+    const userRolesMap = new Map([[TEST_USER_ID, ["editor" as const]]]);
     const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
     const effect = Effect.flatMap(PermissionsService, (service) =>
@@ -393,9 +381,7 @@ describe("hasAnyRole", () => {
 
   it("should return false when user has none of the required roles", async () => {
     const userId = createMockUserId(TEST_USER_ID);
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["viewer" as const]],
-    ]);
+    const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
     const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
     const effect = Effect.flatMap(PermissionsService, (service) =>
@@ -420,9 +406,7 @@ describe("hasAnyRole", () => {
 describe("hasAllPermissions", () => {
   it("should return true when user has all required permissions", async () => {
     const userId = createMockUserId(TEST_USER_ID);
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["admin" as const]],
-    ]);
+    const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
     const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
     const effect = Effect.flatMap(PermissionsService, (service) =>
@@ -441,9 +425,7 @@ describe("hasAllPermissions", () => {
 
   it("should return false when user is missing some permissions", async () => {
     const userId = createMockUserId(TEST_USER_ID);
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["editor" as const]],
-    ]);
+    const userRolesMap = new Map([[TEST_USER_ID, ["editor" as const]]]);
     const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
     const effect = Effect.flatMap(PermissionsService, (service) =>
@@ -462,9 +444,7 @@ describe("hasAllPermissions", () => {
 
   it("should return true for empty permissions array", async () => {
     const userId = createMockUserId(TEST_USER_ID);
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["viewer" as const]],
-    ]);
+    const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
     const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
     const effect = Effect.flatMap(PermissionsService, (service) =>

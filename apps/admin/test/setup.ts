@@ -5,10 +5,21 @@
  * - Mock layers for testing without real database
  * - Test helpers for creating mock data
  * - Test fixtures for Effect-based testing
- */
-import { Effect, Layer, Option, Schema } from "effect";
-
+import type { AuthServiceImpl } from "$/lib/effect/services/auth";
+import type { PermissionsServiceImpl } from "$/lib/effect/services/permissions";
 import type { AuthContext } from "@packages/types";
+
+import {
+  AuthService,
+  NoSessionError,
+  SessionValidationError,
+} from "$/lib/effect/services/auth";
+import { DatabaseQueryError } from "$/lib/effect/services/database";
+import {
+  PermissionsService,
+  InsufficientRoleError,
+  InsufficientPermissionError,
+} from "$/lib/effect/services/permissions";
 import {
   Session as SessionSchema,
   User as UserSchema,
@@ -18,20 +29,8 @@ import {
   PermissionString as PermissionStringSchema,
   DEFAULT_ROLE_PERMISSIONS,
 } from "@packages/types";
-
-import type { AuthServiceImpl } from "$/lib/effect/services/auth";
-import {
-  AuthService,
-  NoSessionError,
-  SessionValidationError,
-} from "$/lib/effect/services/auth";
-import type { PermissionsServiceImpl } from "$/lib/effect/services/permissions";
-import {
-  PermissionsService,
-  InsufficientRoleError,
-  InsufficientPermissionError,
-} from "$/lib/effect/services/permissions";
-import { DatabaseQueryError } from "$/lib/effect/services/database";
+ */
+import { Effect, Layer, Option, Schema } from "effect";
 
 // =============================================================================
 // Test Data Factories
@@ -47,13 +46,15 @@ const futureIso = new Date(Date.now() + 86400000).toISOString();
 /**
  * Create a mock user for testing
  */
-export const createMockUser = (overrides: Partial<{
-  id: string;
-  email: string;
-  emailVerified: boolean;
-  name: string | null;
-  image: string | null;
-}> = {}) =>
+export const createMockUser = (
+  overrides: Partial<{
+    id: string;
+    email: string;
+    emailVerified: boolean;
+    name: string | null;
+    image: string | null;
+  }> = {}
+) =>
   Schema.decodeUnknownSync(UserSchema)({
     id: overrides.id ?? validUuid,
     email: overrides.email ?? validEmail,
@@ -67,11 +68,13 @@ export const createMockUser = (overrides: Partial<{
 /**
  * Create a mock session for testing
  */
-export const createMockSession = (overrides: Partial<{
-  id: string;
-  userId: string;
-  token: string;
-}> = {}) =>
+export const createMockSession = (
+  overrides: Partial<{
+    id: string;
+    userId: string;
+    token: string;
+  }> = {}
+) =>
   Schema.decodeUnknownSync(SessionSchema)({
     id: overrides.id ?? validUuid2,
     userId: overrides.userId ?? validUuid,
@@ -89,11 +92,13 @@ export const createMockSession = (overrides: Partial<{
  * Note: createMockUser and createMockSession already decode/validate the data,
  * so we can simply combine them into an AuthContext without re-decoding.
  */
-export const createMockAuthContext = (overrides: {
-  userId?: string;
-  email?: string;
-  sessionId?: string;
-} = {}): AuthContext => {
+export const createMockAuthContext = (
+  overrides: {
+    userId?: string;
+    email?: string;
+    sessionId?: string;
+  } = {}
+): AuthContext => {
   const userOverrides: Partial<{
     id: string;
     email: string;
@@ -111,7 +116,8 @@ export const createMockAuthContext = (overrides: {
   }> = {
     userId: overrides.userId ?? validUuid,
   };
-  if (overrides.sessionId !== undefined) sessionOverrides.id = overrides.sessionId;
+  if (overrides.sessionId !== undefined)
+    sessionOverrides.id = overrides.sessionId;
 
   const user = createMockUser(userOverrides);
   const session = createMockSession(sessionOverrides);

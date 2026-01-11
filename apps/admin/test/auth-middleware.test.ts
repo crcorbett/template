@@ -7,16 +7,6 @@
  * 3. requirePermission middleware with branded PermissionString types
  * 4. Error handling and response codes
  * 5. Middleware composition patterns
- */
-import { describe, expect, it } from "vitest";
-import { Effect, Exit, Layer, Schema } from "effect";
-
-import {
-  RoleName as RoleNameSchema,
-  PermissionString as PermissionStringSchema,
-  DEFAULT_ROLE_PERMISSIONS,
-} from "@packages/types";
-
 import {
   InsufficientRoleError,
   InsufficientPermissionError,
@@ -26,6 +16,14 @@ import {
   requireRole,
   requirePermission,
 } from "$/lib/effect/services/permissions";
+import {
+  RoleName as RoleNameSchema,
+  PermissionString as PermissionStringSchema,
+  DEFAULT_ROLE_PERMISSIONS,
+} from "@packages/types";
+import { Effect, Exit, Layer, Schema } from "effect";
+ */
+import { describe, expect, it } from "vitest";
 
 import {
   createMockAuthContext,
@@ -147,9 +145,7 @@ describe("PermissionsService", () => {
   describe("getUserRoles", () => {
     it("should return user roles and computed permissions for admin", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -169,9 +165,7 @@ describe("PermissionsService", () => {
 
     it("should return editor permissions for editor role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["editor" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["editor" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -191,9 +185,7 @@ describe("PermissionsService", () => {
 
     it("should return viewer permissions for viewer role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = getUserRoles(userId);
@@ -248,9 +240,7 @@ describe("PermissionsService", () => {
     it("should return true when user has the role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
       const role = Schema.decodeUnknownSync(RoleNameSchema)("admin");
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = hasRole(userId, role);
@@ -264,9 +254,7 @@ describe("PermissionsService", () => {
     it("should return false when user does not have the role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
       const role = Schema.decodeUnknownSync(RoleNameSchema)("admin");
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = hasRole(userId, role);
@@ -284,9 +272,7 @@ describe("PermissionsService", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "users:read"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = hasPermission(userId, permission);
@@ -302,9 +288,7 @@ describe("PermissionsService", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "users:read"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = hasPermission(userId, permission);
@@ -320,9 +304,7 @@ describe("PermissionsService", () => {
     it("should succeed when user has required role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
       const role = Schema.decodeUnknownSync(RoleNameSchema)("admin");
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["admin" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requireRole(userId, role);
@@ -336,9 +318,7 @@ describe("PermissionsService", () => {
     it("should fail with InsufficientRoleError when user lacks role", async () => {
       const userId = createMockUserId(TEST_USER_ID);
       const role = Schema.decodeUnknownSync(RoleNameSchema)("admin");
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requireRole(userId, role);
@@ -352,9 +332,7 @@ describe("PermissionsService", () => {
     it("should allow catching InsufficientRoleError", async () => {
       const userId = createMockUserId(TEST_USER_ID);
       const role = Schema.decodeUnknownSync(RoleNameSchema)("admin");
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requireRole(userId, role).pipe(
@@ -385,9 +363,7 @@ describe("PermissionsService", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "posts:read"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requirePermission(userId, permission);
@@ -403,9 +379,7 @@ describe("PermissionsService", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "users:write"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requirePermission(userId, permission);
@@ -421,9 +395,7 @@ describe("PermissionsService", () => {
       const permission = Schema.decodeUnknownSync(PermissionStringSchema)(
         "users:write"
       );
-      const userRolesMap = new Map([
-        [TEST_USER_ID, ["viewer" as const]],
-      ]);
+      const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
       const testLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
 
       const effect = requirePermission(userId, permission).pipe(
@@ -485,10 +457,10 @@ describe("Middleware Service Layer Pattern", () => {
   it("should allow composing auth and permissions services", async () => {
     const authContext = createMockAuthContext({ userId: TEST_USER_ID });
     const authLayer = createMockAuthLayer({ session: authContext });
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["admin" as const]],
-    ]);
-    const permissionsLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
+    const userRolesMap = new Map([[TEST_USER_ID, ["admin" as const]]]);
+    const permissionsLayer = createMockPermissionsLayer({
+      userRoles: userRolesMap,
+    });
     const combinedLayer = Layer.mergeAll(authLayer, permissionsLayer);
 
     const effect = Effect.gen(function* () {
@@ -508,10 +480,10 @@ describe("Middleware Service Layer Pattern", () => {
   it("should fail when auth passes but permissions fail", async () => {
     const authContext = createMockAuthContext({ userId: TEST_USER_ID });
     const authLayer = createMockAuthLayer({ session: authContext });
-    const userRolesMap = new Map([
-      [TEST_USER_ID, ["viewer" as const]],
-    ]);
-    const permissionsLayer = createMockPermissionsLayer({ userRoles: userRolesMap });
+    const userRolesMap = new Map([[TEST_USER_ID, ["viewer" as const]]]);
+    const permissionsLayer = createMockPermissionsLayer({
+      userRoles: userRolesMap,
+    });
     const combinedLayer = Layer.mergeAll(authLayer, permissionsLayer);
 
     const effect = Effect.gen(function* () {

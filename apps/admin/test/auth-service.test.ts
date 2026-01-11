@@ -6,10 +6,6 @@
  * 2. Session validation with Effect Schemas
  * 3. Error handling (NoSessionError, SessionValidationError)
  * 4. Service layer patterns with dependency injection
- */
-import { describe, expect, it } from "vitest";
-import { Effect, Exit, Option } from "effect";
-
 import {
   AuthService,
   NoSessionError,
@@ -18,6 +14,9 @@ import {
   requireSession,
   validateToken,
 } from "$/lib/effect/services/auth";
+import { Effect, Exit, Option } from "effect";
+ */
+import { describe, expect, it } from "vitest";
 
 import {
   createMockAuthContext,
@@ -46,7 +45,9 @@ describe("Auth Error Types", () => {
 
   describe("SessionValidationError", () => {
     it("should create error with message", () => {
-      const error = new SessionValidationError({ message: "Validation failed" });
+      const error = new SessionValidationError({
+        message: "Validation failed",
+      });
       expect(error.message).toBe("Validation failed");
       expect(error._tag).toBe("SessionValidationError");
     });

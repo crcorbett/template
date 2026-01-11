@@ -6,12 +6,7 @@
  * 2. Session creation and validation flow
  * 3. Token refresh patterns
  * 4. Provider-specific handling (Google, Microsoft)
- */
-import { describe, expect, it } from "vitest";
-import { Effect, Exit, Option, Schema } from "effect";
-
 import type { AuthContext } from "@packages/types";
-import { Account } from "@packages/types";
 
 import {
   getSession,
@@ -19,6 +14,10 @@ import {
   validateToken,
   SessionValidationError,
 } from "$/lib/effect/services/auth";
+import { Account } from "@packages/types";
+import { Effect, Exit, Option, Schema } from "effect";
+ */
+import { describe, expect, it } from "vitest";
 
 import {
   createMockAuthContext,
@@ -145,7 +144,10 @@ describe("OAuth Session Flow", () => {
         name: "OAuth User",
       });
       const oauthSession = createMockSession({ userId: TEST_USER_ID });
-      const authContext = { user: oauthUser, session: oauthSession } as AuthContext;
+      const authContext = {
+        user: oauthUser,
+        session: oauthSession,
+      } as AuthContext;
 
       const testLayer = createMockAuthLayer({ session: authContext });
 
@@ -351,7 +353,10 @@ describe("OAuth User Data Handling", () => {
 
     const oauthSession = createMockSession({ userId: TEST_USER_ID });
     // User and Session are already decoded by createMockUser/createMockSession
-    const authContext = { user: oauthUser, session: oauthSession } as AuthContext;
+    const authContext = {
+      user: oauthUser,
+      session: oauthSession,
+    } as AuthContext;
 
     const testLayer = createMockAuthLayer({ session: authContext });
 
@@ -375,7 +380,10 @@ describe("OAuth User Data Handling", () => {
 
     const oauthSession = createMockSession();
     // User and Session are already decoded by createMockUser/createMockSession
-    const authContext = { user: oauthUser, session: oauthSession } as AuthContext;
+    const authContext = {
+      user: oauthUser,
+      session: oauthSession,
+    } as AuthContext;
 
     const testLayer = createMockAuthLayer({ session: authContext });
 
@@ -396,7 +404,10 @@ describe("OAuth User Data Handling", () => {
 
     const oauthSession = createMockSession();
     // User and Session are already decoded by createMockUser/createMockSession
-    const authContext = { user: oauthUser, session: oauthSession } as AuthContext;
+    const authContext = {
+      user: oauthUser,
+      session: oauthSession,
+    } as AuthContext;
 
     const testLayer = createMockAuthLayer({ session: authContext });
 

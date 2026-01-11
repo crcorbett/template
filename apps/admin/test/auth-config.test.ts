@@ -6,10 +6,6 @@
  * 2. Branded type validation for OAuth credentials
  * 3. Database URL validation
  * 4. Auth configuration structure
- */
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { Either, Schema } from "effect";
-
 import {
   OAuthClientId,
   OAuthClientSecret,
@@ -20,6 +16,9 @@ import {
   loadAuthEnv,
   getAuthEnv,
 } from "$/lib/env";
+import { Either, Schema } from "effect";
+ */
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 
 // =============================================================================
 // Branded Type Tests
@@ -28,9 +27,8 @@ import {
 describe("OAuth Credential Branded Types", () => {
   describe("OAuthClientId", () => {
     it("should accept non-empty string", () => {
-      const result = Schema.decodeUnknownEither(OAuthClientId)(
-        "client-id-12345"
-      );
+      const result =
+        Schema.decodeUnknownEither(OAuthClientId)("client-id-12345");
       expect(Either.isRight(result)).toBe(true);
     });
 
@@ -49,9 +47,8 @@ describe("OAuth Credential Branded Types", () => {
 
   describe("OAuthClientSecret", () => {
     it("should accept non-empty string", () => {
-      const result = Schema.decodeUnknownEither(OAuthClientSecret)(
-        "GOCSPX-secret123"
-      );
+      const result =
+        Schema.decodeUnknownEither(OAuthClientSecret)("GOCSPX-secret123");
       expect(Either.isRight(result)).toBe(true);
     });
 
