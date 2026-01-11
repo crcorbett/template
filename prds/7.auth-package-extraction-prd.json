@@ -61,7 +61,7 @@
         "Step 8: Export service tag, interface, and layer"
       ],
       "notes": "Use Option.fromNullable for nullable DB results. Use Match for exhaustive role checking.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",

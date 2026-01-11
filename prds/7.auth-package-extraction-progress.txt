@@ -37,3 +37,18 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports services, service interfaces, and types
 - Updated: prd.json item 3 (category: architectural) → passes: true
 - Notes: Service is framework-agnostic - apps provide BetterAuthClient layer with their configured Better Auth instance. No type assertions used - proper Effect patterns with Schema.decodeUnknownSync and Effect.try. Option<AuthContext> used for getSession return type.
+
+## Iteration 4
+- Completed: Create PermissionsService as Effect service with typed interface
+- Changes:
+  - packages/auth/src/services/permissions.ts: PermissionsService with full RBAC support
+    - UserRolesProvider Context.Tag for flexible role data sourcing (apps provide implementation)
+    - UserRolesLookupError for role lookup failures
+    - PermissionsServiceImpl interface: getUserRoles, hasRole, hasPermission, requireRole, requirePermission, hasAnyRole, hasAllPermissions
+    - Option<UserWithRoles> return for getUserRoles (handles user not found)
+    - Match module for role/permission branching in requireRole/requirePermission
+    - PermissionsServiceLive layer requiring UserRolesProvider dependency
+  - packages/auth/src/services/index.ts: Re-exports PermissionsService, UserRolesProvider, convenience functions
+  - packages/auth/src/index.ts: Exports all permissions service components
+- Updated: prd.json item 4 (category: architectural) → passes: true
+- Notes: Framework-agnostic - apps provide UserRolesProvider layer with their DB/cache implementation. Uses existing InsufficientRoleError/InsufficientPermissionError from errors.ts. Match.exhaustive used for boolean branching in require* methods.
