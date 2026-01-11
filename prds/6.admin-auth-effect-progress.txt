@@ -236,3 +236,15 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
 - Completed: Create Docker Compose setup for PostgreSQL
 - Changes: Created docker-compose.yml with PostgreSQL 17, health checks, persistent volume. Added .env.example with all required env vars (DB connection, Better Auth, OAuth providers). .gitignore already had .env patterns.
 - Updated: prd.json item 3 (category: architectural) → passes: true
+
+## Iteration 4
+- Completed: Create @packages/types package with auth and RBAC types using Effect Schemas
+- Changes:
+  - Added effect dependency to packages/types/package.json
+  - Rewrote src/auth.ts with Effect Schemas: UserId, SessionId, AccountId, SessionToken, Email branded types; User, Session, Account, AuthContext structs; Insert schemas
+  - Rewrote src/rbac.ts with Effect Schemas: RoleId, PermissionId, UserRoleId, RolePermissionId branded types; RoleName, PermissionString branded literal types; Role, Permission, UserRole, RolePermission, UserWithRoles structs; Insert schemas
+  - Fixed src/schema.ts import (relations was in comment)
+  - Updated src/index.ts to export all Effect Schemas and derived types
+  - All types derived from Schemas using typeof Schema.Type pattern
+  - All ID types use Schema.brand() with UUID pattern validation
+- Updated: prd.json item 4 (category: architectural) → passes: true

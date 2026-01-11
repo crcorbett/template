@@ -65,7 +65,7 @@
         "Step 14: Verify package builds and exports correctly"
       ],
       "notes": "CRITICAL: All types MUST be derived from Effect Schemas, never raw TypeScript interfaces. Use branded types for IDs and domain values (UserId, RoleId, PermissionString, etc.). Use Effect skill to research Schema.brand(), Schema.Struct(), and Schema patterns. All auth and RBAC types/schemas must be in this package. Database package will import from here.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
