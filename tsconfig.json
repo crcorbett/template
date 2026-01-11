@@ -7,10 +7,11 @@
   },
   "include": [],
   "references": [
+    { "path": "./apps/api" },
     { "path": "./apps/web" },
     { "path": "./apps/docs" },
     { "path": "./packages/core" },
-    { "path": "./packages/api" },
+    { "path": "./packages/types" },
     { "path": "./packages/ui" }
   ]
 }
