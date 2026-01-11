@@ -11,11 +11,40 @@ import {
   DocsTitle,
 } from "fumadocs-ui/layouts/docs/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
-import { useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
 
+import { LLMCopyButton, ViewOptions } from "@/components/ai/page-actions";
+import { CustomPre } from "@/components/mdx/code-block";
 import { Mermaid } from "@/components/mdx/mermaid";
 import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
+
+// GitHub configuration for source links
+const GITHUB_OWNER = "crcorbett";
+const GITHUB_REPO = "template";
+const GITHUB_BRANCH = "main";
+
+// Context for page info (allows clientLoader component to access page URL/path)
+interface PageInfo {
+  url: string;
+  path: string;
+}
+const PageInfoContext = createContext<PageInfo | null>(null);
+
+function PageActions() {
+  const pageInfo = useContext(PageInfoContext);
+  if (!pageInfo) return null;
+
+  const markdownUrl = `${pageInfo.url}.mdx`;
+  const githubUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/apps/docs/content/docs/${pageInfo.path}`;
+
+  return (
+    <div className="flex flex-row flex-wrap gap-2 items-center border-b pb-6 mb-6">
+      <LLMCopyButton markdownUrl={markdownUrl} />
+      <ViewOptions markdownUrl={markdownUrl} githubUrl={githubUrl} />
+    </div>
+  );
+}
 
 const loader = createServerFn({
   method: "GET",
@@ -28,6 +57,7 @@ const loader = createServerFn({
     return {
       tree: source.pageTree as object,
       path: page.path,
+      url: page.url,
     };
   });
 
@@ -37,10 +67,12 @@ const clientLoader = browserCollections.docs.createClientLoader({
       <DocsPage toc={toc}>
         <DocsTitle>{frontmatter.title}</DocsTitle>
         <DocsDescription>{frontmatter.description}</DocsDescription>
+        <PageActions />
         <DocsBody>
           <MDX
             components={{
               ...defaultMdxComponents,
+              pre: CustomPre,
               Mermaid,
             }}
           />
@@ -70,7 +102,9 @@ function Page() {
 
   return (
     <DocsLayout {...baseOptions()} tree={tree}>
-      <Content />
+      <PageInfoContext.Provider value={{ url: data.url, path: data.path }}>
+        <Content />
+      </PageInfoContext.Provider>
     </DocsLayout>
   );
 }
