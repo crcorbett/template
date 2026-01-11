@@ -73,3 +73,21 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all session service components
 - Updated: prd.json item 5 (category: architectural) → passes: true
 - Notes: Framework-agnostic - apps provide SessionRepository layer with their Drizzle/Prisma implementation. Uses Effect.try for Schema validation, Effect.gen for generator-based composition. No type assertions used.
+
+## Iteration 6
+- Completed: Create OAuthService for OAuth provider operations
+- Changes:
+  - packages/auth/src/services/oauth.ts: OAuthService with full OAuth flow support
+    - OAuthProvider Context.Tag for provider-specific operations (getAuthorizationUrl, handleCallback, refreshAccessToken)
+    - AccountRepository Context.Tag for OAuth account database operations
+    - OAuthProviderConfig interface for provider credentials (clientId, clientSecret, redirectUri, scopes)
+    - OAuthAuthorizationUrl, OAuthCallbackResult interfaces for OAuth flow data
+    - RawAccountData interface for unvalidated database results
+    - OAuthServiceImpl: getAuthUrl, handleCallback, linkAccount, getLinkedAccount, getLinkedAccounts, findAccountByProvider, unlinkAccount, refreshTokens, isProviderSupported
+    - Schema.decodeUnknown validation for all account data
+    - Option<Account> returns for nullable results
+    - OAuthServiceLive layer requiring OAuthProvider and AccountRepository
+  - packages/auth/src/services/index.ts: Re-exports OAuthService, OAuthProvider, AccountRepository, convenience functions
+  - packages/auth/src/index.ts: Exports all OAuth service components
+- Updated: prd.json item 6 (category: architectural) → passes: true
+- Notes: Framework-agnostic - apps provide OAuthProvider layer for OAuth2/OIDC flows and AccountRepository for database. No type assertions used - Schema.decodeUnknownSync used for fallback UserId in error construction. Uses Effect.gen, Option, and proper error handling throughout.

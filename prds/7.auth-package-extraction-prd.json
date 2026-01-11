@@ -91,7 +91,7 @@
         "Step 7: Export service tag, interface, and layer"
       ],
       "notes": "OAuth operations should be provider-agnostic. Provider-specific config passed as parameters.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
