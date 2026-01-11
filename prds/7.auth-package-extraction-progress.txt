@@ -52,3 +52,24 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all permissions service components
 - Updated: prd.json item 4 (category: architectural) → passes: true
 - Notes: Framework-agnostic - apps provide UserRolesProvider layer with their DB/cache implementation. Uses existing InsufficientRoleError/InsufficientPermissionError from errors.ts. Match.exhaustive used for boolean branching in require* methods.
+
+## Iteration 5
+- Completed: Create SessionService for session management
+- Changes:
+  - packages/auth/src/errors.ts: Added SessionNotFoundError, SessionDatabaseError to auth errors
+    - SessionNotFoundError for session lookup failures (404)
+    - SessionDatabaseError for CRUD operation failures with operation type (500)
+    - Updated AuthenticationError union, AuthErrorTags, AuthErrorHttpStatus
+  - packages/auth/src/services/session.ts: SessionService with full session CRUD
+    - SessionRepository Context.Tag for framework-agnostic database operations
+    - RawSessionData interface for unvalidated database results
+    - SessionRefreshOptions for session refresh parameters
+    - SessionServiceImpl: createSession, getSession, getSessionByToken, getUserSessions, refreshSession, revokeSession, revokeUserSessions, cleanupExpiredSessions, validateSession
+    - Schema.decodeUnknownSync validation for all session data
+    - Option<Session> returns for nullable results
+    - Expiration checking with SessionExpiredError
+    - SessionServiceLive layer requiring SessionRepository
+  - packages/auth/src/services/index.ts: Re-exports SessionService, SessionRepository, convenience functions
+  - packages/auth/src/index.ts: Exports all session service components
+- Updated: prd.json item 5 (category: architectural) → passes: true
+- Notes: Framework-agnostic - apps provide SessionRepository layer with their Drizzle/Prisma implementation. Uses Effect.try for Schema validation, Effect.gen for generator-based composition. No type assertions used.

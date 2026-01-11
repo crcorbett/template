@@ -76,7 +76,7 @@
         "Step 7: Export service tag, interface, and layer"
       ],
       "notes": "Session operations should validate data through Effect Schemas. Use typed errors for all failure cases.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
