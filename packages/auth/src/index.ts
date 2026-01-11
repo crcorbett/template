@@ -22,3 +22,43 @@ export type {
   UserId,
   UserWithRoles,
 } from "@packages/types";
+
+// =============================================================================
+// Errors
+// =============================================================================
+
+// Authentication errors
+export {
+  SessionValidationError,
+  NoSessionError,
+  SessionExpiredError,
+  InvalidTokenError,
+  UserNotFoundError,
+} from "./errors.js";
+
+// Authorization errors
+export {
+  InsufficientRoleError,
+  InsufficientPermissionError,
+} from "./errors.js";
+
+// OAuth errors
+export {
+  OAuthAuthorizationError,
+  OAuthCallbackError,
+  OAuthTokenError,
+  OAuthAccountLinkError,
+  OAuthProviderError,
+} from "./errors.js";
+
+// Error type unions for exhaustive matching
+export type {
+  AuthenticationError,
+  AuthorizationError,
+  OAuthError,
+  AuthError,
+  AuthErrorTag,
+} from "./errors.js";
+
+// Error constants for Match patterns
+export { AuthErrorTags, AuthErrorHttpStatus } from "./errors.js";

@@ -12,3 +12,14 @@ Started: 2026-01-11
   - bun.lock: updated with new workspace package
 - Updated: prd.json item 1 (category: architectural) → passes: true
 - Notes: Package structure follows existing patterns in packages/core, packages/database. No @effect/schema added separately as Schema is included in effect 3.x.
+
+## Iteration 2
+- Completed: Define typed Effect errors for auth domain
+- Changes:
+  - packages/auth/src/errors.ts: All auth errors using Data.TaggedError
+    - Authentication: SessionValidationError, NoSessionError, SessionExpiredError, InvalidTokenError, UserNotFoundError
+    - Authorization: InsufficientRoleError, InsufficientPermissionError
+    - OAuth: OAuthAuthorizationError, OAuthCallbackError, OAuthTokenError, OAuthAccountLinkError, OAuthProviderError
+  - packages/auth/src/index.ts: Re-exports all errors, type unions (AuthError, AuthenticationError, AuthorizationError, OAuthError), and utility constants (AuthErrorTags, AuthErrorHttpStatus)
+- Updated: prd.json item 2 (category: architectural) → passes: true
+- Notes: Uses branded types from @packages/types for UserId, RoleName, PermissionString, AuthProvider. Includes HTTP status mapping for Match-based error handlers. Step 7 (Schema.TaggedError) not needed - Data.TaggedError sufficient for all use cases; HTTP mapping added instead.

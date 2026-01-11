@@ -30,7 +30,7 @@
         "Step 7: Add Schema.TaggedError variants for HTTP-mappable errors"
       ],
       "notes": "Use Data.TaggedError for type-safe error handling. All errors should be matchable with Effect.match/Match module.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
