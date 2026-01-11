@@ -139,3 +139,18 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all utilities
 - Updated: prd.json item 9 (category: architectural) → passes: true
 - Notes: Used switch statement instead of Match.typeTags to avoid Effect's Unify<R> type compatibility issues. Still provides exhaustive matching via TypeScript's switch exhaustiveness checking. Added type guards for category-based error handling.
+
+## Iteration 10
+- Completed: Add Option-based utilities for nullable handling
+- Changes:
+  - packages/auth/src/utils/option.ts: Option helpers for auth domain
+    - Generic utilities: fromNullable, toNullable, getOrDefault, mapOption, flatMapOption, filterOption, matchOption, isSome, isNone
+    - Finder factory: createFinder<T>() for creating typed finders
+    - Auth domain finders: findUser, findSession, findRole, findAccount (all return Option<T>)
+    - Auth domain combinators: getUserId, getSessionId, getUserEmail, filterActiveSession, chainUserSession
+    - Batch operations: zipOptions, zip3Options, firstSome, collectSome
+    - Error recovery: orElse, orElseSome
+  - packages/auth/src/utils/index.ts: Re-exports all Option utilities
+  - packages/auth/src/index.ts: Exports all Option utilities
+- Updated: prd.json item 10 (category: architectural) → passes: true
+- Notes: Uses Effect's Option module for all operations. Provides auth-specific helpers that work with User, Session, Role, Account types from @packages/types. Enables replacing | undefined patterns with proper Option handling.

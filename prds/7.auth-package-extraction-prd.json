@@ -149,7 +149,7 @@
         "Step 7: Export utilities"
       ],
       "notes": "Replace all | undefined patterns with Option. Use Option combinators instead of null checks.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",
