@@ -62,3 +62,23 @@ export type {
 
 // Error constants for Match patterns
 export { AuthErrorTags, AuthErrorHttpStatus } from "./errors.js";
+
+// =============================================================================
+// Services
+// =============================================================================
+
+// Auth service
+export {
+  AuthService,
+  BetterAuthClient,
+  AuthServiceLive,
+  getSession,
+  requireSession,
+  validateToken,
+} from "./services/index.js";
+
+export type {
+  AuthServiceImpl,
+  BetterAuthClientImpl,
+  BetterAuthSessionResult,
+} from "./services/index.js";
