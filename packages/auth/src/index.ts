@@ -152,7 +152,7 @@ export type {
   RawAccountData,
   OAuthAuthorizationUrl,
   OAuthCallbackResult,
-  OAuthProviderConfig,
+  OAuthProviderConfig as OAuthProviderServiceConfig,
 } from "./services/index.js";
 
 // =============================================================================
@@ -191,3 +191,41 @@ export type {
   AuthWithPermissionsServices,
   AuthWithSessionsServices,
 } from "./runtime.js";
+
+// =============================================================================
+// Configuration
+// =============================================================================
+
+// Branded types for sensitive values
+export { ClientSecret, ClientId, DatabaseUrl, JwtSecret } from "./config.js";
+export type {
+  ClientSecret as ClientSecretType,
+  ClientId as ClientIdType,
+  DatabaseUrl as DatabaseUrlType,
+  JwtSecret as JwtSecretType,
+} from "./config.js";
+
+// Configuration schemas
+export {
+  OAuthProviderConfigSchema,
+  OAuthProvidersConfigSchema,
+  DatabaseConfigSchema,
+  SessionConfigSchema,
+  AuthConfigSchema,
+} from "./config.js";
+export type {
+  OAuthProviderConfigSchema as OAuthProviderConfig,
+  OAuthProvidersConfigSchema as OAuthProvidersConfig,
+  DatabaseConfigSchema as DatabaseConfig,
+  SessionConfigSchema as SessionConfig,
+  AuthConfigSchema as AuthConfigType,
+} from "./config.js";
+
+// Configuration loading
+export {
+  AuthConfigError,
+  loadAuthConfig,
+  AuthConfig,
+  AuthConfigLive,
+  makeAuthConfigLayer,
+} from "./config.js";

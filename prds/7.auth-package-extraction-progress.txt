@@ -104,3 +104,21 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all runtime components
 - Updated: prd.json item 7 (category: architectural) → passes: true
 - Notes: Layer composition allows apps to pick services they need. Uses Layer.mergeAll for composing multiple service layers. ManagedRuntime factory enables easy runtime creation. All layers export explicit dependency types for proper type inference.
+
+## Iteration 8
+- Completed: Create auth config schema with Effect validation
+- Changes:
+  - packages/auth/src/config.ts: Full auth configuration with Effect Schema validation
+    - Branded types: ClientSecret, ClientId, DatabaseUrl, JwtSecret for sensitive values
+    - OAuthProviderConfigSchema: clientId, clientSecret, redirectUri, scopes
+    - OAuthProvidersConfigSchema: google, microsoft provider configs
+    - DatabaseConfigSchema: url, maxConnections, connectionTimeoutMs, idleTimeoutMs
+    - SessionConfigSchema: durationSeconds, autoRefresh, refreshThresholdPercent, cookie settings
+    - AuthConfigSchema: Combined config with database, oauth, session, jwtSecret, baseUrl
+    - loadAuthConfig: Loads from env vars using Effect Config module
+    - AuthConfig Context.Tag for dependency injection
+    - AuthConfigLive Layer for environment-based config loading
+    - makeAuthConfigLayer helper for test config injection
+  - packages/auth/src/index.ts: Exports all config components
+- Updated: prd.json item 8 (category: architectural) → passes: true
+- Notes: Uses Effect Config module for env loading with proper error mapping. ConfigError mapped to AuthConfigError. Branded types prevent sensitive value misuse. Layer-based config enables test mocking.

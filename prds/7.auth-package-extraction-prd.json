@@ -120,7 +120,7 @@
         "Step 7: Export config schema and loader"
       ],
       "notes": "Use Effect Config module for environment variable loading. Validate all config through Schemas.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
