@@ -22,7 +22,9 @@ export class DatabaseQueryError extends Data.TaggedError("DatabaseQueryError")<{
 /**
  * Error thrown when a record is not found
  */
-export class RecordNotFoundError extends Data.TaggedError("RecordNotFoundError")<{
+export class RecordNotFoundError extends Data.TaggedError(
+  "RecordNotFoundError"
+)<{
   readonly table: string;
   readonly id: string;
   readonly message: string;

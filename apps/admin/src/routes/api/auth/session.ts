@@ -4,13 +4,11 @@
  * Returns the current user's session information using Effect for error handling.
  * This provides a type-safe, Effect-wrapped endpoint for session retrieval.
  */
-import { createFileRoute } from "@tanstack/react-router";
-
-import { Effect, Option } from "effect";
-
 import { getSession } from "$/lib/effect/services/auth";
 import { securityHeadersMiddleware } from "$/middleware/security";
 import { runEffect } from "$/utils/effect-handler";
+import { createFileRoute } from "@tanstack/react-router";
+import { Effect, Option } from "effect";
 
 /**
  * Session response type

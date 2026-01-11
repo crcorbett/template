@@ -4,11 +4,9 @@
  * Provides utilities for integrating Effect programs with TanStack Start
  * API routes and server functions.
  */
-import { json } from "@tanstack/react-start";
-
 import type { Cause } from "effect";
-import { Effect, Exit, Match } from "effect";
 
+import { AppRuntime, type AppServices } from "$/lib/effect/runtime";
 import {
   NoSessionError,
   SessionValidationError,
@@ -22,7 +20,8 @@ import {
   InsufficientPermissionError,
   InsufficientRoleError,
 } from "$/lib/effect/services/permissions";
-import { AppRuntime, type AppServices } from "$/lib/effect/runtime";
+import { json } from "@tanstack/react-start";
+import { Effect, Exit, Match } from "effect";
 
 // =============================================================================
 // Error Response Types
@@ -101,7 +100,8 @@ const mapErrorToResponse = (
       })
     ),
     Match.when(
-      (e: unknown): e is RecordNotFoundError => e instanceof RecordNotFoundError,
+      (e: unknown): e is RecordNotFoundError =>
+        e instanceof RecordNotFoundError,
       (e: RecordNotFoundError) => ({
         status: 404,
         body: {

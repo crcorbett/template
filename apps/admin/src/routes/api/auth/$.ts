@@ -4,10 +4,9 @@
  * This route handles all Better Auth API requests at /api/auth/*
  * Including OAuth callbacks, session management, sign in/out, etc.
  */
-import { createFileRoute } from "@tanstack/react-router";
-
 import { auth } from "$/lib/auth";
 import { securityHeadersMiddleware } from "$/middleware/security";
+import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * Better Auth catch-all route handler

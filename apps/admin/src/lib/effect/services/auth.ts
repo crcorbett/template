@@ -4,21 +4,20 @@
  * Provides Effect-based authentication services wrapping Better Auth.
  * Handles session validation, user context, and auth state management.
  */
-import { Context, Data, Effect, Layer, Option, Schema } from "effect";
-
 import type {
   AuthContext as AuthContextType,
   Session,
   User,
   UserId,
 } from "@packages/types";
+
+import { auth } from "$/lib/auth";
 import {
   AuthContext as AuthContextSchema,
   Session as SessionSchema,
   User as UserSchema,
 } from "@packages/types";
-
-import { auth } from "$/lib/auth";
+import { Context, Data, Effect, Layer, Option, Schema } from "effect";
 
 // =============================================================================
 // Error Types
@@ -164,18 +163,13 @@ const getSessionImpl = (
  */
 const requireSessionImpl = (
   headers: Headers
-): Effect.Effect<
-  AuthContextType,
-  NoSessionError | SessionValidationError
-> =>
+): Effect.Effect<AuthContextType, NoSessionError | SessionValidationError> =>
   Effect.gen(function* () {
     const maybeSession = yield* getSessionImpl(headers);
 
     return yield* Option.match(maybeSession, {
       onNone: () =>
-        Effect.fail(
-          new NoSessionError({ message: "Authentication required" })
-        ),
+        Effect.fail(new NoSessionError({ message: "Authentication required" })),
       onSome: (ctx) => Effect.succeed(ctx),
     });
   });

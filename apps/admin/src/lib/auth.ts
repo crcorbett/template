@@ -7,13 +7,13 @@
  * - Microsoft OAuth provider
  * - TanStack Start cookie integration
  */
+
+import { schema } from "@packages/types";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-
-import { schema } from "@packages/types";
 
 import { getAuthEnv } from "./env";
 

@@ -4,20 +4,20 @@
  * Provides Effect-based RBAC (Role-Based Access Control) services.
  * Handles role and permission checking for authenticated users.
  */
-import { Context, Data, Effect, Layer, Schema } from "effect";
-
 import type {
   PermissionString,
   RoleName,
   UserId,
   UserWithRoles,
 } from "@packages/types";
+
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PermissionString as PermissionStringSchema,
   RoleName as RoleNameSchema,
   UserWithRoles as UserWithRolesSchema,
 } from "@packages/types";
+import { Context, Data, Effect, Layer, Schema } from "effect";
 
 import { DatabaseQueryError } from "./database";
 
@@ -299,7 +299,9 @@ export const getUserRoles = (userId: UserId) =>
  * Check if user has role (convenience function)
  */
 export const hasRole = (userId: UserId, role: RoleName) =>
-  Effect.flatMap(PermissionsService, (service) => service.hasRole(userId, role));
+  Effect.flatMap(PermissionsService, (service) =>
+    service.hasRole(userId, role)
+  );
 
 /**
  * Check if user has permission (convenience function)
@@ -320,7 +322,10 @@ export const requireRole = (userId: UserId, role: RoleName) =>
 /**
  * Require user to have permission (convenience function)
  */
-export const requirePermission = (userId: UserId, permission: PermissionString) =>
+export const requirePermission = (
+  userId: UserId,
+  permission: PermissionString
+) =>
   Effect.flatMap(PermissionsService, (service) =>
     service.requirePermission(userId, permission)
   );

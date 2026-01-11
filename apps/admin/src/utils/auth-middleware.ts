@@ -4,10 +4,6 @@
  * Provides TanStack Start middlewares for authentication and authorization.
  * Integrates Better Auth session verification with Effect-based RBAC checks.
  */
-import { createMiddleware, json } from "@tanstack/react-start";
-
-import { Effect, Exit, Option, Schema } from "effect";
-
 import type {
   AuthContext,
   PermissionString,
@@ -15,11 +11,8 @@ import type {
   UserId,
   UserWithRoles,
 } from "@packages/types";
-import {
-  PermissionString as PermissionStringSchema,
-  RoleName as RoleNameSchema,
-} from "@packages/types";
 
+import { AppRuntime } from "$/lib/effect/runtime";
 import { getSession, NoSessionError } from "$/lib/effect/services/auth";
 import {
   getUserRoles,
@@ -28,7 +21,12 @@ import {
   InsufficientPermissionError,
   InsufficientRoleError,
 } from "$/lib/effect/services/permissions";
-import { AppRuntime } from "$/lib/effect/runtime";
+import {
+  PermissionString as PermissionStringSchema,
+  RoleName as RoleNameSchema,
+} from "@packages/types";
+import { createMiddleware, json } from "@tanstack/react-start";
+import { Effect, Exit, Option, Schema } from "effect";
 
 // =============================================================================
 // Types
@@ -71,9 +69,8 @@ const errorResponse = (
   code: string,
   details?: unknown
 ): Response => {
-  const body: AuthErrorResponse = details !== undefined
-    ? { error, code, details }
-    : { error, code };
+  const body: AuthErrorResponse =
+    details !== undefined ? { error, code, details } : { error, code };
   return json(body, { status });
 };
 
@@ -123,7 +120,9 @@ export const requireAuthMiddleware = createMiddleware().server(
 
       return Option.match(maybeSession, {
         onNone: () =>
-          Effect.fail(new NoSessionError({ message: "Authentication required" })),
+          Effect.fail(
+            new NoSessionError({ message: "Authentication required" })
+          ),
         onSome: (ctx) => Effect.succeed(ctx),
       });
     }).pipe(Effect.flatten);
@@ -181,7 +180,9 @@ export const requireAuthApiMiddleware = createMiddleware().server(
 
       return Option.match(maybeSession, {
         onNone: () =>
-          Effect.fail(new NoSessionError({ message: "Authentication required" })),
+          Effect.fail(
+            new NoSessionError({ message: "Authentication required" })
+          ),
         onSome: (ctx) => Effect.succeed(ctx),
       });
     }).pipe(Effect.flatten);
@@ -233,7 +234,9 @@ export const requireAuthApiMiddleware = createMiddleware().server(
  * });
  * ```
  */
-export const createRequireRoleMiddleware = (role: "admin" | "editor" | "viewer") => {
+export const createRequireRoleMiddleware = (
+  role: "admin" | "editor" | "viewer"
+) => {
   const requiredRole = decodeRoleName(role);
 
   return createMiddleware()
@@ -280,7 +283,11 @@ export const createRequireRoleMiddleware = (role: "admin" | "editor" | "viewer")
             });
           }
 
-          throw errorResponse(500, "Failed to check user role", "INTERNAL_ERROR");
+          throw errorResponse(
+            500,
+            "Failed to check user role",
+            "INTERNAL_ERROR"
+          );
         },
       });
     });
@@ -330,7 +337,12 @@ export const requireViewerMiddleware = createRequireRoleMiddleware("viewer");
  * ```
  */
 export const createRequirePermissionMiddleware = (
-  permission: "users:read" | "users:write" | "posts:read" | "posts:write" | "posts:delete"
+  permission:
+    | "users:read"
+    | "users:write"
+    | "posts:read"
+    | "posts:write"
+    | "posts:delete"
 ) => {
   const requiredPermission = decodePermissionString(permission);
 
@@ -341,7 +353,10 @@ export const createRequirePermissionMiddleware = (
 
       const effect = Effect.gen(function* () {
         const userRolesData = yield* getUserRoles(userId);
-        const permissionExists = yield* hasPermission(userId, requiredPermission);
+        const permissionExists = yield* hasPermission(
+          userId,
+          requiredPermission
+        );
 
         if (!permissionExists) {
           return yield* Effect.fail(
@@ -377,7 +392,11 @@ export const createRequirePermissionMiddleware = (
             });
           }
 
-          throw errorResponse(500, "Failed to check user permission", "INTERNAL_ERROR");
+          throw errorResponse(
+            500,
+            "Failed to check user permission",
+            "INTERNAL_ERROR"
+          );
         },
       });
     });
@@ -386,11 +405,16 @@ export const createRequirePermissionMiddleware = (
 /**
  * Pre-built permission middlewares for common use cases
  */
-export const requireUsersReadMiddleware = createRequirePermissionMiddleware("users:read");
-export const requireUsersWriteMiddleware = createRequirePermissionMiddleware("users:write");
-export const requirePostsReadMiddleware = createRequirePermissionMiddleware("posts:read");
-export const requirePostsWriteMiddleware = createRequirePermissionMiddleware("posts:write");
-export const requirePostsDeleteMiddleware = createRequirePermissionMiddleware("posts:delete");
+export const requireUsersReadMiddleware =
+  createRequirePermissionMiddleware("users:read");
+export const requireUsersWriteMiddleware =
+  createRequirePermissionMiddleware("users:write");
+export const requirePostsReadMiddleware =
+  createRequirePermissionMiddleware("posts:read");
+export const requirePostsWriteMiddleware =
+  createRequirePermissionMiddleware("posts:write");
+export const requirePostsDeleteMiddleware =
+  createRequirePermissionMiddleware("posts:delete");
 
 // =============================================================================
 // Helper to extract error from Cause
@@ -429,4 +453,7 @@ const extractError = <E>(cause: Cause.Cause<E>): E | Error => {
 /**
  * Combine auth middleware with security headers for protected routes
  */
-export { securityHeadersMiddleware, corsMiddleware } from "$/middleware/security";
+export {
+  securityHeadersMiddleware,
+  corsMiddleware,
+} from "$/middleware/security";
