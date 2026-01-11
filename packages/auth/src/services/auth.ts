@@ -208,10 +208,7 @@ const makeAuthService = Effect.gen(function* () {
 
   const requireSession = (
     headers: Headers
-  ): Effect.Effect<
-    AuthContextType,
-    NoSessionError | SessionValidationError
-  > =>
+  ): Effect.Effect<AuthContextType, NoSessionError | SessionValidationError> =>
     Effect.gen(function* () {
       const maybeSession = yield* getSession(headers);
 

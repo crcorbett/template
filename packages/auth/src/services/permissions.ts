@@ -108,10 +108,7 @@ export interface PermissionsServiceImpl {
   readonly requirePermission: (
     userId: UserId,
     permission: PermissionString
-  ) => Effect.Effect<
-    void,
-    InsufficientPermissionError | UserRolesLookupError
-  >;
+  ) => Effect.Effect<void, InsufficientPermissionError | UserRolesLookupError>;
 
   /**
    * Check if a user has any of the specified roles
@@ -217,10 +214,7 @@ const makePermissionsService = Effect.gen(function* () {
   const requirePermission = (
     userId: UserId,
     permission: PermissionString
-  ): Effect.Effect<
-    void,
-    InsufficientPermissionError | UserRolesLookupError
-  > =>
+  ): Effect.Effect<void, InsufficientPermissionError | UserRolesLookupError> =>
     Effect.gen(function* () {
       const maybeUserRoles = yield* rolesProvider.getUserRoles(userId);
 
