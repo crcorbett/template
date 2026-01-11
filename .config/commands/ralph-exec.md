@@ -31,6 +31,8 @@ Before committing any work, verify:
 - ✅ `turbo fix` - All lint/format errors handled
 - ✅ UI changes verified with playwriter (if applicable)
 
+YOU MUST ALWAYS USE THE TURBO COMMANDS (add --filter if necessary) TO TYPE CHECK, TEST, LINT, AND BUILD.
+
 **If any feedback loop fails, fix the issues before committing. Do not commit broken code.**
 
 ## Commit Format
