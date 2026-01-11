@@ -1,0 +1,273 @@
+{
+  "prd_id": 7,
+  "title": "Extract Reusable Auth Package with Effect Best Practices",
+  "completion_promise": "COMPLETE",
+  "items": [
+    {
+      "category": "architectural",
+      "description": "Create @packages/auth package structure with Effect dependencies",
+      "steps": [
+        "Step 1: Create packages/auth directory with package.json",
+        "Step 2: Add effect, @effect/schema, better-auth dependencies",
+        "Step 3: Add @packages/types and @packages/database as workspace dependencies",
+        "Step 4: Configure TypeScript with tsconfig.json extending base",
+        "Step 5: Create src/index.ts as main entry point",
+        "Step 6: Add package to root workspace and verify it builds"
+      ],
+      "notes": "This package will contain all auth logic that doesn't depend on framework-specific code (no TanStack, React, etc.)",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Define typed Effect errors for auth domain",
+      "steps": [
+        "Step 1: Create src/errors.ts with tagged error classes using Data.TaggedError",
+        "Step 2: Define AuthenticationError for session/token validation failures",
+        "Step 3: Define AuthorizationError with role and permission variants",
+        "Step 4: Define SessionExpiredError, InvalidTokenError, UserNotFoundError",
+        "Step 5: Define OAuthError with provider-specific variants",
+        "Step 6: Export error type union for exhaustive matching",
+        "Step 7: Add Schema.TaggedError variants for HTTP-mappable errors"
+      ],
+      "notes": "Use Data.TaggedError for type-safe error handling. All errors should be matchable with Effect.match/Match module.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create AuthService as Effect service with typed interface",
+      "steps": [
+        "Step 1: Create src/services/auth.ts with AuthService Context.Tag",
+        "Step 2: Define AuthService interface with Effect-returning methods",
+        "Step 3: Move getSession, requireSession, validateToken from admin app",
+        "Step 4: Update return types to use typed errors (Effect<A, AuthError, R>)",
+        "Step 5: Remove all type assertions (as, !)",
+        "Step 6: Create AuthServiceLive layer with Better Auth integration",
+        "Step 7: Export service tag, interface, and layer"
+      ],
+      "notes": "Service should return Effect types with explicit error channels. No 'as' casts or non-null assertions allowed.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create PermissionsService as Effect service with typed interface",
+      "steps": [
+        "Step 1: Create src/services/permissions.ts with PermissionsService Context.Tag",
+        "Step 2: Define PermissionsService interface with typed methods",
+        "Step 3: Move getUserRoles, hasRole, hasPermission, requireRole, requirePermission from admin app",
+        "Step 4: Use Option<T> for optional returns instead of T | undefined",
+        "Step 5: Use Match module for role/permission branching logic",
+        "Step 6: Update return types to use typed errors",
+        "Step 7: Create PermissionsServiceLive layer",
+        "Step 8: Export service tag, interface, and layer"
+      ],
+      "notes": "Use Option.fromNullable for nullable DB results. Use Match for exhaustive role checking.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create SessionService for session management",
+      "steps": [
+        "Step 1: Create src/services/session.ts with SessionService Context.Tag",
+        "Step 2: Define interface for session CRUD operations",
+        "Step 3: Implement createSession, getSession, refreshSession, revokeSession",
+        "Step 4: Use Effect.tryPromise with typed error mapping",
+        "Step 5: Implement session validation with Schema.decodeUnknown",
+        "Step 6: Create SessionServiceLive layer with database dependency",
+        "Step 7: Export service tag, interface, and layer"
+      ],
+      "notes": "Session operations should validate data through Effect Schemas. Use typed errors for all failure cases.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create OAuthService for OAuth provider operations",
+      "steps": [
+        "Step 1: Create src/services/oauth.ts with OAuthService Context.Tag",
+        "Step 2: Define interface for OAuth operations (getAuthUrl, handleCallback, linkAccount)",
+        "Step 3: Create typed error variants for each OAuth failure mode",
+        "Step 4: Use Schema for OAuth response validation",
+        "Step 5: Implement provider-agnostic operations with provider config",
+        "Step 6: Create OAuthServiceLive layer",
+        "Step 7: Export service tag, interface, and layer"
+      ],
+      "notes": "OAuth operations should be provider-agnostic. Provider-specific config passed as parameters.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create auth package runtime and layer composition",
+      "steps": [
+        "Step 1: Create src/runtime.ts with combined AuthLayer",
+        "Step 2: Compose AuthServiceLive, PermissionsServiceLive, SessionServiceLive, OAuthServiceLive",
+        "Step 3: Create AuthRuntime using ManagedRuntime with AuthLayer",
+        "Step 4: Export layer composition helpers for different contexts (full, minimal)",
+        "Step 5: Document layer dependencies and composition patterns",
+        "Step 6: Verify all services can be used together without conflicts"
+      ],
+      "notes": "Layer composition should allow flexible configuration. Apps can pick which services they need.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create auth config schema with Effect validation",
+      "steps": [
+        "Step 1: Create src/config.ts with AuthConfig Effect Schema",
+        "Step 2: Define OAuthProviderConfig schema for provider credentials",
+        "Step 3: Define DatabaseConfig schema for connection settings",
+        "Step 4: Define SessionConfig schema for session settings (duration, refresh)",
+        "Step 5: Create loadAuthConfig function using Config module from Effect",
+        "Step 6: Use branded types for sensitive values (secrets, tokens)",
+        "Step 7: Export config schema and loader"
+      ],
+      "notes": "Use Effect Config module for environment variable loading. Validate all config through Schemas.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Add Match-based error handling utilities",
+      "steps": [
+        "Step 1: Create src/utils/error-handling.ts with Match patterns",
+        "Step 2: Create matchAuthError for exhaustive auth error handling",
+        "Step 3: Create mapAuthErrorToHttp for HTTP status code mapping",
+        "Step 4: Create formatAuthError for user-friendly messages",
+        "Step 5: Use Match.exhaustive to ensure all error variants handled",
+        "Step 6: Export utilities for consumer use"
+      ],
+      "notes": "Use Match module from Effect for type-safe exhaustive pattern matching on error types.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Add Option-based utilities for nullable handling",
+      "steps": [
+        "Step 1: Create src/utils/option.ts with Option helpers",
+        "Step 2: Create findUser returning Option<User> instead of User | undefined",
+        "Step 3: Create findSession returning Option<Session>",
+        "Step 4: Create findRole returning Option<Role>",
+        "Step 5: Use Option.map, Option.flatMap for chained operations",
+        "Step 6: Use Option.getOrElse for defaults, Option.match for branching",
+        "Step 7: Export utilities"
+      ],
+      "notes": "Replace all | undefined patterns with Option. Use Option combinators instead of null checks.",
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Migrate admin app to use @packages/auth services",
+      "steps": [
+        "Step 1: Add @packages/auth dependency to admin app",
+        "Step 2: Remove src/lib/effect/services/auth.ts (moved to package)",
+        "Step 3: Remove src/lib/effect/services/permissions.ts (moved to package)",
+        "Step 4: Update imports to use @packages/auth",
+        "Step 5: Update runtime.ts to compose with auth package layers",
+        "Step 6: Update effect-handler.ts to use auth package error types",
+        "Step 7: Verify all auth functionality works as before"
+      ],
+      "notes": "This is the migration step. Admin app should import from @packages/auth instead of local files.",
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Update auth middleware to use package services",
+      "steps": [
+        "Step 1: Update auth-middleware.ts to import from @packages/auth",
+        "Step 2: Use typed errors from package for middleware responses",
+        "Step 3: Use Match for error-to-response mapping",
+        "Step 4: Remove local error type definitions",
+        "Step 5: Update auth-server.ts to use package services",
+        "Step 6: Verify middleware chain works with package integration"
+      ],
+      "notes": "Middleware should use services from @packages/auth. Error handling uses package Match utilities.",
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Create framework-agnostic middleware factories in auth package",
+      "steps": [
+        "Step 1: Create src/middleware/index.ts with middleware factories",
+        "Step 2: Create createAuthChecker returning Effect<AuthContext, AuthError>",
+        "Step 3: Create createRoleChecker(role) returning Effect<void, AuthorizationError>",
+        "Step 4: Create createPermissionChecker(permission) returning Effect<void, AuthorizationError>",
+        "Step 5: Middleware factories return Effects, not framework-specific middleware",
+        "Step 6: Document how to integrate with TanStack, Express, etc."
+      ],
+      "notes": "Factories return Effect types that frameworks can wrap. This keeps package framework-agnostic.",
+      "passes": false
+    },
+    {
+      "category": "testing",
+      "description": "Add unit tests for auth package services",
+      "steps": [
+        "Step 1: Create packages/auth/test/ directory",
+        "Step 2: Create test/services/auth.test.ts with AuthService tests",
+        "Step 3: Create test/services/permissions.test.ts with PermissionsService tests",
+        "Step 4: Create test/services/session.test.ts with SessionService tests",
+        "Step 5: Create test/services/oauth.test.ts with OAuthService tests",
+        "Step 6: Use @effect/vitest for Effect testing",
+        "Step 7: Use mock layers for database dependencies",
+        "Step 8: Verify all tests pass"
+      ],
+      "notes": "Use Effect testing patterns from @effect/vitest. Mock external dependencies via test layers.",
+      "passes": false
+    },
+    {
+      "category": "testing",
+      "description": "Add tests for error handling and Match patterns",
+      "steps": [
+        "Step 1: Create test/utils/error-handling.test.ts",
+        "Step 2: Test matchAuthError exhaustiveness",
+        "Step 3: Test mapAuthErrorToHttp returns correct status codes",
+        "Step 4: Test formatAuthError produces readable messages",
+        "Step 5: Create test/utils/option.test.ts for Option utilities",
+        "Step 6: Test Option combinators (map, flatMap, getOrElse, match)",
+        "Step 7: Verify all edge cases covered"
+      ],
+      "notes": "Tests should verify Match patterns are exhaustive and Option handling covers all cases.",
+      "passes": false
+    },
+    {
+      "category": "testing",
+      "description": "Update admin app tests to use auth package",
+      "steps": [
+        "Step 1: Update test/setup.ts to use mock layers from @packages/auth",
+        "Step 2: Update auth-service.test.ts to import from package",
+        "Step 3: Update auth-middleware.test.ts to use package types",
+        "Step 4: Remove redundant tests (now covered by package tests)",
+        "Step 5: Add integration tests verifying package works with admin app",
+        "Step 6: Verify all admin app tests pass"
+      ],
+      "notes": "Admin tests should focus on integration with package, not re-test package internals.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Audit and remove all type assertions from auth code",
+      "steps": [
+        "Step 1: Search for 'as ' type assertions in packages/auth",
+        "Step 2: Search for '!' non-null assertions in packages/auth",
+        "Step 3: Replace assertions with proper type narrowing",
+        "Step 4: Use Schema.decodeUnknown for runtime validation",
+        "Step 5: Use Option for nullable values",
+        "Step 6: Search for assertions in admin app auth code",
+        "Step 7: Replace admin app assertions with proper types",
+        "Step 8: Add eslint rule to prevent future assertions"
+      ],
+      "notes": "Type assertions hide bugs. Use proper type narrowing, Schema validation, and Option instead.",
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Document auth package API and usage patterns",
+      "steps": [
+        "Step 1: Create packages/auth/README.md with package overview",
+        "Step 2: Document all exported services and their methods",
+        "Step 3: Document error types and how to handle them",
+        "Step 4: Document layer composition patterns",
+        "Step 5: Add usage examples for common scenarios",
+        "Step 6: Document how to integrate with different frameworks"
+      ],
+      "notes": "Documentation should make it easy for other apps in the monorepo to adopt the auth package.",
+      "passes": false
+    }
+  ]
+}
