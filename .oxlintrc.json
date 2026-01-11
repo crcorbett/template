@@ -1,5 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "extends": ["ultracite/oxlint/core", "ultracite/oxlint/react"],
-  "ignorePatterns": [".context/**"]
+  "ignorePatterns": [".context/**"],
+  "rules": {
+    "typescript/no-unsafe-type-assertion": "error"
+  }
 }
