@@ -78,6 +78,7 @@
         "tailwindcss": "catalog:build",
         "typescript": "catalog:typescript",
         "vite": "catalog:build",
+        "vite-plugin-mkcert": "catalog:build",
         "vite-tsconfig-paths": "catalog:build",
         "zod": "catalog:utils",
       },
