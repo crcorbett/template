@@ -6,8 +6,8 @@
  * 2. Direct pg Pool for Better Auth (needs synchronous access at config time)
  *
  * Both use the same DATABASE_URL environment variable.
-import { PgDrizzle } from "@effect/sql-drizzle/Pg";
  */
+import { PgDrizzle } from "@effect/sql-drizzle/Pg";
 import { PgClient } from "@effect/sql-pg";
 import { Config, Context, Effect, Layer, Redacted } from "effect";
 import { Pool } from "pg";

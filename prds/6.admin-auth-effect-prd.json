@@ -99,7 +99,7 @@
         "Step 9: Verify Better Auth initialises without errors"
       ],
       "notes": "Use schemas from @packages/database which imports from @packages/types (Effect Schemas). OAuth credentials should be in .env file. Use Effect Schema for env validation.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",

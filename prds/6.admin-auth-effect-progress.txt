@@ -263,3 +263,17 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Updated root tsconfig.json to include packages/database reference
   - Verified package builds and type checks pass
 - Updated: prd.json item 5 (category: architectural) → passes: true
+
+## Iteration 6
+- Completed: Configure Better Auth with Drizzle adapter and OAuth providers
+- Changes:
+  - Added better-auth, drizzle-orm, effect, pg deps to apps/admin/package.json
+  - Added @packages/database, @packages/types workspace deps
+  - Added @types/pg dev dependency
+  - Added check-types script to admin package.json
+  - Created src/lib/env.ts with Effect Schema for env validation (OAuthClientId, OAuthClientSecret, BetterAuthSecret, DatabaseUrl, Url branded types; AuthEnv schema; loadAuthEnv/getAuthEnv functions)
+  - Created src/lib/auth.ts with Better Auth config (Drizzle adapter for PostgreSQL, Google OAuth, Microsoft OAuth, TanStack Start cookies plugin)
+  - Created src/lib/auth-client.ts with React client hooks (useSession, signIn, signOut)
+  - Fixed @packages/database/src/client.ts import (PgDrizzle was in comment)
+  - All types pass, admin app builds successfully
+- Updated: prd.json item 6 (category: architectural) → passes: true
