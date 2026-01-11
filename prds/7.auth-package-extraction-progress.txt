@@ -91,3 +91,16 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all OAuth service components
 - Updated: prd.json item 6 (category: architectural) → passes: true
 - Notes: Framework-agnostic - apps provide OAuthProvider layer for OAuth2/OIDC flows and AccountRepository for database. No type assertions used - Schema.decodeUnknownSync used for fallback UserId in error construction. Uses Effect.gen, Option, and proper error handling throughout.
+
+## Iteration 7
+- Completed: Create auth package runtime and layer composition
+- Changes:
+  - packages/auth/src/runtime.ts: Full runtime and layer composition
+    - Individual layers: AuthOnlyLayer, PermissionsOnlyLayer, SessionOnlyLayer, OAuthOnlyLayer
+    - Composite layers: AuthWithPermissionsLayer, AuthWithSessionsLayer, FullAuthLayer
+    - Layer builder functions: makeBetterAuthClientLayer, makeUserRolesProviderLayer, makeSessionRepositoryLayer, makeOAuthProviderLayer, makeAccountRepositoryLayer
+    - ManagedRuntime factory: makeAuthRuntime for creating runtimes with composed layers
+    - Typed dependency unions: AuthDependencies, AuthMinimalDependencies, AuthWithPermissionsDependencies, etc.
+  - packages/auth/src/index.ts: Exports all runtime components
+- Updated: prd.json item 7 (category: architectural) → passes: true
+- Notes: Layer composition allows apps to pick services they need. Uses Layer.mergeAll for composing multiple service layers. ManagedRuntime factory enables easy runtime creation. All layers export explicit dependency types for proper type inference.
