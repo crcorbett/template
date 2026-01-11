@@ -356,3 +356,19 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Tests verify branded types enforce UUID patterns
   - Integration tests properly skip when DB unavailable (CI compatible)
 - Updated: prd.json item 15 (category: testing) → passes: true
+
+## Iteration 12
+- Completed: Add tests for auth flow and RBAC
+- Changes:
+  - Created apps/admin/test/ directory with 6 test files
+  - setup.ts: Mock service factories (createMockAuthService, createMockPermissionsService), test data factories (createMockUser, createMockSession, createMockAuthContext, createMockUserWithRoles), combined test layers
+  - auth-config.test.ts: 31 tests covering env validation (loadAuthEnv, getAuthEnv), branded OAuth types (OAuthClientId, OAuthClientSecret, BetterAuthSecret, DatabaseUrl, Url), error handling
+  - auth-service.test.ts: 23 tests covering AuthService interface, error types (NoSessionError, SessionValidationError, UserNotFoundError), Effect patterns (getSession, requireSession, validateToken)
+  - auth-middleware.test.ts: 34 tests covering PermissionsService (getUserRoles, hasRole, hasPermission, requireRole, requirePermission, hasAnyRole, hasAllPermissions), error types (InsufficientRoleError, InsufficientPermissionError)
+  - oauth-integration.test.ts: 22 tests covering OAuth Account Schema (Google, Microsoft providers), OAuth session flow (creation, validation, refresh), OAuth error handling, user data handling
+  - role-assignment.test.ts: 40 tests covering role schema validation, permission derivation from DEFAULT_ROLE_PERMISSIONS, role combinations, branded types (UserId, RoleName, PermissionString)
+  - Fixed commented-out imports in source files: auth.ts, permissions.ts, runtime.ts, effect-handler.ts, auth-middleware.ts, $.ts, session.ts
+  - Fixed createMockUser to handle explicit null values for name/image using "key in obj" pattern instead of ??
+  - Fixed oauth-integration tests to use direct AuthContext casting instead of re-decoding already-decoded objects
+  - All 150 tests pass, types check clean
+- Updated: prd.json item 14 (category: testing) → passes: true
