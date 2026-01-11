@@ -1,3 +1,233 @@
 # Progress Log
 
 Started: 2026-01-11
+
+## Iteration 1
+- Completed: Add context git submodules for research repositories
+- Changes: Added 5 submodules to .context/ (effect-better-auth-example, better-auth, drizzle-orm, effect, effect-utils). Updated .gitmodules with ignore=all. Updated .oxlintrc.json to ignore .context/ from linting.
+- Updated: prd.json item 1 (category: architectural) → passes: true
+
+## Iteration 2
+- Completed: Research Effect + Better Auth integration patterns from context repos
+- Findings documented below with code examples
+
+### 1. Better Auth Configuration Pattern
+From `.context/effect-better-auth-example/src/server/auth.ts`:
+```typescript
+import { betterAuth } from "better-auth";
+import { db } from "./db.ts";
+
+export const auth = betterAuth({
+  database: db,
+  emailAndPassword: { enabled: true },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+  trustedOrigins: ["http://localhost:5173"],
+});
+
+export type Session = typeof auth.$Infer.Session;
+```
+Key: Better Auth config is synchronous; needs direct DB connection at init time.
+
+### 2. Effect HttpApiMiddleware Pattern for Auth
+From `.context/effect-better-auth-example/src/server/middleware/AuthMiddleware.ts`:
+```typescript
+import { HttpApiMiddleware, HttpApiSecurity } from "@effect/platform";
+import { Context } from "effect";
+
+// User type matching BetterAuth session
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  emailVerified: boolean;
+}
+
+// Service tag for current authenticated user
+export class CurrentUser extends Context.Tag("CurrentUser")<
+  CurrentUser,
+  AuthUser
+>() {}
+
+// Middleware that validates BetterAuth sessions via cookie
+export class AuthMiddleware extends HttpApiMiddleware.Tag<AuthMiddleware>()(
+  "AuthMiddleware",
+  {
+    provides: CurrentUser,
+    security: {
+      cookie: HttpApiSecurity.apiKey({
+        in: "cookie",
+        key: "better-auth.session_token",
+      }),
+    },
+  }
+) {}
+```
+Key: Use `HttpApiMiddleware.Tag` with `provides` to inject user context.
+
+### 3. Auth Middleware Implementation Layer
+From `.context/effect-better-auth-example/src/server/middleware/Auth.ts`:
+```typescript
+import { Effect, Layer, Redacted } from "effect";
+import { auth } from "../auth.ts";
+import { AuthMiddleware, CurrentUser } from "./AuthMiddleware.ts";
+
+export const AuthMiddlewareLive = Layer.succeed(
+  AuthMiddleware,
+  AuthMiddleware.of({
+    cookie: (token) =>
+      Effect.promise(async () => {
+        const session = await auth.api.getSession({
+          headers: new Headers({
+            cookie: `better-auth.session_token=${Redacted.value(token)}`,
+          }),
+        });
+        if (!session) throw new Error("No active session");
+        return session.user;
+      }),
+  })
+);
+```
+Key: Use `Effect.promise` to wrap BetterAuth's async session validation.
+
+### 4. Mounting BetterAuth as Effect HttpApp
+From `.context/effect-better-auth-example/src/server/middleware/BetterAuthApp.ts`:
+```typescript
+import { HttpApiBuilder, HttpApp } from "@effect/platform";
+import { auth } from "../auth.ts";
+
+// BetterAuth wrapped as Effect HttpApp
+export const BetterAuthApp = HttpApp.fromWebHandler(auth.handler);
+
+// Layer mounting BetterAuth at /api/auth
+export const BetterAuthRouterLive = HttpApiBuilder.Router.use((router) =>
+  router.mountApp("/api/auth", BetterAuthApp, { includePrefix: true })
+);
+```
+Key: `HttpApp.fromWebHandler()` converts BetterAuth handler to Effect.
+
+### 5. Effect API Definition Pattern
+From `.context/effect-better-auth-example/src/server/Api.ts`:
+```typescript
+import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "@effect/platform";
+import { Schema } from "effect";
+import { AuthMiddleware } from "./middleware/AuthMiddleware.ts";
+
+// Domain schemas
+export class User extends Schema.Class<User>("User")({
+  id: Schema.String,
+  email: Schema.String,
+  name: Schema.NullOr(Schema.String),
+  // ...
+}) {}
+
+// Domain error with HTTP status
+export class DatabaseError extends Schema.TaggedError<DatabaseError>()(
+  "DatabaseError",
+  { message: Schema.String },
+  HttpApiSchema.annotations({ status: 500 })
+) {}
+
+// Public endpoints (no auth)
+export class PublicGroup extends HttpApiGroup.make("public")
+  .add(HttpApiEndpoint.get("health", "/health").addSuccess(Schema.Struct({ status: Schema.String })))
+  .prefix("/api") {}
+
+// Protected endpoints (auth required)
+export class ProtectedGroup extends HttpApiGroup.make("protected")
+  .add(HttpApiEndpoint.get("me", "/me").addSuccess(User))
+  .middleware(AuthMiddleware)
+  .prefix("/api") {}
+
+// Combined API
+export class Api extends HttpApi.make("Api")
+  .add(PublicGroup)
+  .add(ProtectedGroup) {}
+```
+Key: Use `.middleware(AuthMiddleware)` on groups needing auth.
+
+### 6. Effect API Handler Implementation
+From `.context/effect-better-auth-example/src/server/ApiLive.ts`:
+```typescript
+import { HttpApiBuilder } from "@effect/platform";
+import { SqlClient } from "@effect/sql";
+import { Effect, Layer } from "effect";
+import { Api, User } from "./Api.ts";
+import { AuthMiddlewareLive, CurrentUser } from "./middleware/Auth.ts";
+
+const ProtectedGroupLive = HttpApiBuilder.group(Api, "protected", (handlers) =>
+  handlers
+    .handle("me", Effect.fn("ProtectedGroup.me")(function* () {
+      const user = yield* CurrentUser;
+      return new User({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        // ...
+      });
+    }))
+).pipe(Layer.provide(AuthMiddlewareLive));
+
+export const ApiLive = Layer.provide(HttpApiBuilder.api(Api), [
+  PublicGroupLive,
+  ProtectedGroupLive,
+]);
+```
+Key: `yield* CurrentUser` accesses authenticated user in handlers.
+
+### 7. Drizzle Adapter Config for PostgreSQL
+From `.context/better-auth/packages/better-auth/src/adapters/drizzle-adapter/drizzle-adapter.ts`:
+```typescript
+export interface DrizzleAdapterConfig {
+  schema?: Record<string, any>;  // Drizzle schema object
+  provider: "pg" | "mysql" | "sqlite";
+  usePlural?: boolean;           // "users" vs "user" table names
+  debugLogs?: boolean;
+  camelCase?: boolean;           // field naming convention
+  transaction?: boolean;         // enable transaction support
+}
+
+export const drizzleAdapter = (db: DB, config: DrizzleAdapterConfig) => { ... }
+```
+For PostgreSQL: `provider: "pg"` enables UUID, JSON, and array support.
+
+### 8. TanStack Start RPC Integration Pattern
+From `.context/effect-utils/packages/@overeng/effect-rpc-tanstack/examples/basic/src/routes/api/rpc.ts`:
+```typescript
+import { createFileRoute } from "@tanstack/react-router";
+import { makeHandler } from "@overeng/effect-rpc-tanstack/server";
+import { UserApi } from "../../rpc/api.ts";
+import { UserHandlers } from "../../rpc/server.ts";
+
+const { handler } = makeHandler({ group: UserApi, handlerLayer: UserHandlers });
+
+export const Route = createFileRoute("/api/rpc")({
+  server: {
+    handlers: {
+      POST: ({ request }) => handler(request),
+    },
+  },
+});
+```
+Key: Effect handlers integrate via TanStack's server handlers pattern.
+
+### Architecture Decisions for Our Implementation
+
+1. **Database Layer**: Use Drizzle with PostgreSQL adapter. BetterAuth needs synchronous DB at config time, so keep separate connections (BetterAuth direct, Effect via SqlClient).
+
+2. **Auth Middleware**: Create `AuthMiddleware` tag with `HttpApiSecurity.apiKey` for cookie-based sessions. Implement via `Layer.succeed` calling `auth.api.getSession()`.
+
+3. **RBAC Extension**: Extend `CurrentUser` context with roles/permissions. Create `requireRole` and `requirePermission` middleware variants checking user context.
+
+4. **TanStack Integration**: Mount BetterAuth via `HttpApp.fromWebHandler(auth.handler)` at `/api/auth/*`. Effect API handlers use TanStack's server handlers.
+
+5. **Service Pattern**: Define services as `Context.Tag` classes. Use `Layer.succeed` or `Layer.effect` for implementations. Compose with `Layer.provide`.
+
+- Updated: prd.json item 2 (category: architectural) → passes: true

@@ -16,7 +16,7 @@
         "Step 7: Configure all submodules with ignore=all in .gitmodules",
         "Step 8: Verify all submodules are cloned and accessible"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
@@ -28,7 +28,7 @@
         "Step 4: Study effect-utils for reusable Effect utilities",
         "Step 5: Document findings in progress.txt with code examples"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
