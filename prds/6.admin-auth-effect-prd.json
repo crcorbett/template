@@ -1,0 +1,163 @@
+{
+  "prd_id": 6,
+  "title": "Admin Auth with Better Auth, Effect TS, and PostgreSQL/Drizzle",
+  "completion_promise": "COMPLETE",
+  "items": [
+    {
+      "category": "architectural",
+      "description": "Add context git submodules for research repositories",
+      "steps": [
+        "Step 1: Create .context directory if it doesn't exist",
+        "Step 2: Add git submodule for https://github.com/kitlangton/effect-better-auth-example",
+        "Step 3: Add git submodule for https://github.com/better-auth/better-auth",
+        "Step 4: Add git submodule for https://github.com/drizzle-team/drizzle-orm",
+        "Step 5: Add git submodule for https://github.com/Effect-TS/effect",
+        "Step 6: Add git submodule for https://github.com/overengineeringstudio/effect-utils",
+        "Step 7: Configure all submodules with ignore=all in .gitmodules",
+        "Step 8: Verify all submodules are cloned and accessible"
+      ],
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Research Effect + Better Auth integration patterns from context repos",
+      "steps": [
+        "Step 1: Study effect-better-auth-example for auth service patterns",
+        "Step 2: Study better-auth repo for Drizzle adapter configuration",
+        "Step 3: Study effect repo for Effect service patterns",
+        "Step 4: Study effect-utils for reusable Effect utilities",
+        "Step 5: Document findings in progress.txt with code examples"
+      ],
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create @packages/types package for shared TypeScript schemas",
+      "steps": [
+        "Step 1: Create packages/types directory with package.json",
+        "Step 2: Configure TypeScript with tsconfig.json extending base",
+        "Step 3: Create src/index.ts with initial exports",
+        "Step 4: Add auth-related types (User, Session, AuthProvider)",
+        "Step 5: Update root workspace to include new package",
+        "Step 6: Verify package builds and exports correctly"
+      ],
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Create @packages/database package with Drizzle + PostgreSQL",
+      "steps": [
+        "Step 1: Create packages/database directory with package.json",
+        "Step 2: Add drizzle-orm, drizzle-kit, and postgres dependencies",
+        "Step 3: Configure drizzle.config.ts for PostgreSQL",
+        "Step 4: Create src/schema.ts with auth tables (users, sessions, accounts)",
+        "Step 5: Create src/client.ts with database connection using Effect",
+        "Step 6: Create src/index.ts exporting schema and client",
+        "Step 7: Add migration scripts to package.json",
+        "Step 8: Verify package builds and connects to PostgreSQL"
+      ],
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Configure Better Auth with Drizzle adapter",
+      "steps": [
+        "Step 1: Add better-auth and @better-auth/drizzle dependencies to admin app",
+        "Step 2: Create src/lib/auth.ts with Better Auth configuration",
+        "Step 3: Configure Drizzle adapter pointing to @packages/database",
+        "Step 4: Add Google OAuth provider configuration",
+        "Step 5: Add Microsoft OAuth provider configuration",
+        "Step 6: Create environment variables schema for OAuth credentials",
+        "Step 7: Verify Better Auth initializes without errors"
+      ],
+      "passes": false
+    },
+    {
+      "category": "architectural",
+      "description": "Integrate Effect TS into admin app API layer",
+      "steps": [
+        "Step 1: Add effect dependency to admin app",
+        "Step 2: Create src/lib/effect/runtime.ts with Effect runtime configuration",
+        "Step 3: Create src/lib/effect/services/auth.ts with auth service layer",
+        "Step 4: Create src/lib/effect/services/database.ts wrapping Drizzle",
+        "Step 5: Create src/utils/effect-handler.ts for TanStack Start integration",
+        "Step 6: Verify Effect services can be used in API routes"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Create auth API routes with Effect handlers",
+      "steps": [
+        "Step 1: Create src/routes/api/auth/[...all].ts for Better Auth routes",
+        "Step 2: Create src/routes/api/auth/session.ts for session info",
+        "Step 3: Wrap auth handlers with Effect for error handling",
+        "Step 4: Add proper CORS and security headers",
+        "Step 5: Verify OAuth callback routes work correctly"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Create auth middleware for protected routes",
+      "steps": [
+        "Step 1: Create src/utils/auth-middleware.ts using TanStack middleware pattern",
+        "Step 2: Integrate Better Auth session verification",
+        "Step 3: Wrap middleware with Effect for consistent error handling",
+        "Step 4: Create requireAuth middleware that redirects unauthenticated users",
+        "Step 5: Verify middleware can be composed with existing logging middleware"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Create login/logout UI components",
+      "steps": [
+        "Step 1: Create src/components/auth/login-button.tsx with OAuth options",
+        "Step 2: Create src/components/auth/logout-button.tsx",
+        "Step 3: Create src/components/auth/user-menu.tsx showing current user",
+        "Step 4: Create src/routes/login.tsx login page with provider buttons",
+        "Step 5: Add auth state to root layout showing user menu when logged in",
+        "Step 6: Verify login/logout flow works end-to-end"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Protect admin routes with auth middleware",
+      "steps": [
+        "Step 1: Apply auth middleware to existing admin routes (posts, users)",
+        "Step 2: Create authenticated layout wrapper",
+        "Step 3: Add redirect to login for unauthenticated access",
+        "Step 4: Preserve original URL for post-login redirect",
+        "Step 5: Verify protected routes require authentication"
+      ],
+      "passes": false
+    },
+    {
+      "category": "testing",
+      "description": "Add tests for auth flow",
+      "steps": [
+        "Step 1: Set up test database configuration",
+        "Step 2: Create tests for Better Auth configuration",
+        "Step 3: Create tests for Effect auth service",
+        "Step 4: Create tests for auth middleware",
+        "Step 5: Create integration tests for OAuth flow (mocked providers)",
+        "Step 6: Verify all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "category": "testing",
+      "description": "Add tests for database package",
+      "steps": [
+        "Step 1: Create tests for Drizzle schema validation",
+        "Step 2: Create tests for database client connection",
+        "Step 3: Create tests for Effect-wrapped database operations",
+        "Step 4: Add migration test to verify schema applies correctly",
+        "Step 5: Verify all tests pass"
+      ],
+      "passes": false
+    }
+  ]
+}
