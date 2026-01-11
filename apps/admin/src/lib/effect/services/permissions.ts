@@ -140,7 +140,7 @@ export class PermissionsService extends Context.Tag("PermissionsService")<
 const getUserRolesImpl = (
   userId: UserId
 ): Effect.Effect<UserWithRoles, DatabaseQueryError> =>
-  Effect.gen(function* () {
+  Effect.sync(() => {
     // TODO: Integrate with database when the API routes task is completed
     // For now, return empty roles (user has no special permissions)
     const roles: RoleName[] = [];

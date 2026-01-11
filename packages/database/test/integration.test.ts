@@ -11,11 +11,11 @@
  * Run `docker compose up -d` before running these tests.
  *
  * These tests are skipped by default in CI and when DB is unavailable.
+ */
 import { SqlClient } from "@effect/sql";
 import { SqlLive, PgPool, PgPoolLive } from "@packages/database";
 import { UserId, RoleId } from "@packages/types";
 import { Effect, Exit, Schema } from "effect";
- */
 import { describe, expect, test } from "vitest";
 
 // =============================================================================
@@ -109,7 +109,7 @@ describe.skipIf(process.env["CI"] === "true")(
       const program = Effect.gen(function* () {
         const sql = yield* SqlClient.SqlClient;
         const result = yield* sql`SELECT version()`;
-        return result[0]?.version as string;
+        return String(result[0]?.version ?? "");
       });
 
       const version = await Effect.runPromise(

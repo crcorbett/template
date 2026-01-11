@@ -20,16 +20,24 @@ import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as PathlessLayoutNestedLayoutRouteImport } from './routes/_pathless-layout/_nested-layout'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated.users'
 import { Route as AuthenticatedPostsRouteImport } from './routes/_authenticated.posts'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated.users/index'
 import { Route as AuthenticatedPostsIndexRouteImport } from './routes/_authenticated.posts/index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin/index'
 import { Route as ApiUsersUserIdRouteImport } from './routes/api/users.$userId'
 import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as PathlessLayoutNestedLayoutRouteBRouteImport } from './routes/_pathless-layout/_nested-layout/route-b'
 import { Route as PathlessLayoutNestedLayoutRouteARouteImport } from './routes/_pathless-layout/_nested-layout/route-a'
 import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated.users/$user-id'
 import { Route as AuthenticatedPostsPostIdRouteImport } from './routes/_authenticated.posts/$post-id'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
+import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated.admin.users/index'
+import { Route as ApiAdminUsersUserIdRouteImport } from './routes/api/admin/users.$userId'
 import { Route as AuthenticatedPostsPostIdDeepRouteImport } from './routes/_authenticated.posts_/$post-id/deep'
+import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated.admin.users/$user-id'
+import { Route as ApiAdminUsersUserIdRolesRouteImport } from './routes/api/admin/users.$userId.roles'
 
 const RedirectRoute = RedirectRouteImport.update({
   id: '/redirect',
@@ -84,6 +92,11 @@ const AuthenticatedPostsRoute = AuthenticatedPostsRouteImport.update({
   path: '/posts',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -93,6 +106,11 @@ const AuthenticatedPostsIndexRoute = AuthenticatedPostsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedPostsRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const ApiUsersUserIdRoute = ApiUsersUserIdRouteImport.update({
   id: '/$userId',
@@ -107,6 +125,11 @@ const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
+  id: '/api/admin/users',
+  path: '/api/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PathlessLayoutNestedLayoutRouteBRoute =
@@ -133,11 +156,39 @@ const AuthenticatedPostsPostIdRoute =
     path: '/$post-id',
     getParentRoute: () => AuthenticatedPostsRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminUsersIndexRoute =
+  AuthenticatedAdminUsersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminUsersRoute,
+  } as any)
+const ApiAdminUsersUserIdRoute = ApiAdminUsersUserIdRouteImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => ApiAdminUsersRoute,
+} as any)
 const AuthenticatedPostsPostIdDeepRoute =
   AuthenticatedPostsPostIdDeepRouteImport.update({
     id: '/posts_/$post-id/deep',
     path: '/posts/$post-id/deep',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminUsersUserIdRoute =
+  AuthenticatedAdminUsersUserIdRouteImport.update({
+    id: '/$user-id',
+    path: '/$user-id',
+    getParentRoute: () => AuthenticatedAdminUsersRoute,
+  } as any)
+const ApiAdminUsersUserIdRolesRoute =
+  ApiAdminUsersUserIdRolesRouteImport.update({
+    id: '/roles',
+    path: '/roles',
+    getParentRoute: () => ApiAdminUsersUserIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -146,19 +197,27 @@ export interface FileRoutesByFullPath {
   '/deferred': typeof DeferredRoute
   '/login': typeof LoginRoute
   '/redirect': typeof RedirectRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/posts': typeof AuthenticatedPostsRouteWithChildren
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/api/users': typeof ApiUsersRouteWithChildren
+  '/admin/users': typeof AuthenticatedAdminUsersRouteWithChildren
   '/posts/$post-id': typeof AuthenticatedPostsPostIdRoute
   '/users/$user-id': typeof AuthenticatedUsersUserIdRoute
   '/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/posts/': typeof AuthenticatedPostsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/admin/users/$user-id': typeof AuthenticatedAdminUsersUserIdRoute
   '/posts/$post-id/deep': typeof AuthenticatedPostsPostIdDeepRoute
+  '/api/admin/users/$userId': typeof ApiAdminUsersUserIdRouteWithChildren
+  '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
+  '/api/admin/users/$userId/roles': typeof ApiAdminUsersUserIdRolesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -171,12 +230,18 @@ export interface FileRoutesByTo {
   '/users/$user-id': typeof AuthenticatedUsersUserIdRoute
   '/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/posts': typeof AuthenticatedPostsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/admin/users/$user-id': typeof AuthenticatedAdminUsersUserIdRoute
   '/posts/$post-id/deep': typeof AuthenticatedPostsPostIdDeepRoute
+  '/api/admin/users/$userId': typeof ApiAdminUsersUserIdRouteWithChildren
+  '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
+  '/api/admin/users/$userId/roles': typeof ApiAdminUsersUserIdRolesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,20 +252,28 @@ export interface FileRoutesById {
   '/deferred': typeof DeferredRoute
   '/login': typeof LoginRoute
   '/redirect': typeof RedirectRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/posts': typeof AuthenticatedPostsRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_pathless-layout/_nested-layout': typeof PathlessLayoutNestedLayoutRouteWithChildren
   '/api/users': typeof ApiUsersRouteWithChildren
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRouteWithChildren
   '/_authenticated/posts/$post-id': typeof AuthenticatedPostsPostIdRoute
   '/_authenticated/users/$user-id': typeof AuthenticatedUsersUserIdRoute
   '/_pathless-layout/_nested-layout/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/_pathless-layout/_nested-layout/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/posts/': typeof AuthenticatedPostsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/admin/users/$user-id': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/posts_/$post-id/deep': typeof AuthenticatedPostsPostIdDeepRoute
+  '/api/admin/users/$userId': typeof ApiAdminUsersUserIdRouteWithChildren
+  '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
+  '/api/admin/users/$userId/roles': typeof ApiAdminUsersUserIdRolesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,19 +283,27 @@ export interface FileRouteTypes {
     | '/deferred'
     | '/login'
     | '/redirect'
+    | '/admin'
     | '/posts'
     | '/users'
     | '/api/users'
+    | '/admin/users'
     | '/posts/$post-id'
     | '/users/$user-id'
     | '/route-a'
     | '/route-b'
+    | '/api/admin/users'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/users/$userId'
+    | '/admin/'
     | '/posts/'
     | '/users/'
+    | '/admin/users/$user-id'
     | '/posts/$post-id/deep'
+    | '/api/admin/users/$userId'
+    | '/admin/users/'
+    | '/api/admin/users/$userId/roles'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -235,12 +316,18 @@ export interface FileRouteTypes {
     | '/users/$user-id'
     | '/route-a'
     | '/route-b'
+    | '/api/admin/users'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/users/$userId'
+    | '/admin'
     | '/posts'
     | '/users'
+    | '/admin/users/$user-id'
     | '/posts/$post-id/deep'
+    | '/api/admin/users/$userId'
+    | '/admin/users'
+    | '/api/admin/users/$userId/roles'
   id:
     | '__root__'
     | '/'
@@ -250,20 +337,28 @@ export interface FileRouteTypes {
     | '/deferred'
     | '/login'
     | '/redirect'
+    | '/_authenticated/admin'
     | '/_authenticated/posts'
     | '/_authenticated/users'
     | '/_pathless-layout/_nested-layout'
     | '/api/users'
+    | '/_authenticated/admin/users'
     | '/_authenticated/posts/$post-id'
     | '/_authenticated/users/$user-id'
     | '/_pathless-layout/_nested-layout/route-a'
     | '/_pathless-layout/_nested-layout/route-b'
+    | '/api/admin/users'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/users/$userId'
+    | '/_authenticated/admin/'
     | '/_authenticated/posts/'
     | '/_authenticated/users/'
+    | '/_authenticated/admin/users/$user-id'
     | '/_authenticated/posts_/$post-id/deep'
+    | '/api/admin/users/$userId'
+    | '/_authenticated/admin/users/'
+    | '/api/admin/users/$userId/roles'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,6 +370,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RedirectRoute: typeof RedirectRoute
   ApiUsersRoute: typeof ApiUsersRouteWithChildren
+  ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAuthSessionRoute: typeof ApiAuthSessionRoute
 }
@@ -358,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/'
@@ -371,6 +474,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/posts/'
       preLoaderRoute: typeof AuthenticatedPostsIndexRouteImport
       parentRoute: typeof AuthenticatedPostsRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/users/$userId': {
       id: '/api/users/$userId'
@@ -391,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/users': {
+      id: '/api/admin/users'
+      path: '/api/admin/users'
+      fullPath: '/api/admin/users'
+      preLoaderRoute: typeof ApiAdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_pathless-layout/_nested-layout/route-b': {
@@ -421,6 +538,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedPostsRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users/': {
+      id: '/_authenticated/admin/users/'
+      path: '/'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminUsersRoute
+    }
+    '/api/admin/users/$userId': {
+      id: '/api/admin/users/$userId'
+      path: '/$userId'
+      fullPath: '/api/admin/users/$userId'
+      preLoaderRoute: typeof ApiAdminUsersUserIdRouteImport
+      parentRoute: typeof ApiAdminUsersRoute
+    }
     '/_authenticated/posts_/$post-id/deep': {
       id: '/_authenticated/posts_/$post-id/deep'
       path: '/posts/$post-id/deep'
@@ -428,8 +566,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsPostIdDeepRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/users/$user-id': {
+      id: '/_authenticated/admin/users/$user-id'
+      path: '/$user-id'
+      fullPath: '/admin/users/$user-id'
+      preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedAdminUsersRoute
+    }
+    '/api/admin/users/$userId/roles': {
+      id: '/api/admin/users/$userId/roles'
+      path: '/roles'
+      fullPath: '/api/admin/users/$userId/roles'
+      preLoaderRoute: typeof ApiAdminUsersUserIdRolesRouteImport
+      parentRoute: typeof ApiAdminUsersUserIdRoute
+    }
   }
 }
+
+interface AuthenticatedAdminUsersRouteChildren {
+  AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
+  AuthenticatedAdminUsersIndexRoute: typeof AuthenticatedAdminUsersIndexRoute
+}
+
+const AuthenticatedAdminUsersRouteChildren: AuthenticatedAdminUsersRouteChildren =
+  {
+    AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
+    AuthenticatedAdminUsersIndexRoute: AuthenticatedAdminUsersIndexRoute,
+  }
+
+const AuthenticatedAdminUsersRouteWithChildren =
+  AuthenticatedAdminUsersRoute._addFileChildren(
+    AuthenticatedAdminUsersRouteChildren,
+  )
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRouteWithChildren
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRouteWithChildren,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedPostsRouteChildren {
   AuthenticatedPostsPostIdRoute: typeof AuthenticatedPostsPostIdRoute
@@ -458,12 +639,14 @@ const AuthenticatedUsersRouteWithChildren =
   AuthenticatedUsersRoute._addFileChildren(AuthenticatedUsersRouteChildren)
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedPostsRoute: typeof AuthenticatedPostsRouteWithChildren
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedPostsPostIdDeepRoute: typeof AuthenticatedPostsPostIdDeepRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedPostsRoute: AuthenticatedPostsRouteWithChildren,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedPostsPostIdDeepRoute: AuthenticatedPostsPostIdDeepRoute,
@@ -515,6 +698,29 @@ const ApiUsersRouteWithChildren = ApiUsersRoute._addFileChildren(
   ApiUsersRouteChildren,
 )
 
+interface ApiAdminUsersUserIdRouteChildren {
+  ApiAdminUsersUserIdRolesRoute: typeof ApiAdminUsersUserIdRolesRoute
+}
+
+const ApiAdminUsersUserIdRouteChildren: ApiAdminUsersUserIdRouteChildren = {
+  ApiAdminUsersUserIdRolesRoute: ApiAdminUsersUserIdRolesRoute,
+}
+
+const ApiAdminUsersUserIdRouteWithChildren =
+  ApiAdminUsersUserIdRoute._addFileChildren(ApiAdminUsersUserIdRouteChildren)
+
+interface ApiAdminUsersRouteChildren {
+  ApiAdminUsersUserIdRoute: typeof ApiAdminUsersUserIdRouteWithChildren
+}
+
+const ApiAdminUsersRouteChildren: ApiAdminUsersRouteChildren = {
+  ApiAdminUsersUserIdRoute: ApiAdminUsersUserIdRouteWithChildren,
+}
+
+const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
+  ApiAdminUsersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -524,6 +730,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RedirectRoute: RedirectRoute,
   ApiUsersRoute: ApiUsersRouteWithChildren,
+  ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAuthSessionRoute: ApiAuthSessionRoute,
 }

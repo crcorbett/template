@@ -5,6 +5,7 @@
  * 1. Effect Schemas correctly validate data shapes
  * 2. Drizzle schemas have the expected columns and constraints
  * 3. Branded types enforce UUID patterns
+ */
 // Import Effect Schemas from @packages/types
 import {
   UserId,
@@ -46,7 +47,6 @@ import {
   rolePermissions,
 } from "@packages/types";
 import { Either, Schema } from "effect";
- */
 import { describe, expect, it } from "vitest";
 
 // =============================================================================

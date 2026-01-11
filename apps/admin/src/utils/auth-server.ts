@@ -4,8 +4,8 @@
  * Provides server functions for checking auth state in route loaders/beforeLoad.
  * Uses Better Auth session validation through Effect services.
  */
-import { AuthContext as AuthContextSchema } from "@packages/types";
 import { auth } from "$/lib/auth";
+import { AuthContext as AuthContextSchema } from "@packages/types";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { Schema } from "effect";
