@@ -4,14 +4,14 @@
  * All errors use Data.TaggedError for type-safe error handling.
  * Errors are matchable with Effect.match/Match module for exhaustive handling.
  */
-import { Data } from "effect";
-
 import type {
   AuthProvider,
   PermissionString,
   RoleName,
   UserId,
 } from "@packages/types";
+
+import { Data } from "effect";
 
 // =============================================================================
 // Authentication Errors
@@ -61,6 +61,27 @@ export class InvalidTokenError extends Data.TaggedError("InvalidTokenError")<{
 export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   readonly userId: UserId;
   readonly message: string;
+}> {}
+
+/**
+ * Error thrown when session not found in database
+ */
+export class SessionNotFoundError extends Data.TaggedError(
+  "SessionNotFoundError"
+)<{
+  readonly sessionId: string;
+  readonly message: string;
+}> {}
+
+/**
+ * Error thrown when session database operations fail
+ */
+export class SessionDatabaseError extends Data.TaggedError(
+  "SessionDatabaseError"
+)<{
+  readonly operation: "create" | "read" | "update" | "delete" | "refresh";
+  readonly message: string;
+  readonly cause?: unknown;
 }> {}
 
 // =============================================================================
@@ -157,7 +178,9 @@ export type AuthenticationError =
   | NoSessionError
   | SessionExpiredError
   | InvalidTokenError
-  | UserNotFoundError;
+  | UserNotFoundError
+  | SessionNotFoundError
+  | SessionDatabaseError;
 
 /**
  * All authorization-related errors
@@ -196,6 +219,8 @@ export const AuthErrorTags = {
   SessionExpiredError: "SessionExpiredError",
   InvalidTokenError: "InvalidTokenError",
   UserNotFoundError: "UserNotFoundError",
+  SessionNotFoundError: "SessionNotFoundError",
+  SessionDatabaseError: "SessionDatabaseError",
   // Authorization
   InsufficientRoleError: "InsufficientRoleError",
   InsufficientPermissionError: "InsufficientPermissionError",
@@ -228,6 +253,9 @@ export const AuthErrorHttpStatus: Record<AuthErrorTag, number> = {
   InsufficientPermissionError: 403,
   // 404 Not Found
   UserNotFoundError: 404,
+  SessionNotFoundError: 404,
+  // 500 Internal Server Error - database errors
+  SessionDatabaseError: 500,
   // 400 Bad Request - OAuth client errors
   OAuthAuthorizationError: 400,
   OAuthCallbackError: 400,

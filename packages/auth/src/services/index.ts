@@ -55,3 +55,34 @@ export type {
   PermissionsServiceImpl,
   UserRolesProviderImpl,
 } from "./permissions.js";
+
+// =============================================================================
+// Session Service
+// =============================================================================
+
+export {
+  // Service tags
+  SessionService,
+  SessionRepository,
+  // Layers
+  SessionServiceLive,
+  // Convenience functions
+  createSession,
+  getSessionById,
+  getSessionByToken,
+  getUserSessions,
+  refreshSession,
+  revokeSession,
+  revokeUserSessions,
+  cleanupExpiredSessions,
+  validateSession,
+} from "./session.js";
+
+export type {
+  // Service interfaces
+  SessionServiceImpl,
+  SessionRepositoryImpl,
+  // Data types
+  RawSessionData,
+  SessionRefreshOptions,
+} from "./session.js";

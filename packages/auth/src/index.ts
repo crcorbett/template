@@ -34,6 +34,8 @@ export {
   SessionExpiredError,
   InvalidTokenError,
   UserNotFoundError,
+  SessionNotFoundError,
+  SessionDatabaseError,
 } from "./errors.js";
 
 // Authorization errors
@@ -101,4 +103,27 @@ export {
 export type {
   PermissionsServiceImpl,
   UserRolesProviderImpl,
+} from "./services/index.js";
+
+// Session service
+export {
+  SessionService,
+  SessionRepository,
+  SessionServiceLive,
+  createSession,
+  getSessionById,
+  getSessionByToken,
+  getUserSessions,
+  refreshSession,
+  revokeSession,
+  revokeUserSessions,
+  cleanupExpiredSessions,
+  validateSession,
+} from "./services/index.js";
+
+export type {
+  SessionServiceImpl,
+  SessionRepositoryImpl,
+  RawSessionData,
+  SessionRefreshOptions,
 } from "./services/index.js";
