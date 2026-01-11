@@ -25,6 +25,7 @@
         "@packages/database": "workspace:*",
         "@packages/types": "workspace:*",
         "@packages/ui": "workspace:*",
+        "@tabler/icons-react": "^3.34.0",
         "@tanstack/react-router": "catalog:tanstack",
         "@tanstack/react-router-devtools": "catalog:tanstack",
         "@tanstack/react-start": "catalog:tanstack",

@@ -2,6 +2,7 @@
 
 import type * as React from "react";
 
+import { UserMenu } from "$/components/auth/user-menu";
 import { DefaultCatchBoundary } from "$/components/default-catch-boundary";
 import { NotFound } from "$/components/not-found";
 import { seo } from "@packages/core/seo";
@@ -72,57 +73,60 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <div className="flex gap-2 p-2 text-lg">
-          <Link
-            activeOptions={{ exact: true }}
-            activeProps={{
-              className: "font-bold",
-            }}
-            to="/"
-          >
-            Home
-          </Link>{" "}
-          <Link
-            activeProps={{
-              className: "font-bold",
-            }}
-            to="/posts"
-          >
-            Posts
-          </Link>{" "}
-          <Link
-            activeProps={{
-              className: "font-bold",
-            }}
-            to="/users"
-          >
-            Users
-          </Link>{" "}
-          <Link
-            activeProps={{
-              className: "font-bold",
-            }}
-            to="/route-a"
-          >
-            Pathless Layout
-          </Link>{" "}
-          <Link
-            activeProps={{
-              className: "font-bold",
-            }}
-            to="/deferred"
-          >
-            Deferred
-          </Link>{" "}
-          <Link
-            activeProps={{
-              className: "font-bold",
-            }}
-            // @ts-expect-error - intentionally invalid route to demo 404
-            to="/this-route-does-not-exist"
-          >
-            This Route Does Not Exist
-          </Link>
+        <div className="flex items-center justify-between gap-2 p-2 text-lg">
+          <nav className="flex items-center gap-2">
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{
+                className: "font-bold",
+              }}
+              to="/"
+            >
+              Home
+            </Link>{" "}
+            <Link
+              activeProps={{
+                className: "font-bold",
+              }}
+              to="/posts"
+            >
+              Posts
+            </Link>{" "}
+            <Link
+              activeProps={{
+                className: "font-bold",
+              }}
+              to="/users"
+            >
+              Users
+            </Link>{" "}
+            <Link
+              activeProps={{
+                className: "font-bold",
+              }}
+              to="/route-a"
+            >
+              Pathless Layout
+            </Link>{" "}
+            <Link
+              activeProps={{
+                className: "font-bold",
+              }}
+              to="/deferred"
+            >
+              Deferred
+            </Link>{" "}
+            <Link
+              activeProps={{
+                className: "font-bold",
+              }}
+              // @ts-expect-error - intentionally invalid route to demo 404
+              to="/this-route-does-not-exist"
+            >
+              This Route Does Not Exist
+            </Link>
+          </nav>
+          <UserMenu />
         </div>
         <hr />
         {children}

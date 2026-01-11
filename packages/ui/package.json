@@ -16,8 +16,15 @@
     "./*": {
       "import": {
         "types": "./dist/src/*.d.ts",
-        "@packages/source": "./src/*.ts",
+        "@packages/source": "./src/*",
         "default": "./dist/src/*.js"
+      }
+    },
+    "./ui/*": {
+      "import": {
+        "types": "./dist/src/ui/*.d.ts",
+        "@packages/source": "./src/ui/*.tsx",
+        "default": "./dist/src/ui/*.js"
       }
     },
     "./styles/*.css": "./src/styles/*.css"

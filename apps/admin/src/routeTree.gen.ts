@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as RedirectRouteImport } from './routes/redirect'
 import { Route as PostsRouteImport } from './routes/posts'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeferredRouteImport } from './routes/deferred'
 import { Route as CustomScriptDotjsRouteImport } from './routes/custom-script[.]js'
 import { Route as PathlessLayoutRouteImport } from './routes/_pathless-layout'
@@ -42,6 +43,11 @@ const RedirectRoute = RedirectRouteImport.update({
 const PostsRoute = PostsRouteImport.update({
   id: '/posts',
   path: '/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeferredRoute = DeferredRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/custom-script.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/login': typeof LoginRoute
   '/posts': typeof PostsRouteWithChildren
   '/redirect': typeof RedirectRoute
   '/users': typeof UsersRouteWithChildren
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/custom-script.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/login': typeof LoginRoute
   '/redirect': typeof RedirectRoute
   '/api/users': typeof ApiUsersRouteWithChildren
   '/posts/$post-id': typeof PostsPostIdRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/_pathless-layout': typeof PathlessLayoutRouteWithChildren
   '/custom-script.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/login': typeof LoginRoute
   '/posts': typeof PostsRouteWithChildren
   '/redirect': typeof RedirectRoute
   '/users': typeof UsersRouteWithChildren
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/'
     | '/custom-script.js'
     | '/deferred'
+    | '/login'
     | '/posts'
     | '/redirect'
     | '/users'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/'
     | '/custom-script.js'
     | '/deferred'
+    | '/login'
     | '/redirect'
     | '/api/users'
     | '/posts/$post-id'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/_pathless-layout'
     | '/custom-script.js'
     | '/deferred'
+    | '/login'
     | '/posts'
     | '/redirect'
     | '/users'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   PathlessLayoutRoute: typeof PathlessLayoutRouteWithChildren
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
   DeferredRoute: typeof DeferredRoute
+  LoginRoute: typeof LoginRoute
   PostsRoute: typeof PostsRouteWithChildren
   RedirectRoute: typeof RedirectRoute
   UsersRoute: typeof UsersRouteWithChildren
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/posts'
       fullPath: '/posts'
       preLoaderRoute: typeof PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deferred': {
@@ -467,6 +487,7 @@ const rootRouteChildren: RootRouteChildren = {
   PathlessLayoutRoute: PathlessLayoutRouteWithChildren,
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
   DeferredRoute: DeferredRoute,
+  LoginRoute: LoginRoute,
   PostsRoute: PostsRouteWithChildren,
   RedirectRoute: RedirectRoute,
   UsersRoute: UsersRouteWithChildren,
