@@ -1,68 +1,77 @@
 # Create New PRD
 
-Create a new PRD (spec + tasks) for the ralph-loop plugin.
+Create a new PRD for the ralph-loop plugin following the Ralph Wiggum pattern.
 
-**Important: This command only creates the spec and task files. It does NOT begin executing the tasks.**
+**Important: This command only creates the PRD files. It does NOT begin executing the items.**
 
 ## Instructions
 
 1. Check `/prds/` for existing PRDs to determine the next number
 2. Create two files:
-   - `{n}.{name}-spec.md` - Specification (ralph-loop reads this)
-   - `{n}.{name}-tasks.json` - Task list for tracking
-3. **Do NOT begin executing tasks** - only create the files and stop
+   - `{n}.{name}-prd.json` - PRD with structured items
+   - `{n}.{name}-progress.txt` - Progress tracking file
+3. **Do NOT begin executing items** - only create the files and stop
 
-## Spec File Format
-
-The spec file starts with the task instruction and completion promise that ralph-loop uses:
-
-```markdown
-{Task description} then write DONE into the record
-
---completion-promise=DONE
-
----
-
-## Overview
-{Details...}
-```
-
-## Tasks JSON Format
+## PRD JSON Format
 
 ```json
 {
   "prd_id": {n},
   "title": "{Title}",
   "completion_promise": "DONE",
-  "status": "pending",
-  "tasks": [
+  "items": [
     {
-      "id": "{n}.1",
-      "task": "Task name",
-      "description": "What to do",
-      "status": "pending",
-      "phase": "setup|implementation|testing|completion",
-      "notes": ""
+      "category": "functional|architectural|testing",
+      "description": "Clear description of what needs to be accomplished",
+      "steps": [
+        "Step 1: Specific action to take",
+        "Step 2: How to verify completion",
+        "Step 3: Acceptance criteria"
+      ],
+      "passes": false
     }
   ]
 }
 ```
 
-**Note:** Set `status` to `"pending"` for both the PRD and all tasks since execution will begin later.
+### Category Types
 
-## Commit Policy (for later execution)
+- `architectural`: System design, types, abstractions, infrastructure
+- `functional`: User-facing features and behaviors
+- `testing`: Test coverage, test infrastructure
 
-When tasks are executed later, **commit after each completed task.** Group related changes logically:
+### Item Sizing
 
-- Use conventional commit format: `feat:`, `fix:`, `refactor:`, `chore:`, `test:`
-- Each commit should be atomic and buildable
+**Each item should be completable in one iteration.** If an item is too large, break it down.
 
-Example workflow:
+Good items are:
 
-1. Complete task 2.1 → commit: `feat: add theme token types`
-2. Complete task 2.2 → commit: `feat: implement dark theme`
-3. Complete task 2.3 → commit: `refactor: use theme tokens in components`
+- **Focused**: One clear, specific goal
+- **Completable**: Can be finished in one iteration
+- **Verifiable**: Clear steps to confirm completion
 
-## User Request
+Bad items:
 
-$ARGUMENTS
+- ❌ "Implement the whole feature" (too large)
+- ❌ "Improve the code" (too vague)
+- ❌ "Add feature and tests and docs" (multiple concerns)
+
+### Item Ordering
+
+Order items by risk:
+
+1. Architectural decisions and core abstractions first
+2. Implementation and features
+3. Tests and polish last
+
+## Progress File Format
+
+```text
+# Progress Log
+
+Started: {date}
+```
+
+Ralph appends to this file after completing each item.
+
+
