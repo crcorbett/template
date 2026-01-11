@@ -372,3 +372,19 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Fixed oauth-integration tests to use direct AuthContext casting instead of re-decoding already-decoded objects
   - All 150 tests pass, types check clean
 - Updated: prd.json item 14 (category: testing) → passes: true
+
+## Iteration 13
+- Completed: Create login/logout UI components
+- Changes:
+  - Created apps/admin/src/components/auth/ directory with 3 components
+  - login-button.tsx: OAuth login button supporting Google and Microsoft providers, loading states
+  - logout-button.tsx: Sign out button with redirect to login page
+  - user-menu.tsx: Dropdown menu showing user avatar, name, email, profile/settings links, sign out option. Shows "Sign in" link when unauthenticated
+  - Created apps/admin/src/routes/login.tsx: Login page with Google and Microsoft OAuth buttons, returnTo URL handling, redirect if already authenticated
+  - Updated apps/admin/src/routes/__root.tsx: Added UserMenu component to root layout navigation
+  - Added @tabler/icons-react dependency for IconBrandGoogle, IconBrandWindows, IconLogout, IconUser, IconSettings
+  - Fixed @packages/ui exports in package.json: Added ./ui/* export pattern for .tsx components
+  - Updated apps/admin/vite.config.ts: Added path alias for @/lib to resolve @packages/ui internal paths
+  - Used native button/anchor elements with button styling (avoided @base-ui Button type issues with exactOptionalPropertyTypes)
+  - All types pass, admin app builds, 150 tests pass
+- Updated: prd.json item 11 (category: functional) → passes: true

@@ -175,7 +175,7 @@
         "Step 7: Verify login/logout flow works end-to-end"
       ],
       "notes": "Use shadcn/ui components from @packages/ui. Show loading states during auth. Handle auth errors in UI.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",
