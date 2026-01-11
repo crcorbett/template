@@ -18,7 +18,7 @@ Create a new PRD for the ralph-loop plugin following the Ralph Wiggum pattern.
 {
   "prd_id": {n},
   "title": "{Title}",
-  "completion_promise": "DONE",
+  "completion_promise": "COMPLETE",
   "items": [
     {
       "category": "functional|architectural|testing",
@@ -73,5 +73,3 @@ Started: {date}
 ```
 
 Ralph appends to this file after completing each item.
-
-
