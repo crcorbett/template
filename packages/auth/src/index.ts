@@ -229,3 +229,31 @@ export {
   AuthConfigLive,
   makeAuthConfigLayer,
 } from "./config.js";
+
+// =============================================================================
+// Utilities
+// =============================================================================
+
+// Match-based error handling utilities
+export {
+  matchAuthError,
+  mapAuthErrorToHttp,
+  formatAuthError,
+  authErrorToHttpResponse,
+  matchAuthenticationError,
+  matchAuthorizationError,
+  matchOAuthError,
+  isAuthenticationError,
+  isAuthorizationError,
+  isOAuthError,
+  isReauthRequired,
+  isRetryableError,
+} from "./utils/index.js";
+
+export type {
+  HttpErrorResponse,
+  AuthErrorHandlers,
+  AuthenticationErrorType,
+  AuthorizationErrorType,
+  OAuthErrorType,
+} from "./utils/index.js";
