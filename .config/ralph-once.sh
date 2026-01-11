@@ -18,7 +18,7 @@ FULL_PROMPT="${PROMPT}"
 # For each iteration, run Claude Code with the prompt
 for ((i=1; i<=$ITERATIONS; i++)); do
   echo "=== Iteration $i/$ITERATIONS ==="
-  result=$(docker sandbox run claude -p "$FULL_PROMPT")
+  result=$(docker sandbox --mount-docker-socket run claude -p "$FULL_PROMPT")
 
   echo "$result"
 

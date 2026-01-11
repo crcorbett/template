@@ -47,18 +47,24 @@
     },
     {
       "category": "architectural",
-      "description": "Create @packages/types package with auth and RBAC types",
+      "description": "Create @packages/types package with auth and RBAC types using Effect Schemas",
       "steps": [
         "Step 1: Create packages/types directory with package.json",
-        "Step 2: Configure TypeScript with tsconfig.json extending base",
-        "Step 3: Create src/index.ts with initial exports",
-        "Step 4: Add User, Session, AuthProvider types",
-        "Step 5: Add Role type (admin, editor, viewer)",
-        "Step 6: Add Permission type with granular permissions (users:read, users:write, posts:read, posts:write, posts:delete)",
-        "Step 7: Add UserRole and RolePermission junction types",
-        "Step 8: Update root workspace to include new package",
-        "Step 9: Verify package builds and exports correctly"
+        "Step 2: Add effect dependency to package.json",
+        "Step 3: Configure TypeScript with tsconfig.json extending base",
+        "Step 4: Use Effect skill to research Effect Schema primitives and branded types patterns",
+        "Step 5: Create src/auth.ts with Effect Schemas for User, Session, Account, AuthProvider",
+        "Step 6: Create branded types for UserId, SessionId, AccountId using Schema.brand()",
+        "Step 7: Create src/rbac.ts with Effect Schemas for Role, Permission, UserRole, RolePermission",
+        "Step 8: Create branded types for RoleId, PermissionId, RoleName, PermissionString using Schema.brand()",
+        "Step 9: Derive all TypeScript types from Schemas using typeof SchemaName.Type pattern",
+        "Step 10: Create src/schema.ts with Drizzle table schemas using Effect Schemas as base",
+        "Step 11: Map Effect Schemas to Drizzle columns ensuring type safety",
+        "Step 12: Export all Effect Schemas and derived types from src/index.ts",
+        "Step 13: Update root workspace to include new package",
+        "Step 14: Verify package builds and exports correctly"
       ],
+      "notes": "CRITICAL: All types MUST be derived from Effect Schemas, never raw TypeScript interfaces. Use branded types for IDs and domain values (UserId, RoleId, PermissionString, etc.). Use Effect skill to research Schema.brand(), Schema.Struct(), and Schema patterns. All auth and RBAC types/schemas must be in this package. Database package will import from here.",
       "passes": false
     },
     {
@@ -66,21 +72,16 @@
       "description": "Create @packages/database package with Drizzle + PostgreSQL + RBAC schema",
       "steps": [
         "Step 1: Create packages/database directory with package.json",
-        "Step 2: Add drizzle-orm, drizzle-kit, and postgres dependencies",
+        "Step 2: Add drizzle-orm, drizzle-kit, postgres, effect, and @packages/types dependencies",
         "Step 3: Configure drizzle.config.ts for PostgreSQL",
-        "Step 4: Create src/schema/users.ts with users table",
-        "Step 5: Create src/schema/sessions.ts with sessions table",
-        "Step 6: Create src/schema/accounts.ts with OAuth accounts table",
-        "Step 7: Create src/schema/roles.ts with roles table (admin, editor, viewer)",
-        "Step 8: Create src/schema/permissions.ts with permissions table",
-        "Step 9: Create src/schema/user-roles.ts junction table",
-        "Step 10: Create src/schema/role-permissions.ts junction table",
-        "Step 11: Create src/client.ts with database connection using Effect",
-        "Step 12: Create src/index.ts exporting schema and client",
-        "Step 13: Add migration scripts to package.json",
-        "Step 14: Create initial migration with all tables",
-        "Step 15: Verify package builds and connects to PostgreSQL"
+        "Step 4: Import Drizzle schema definitions from @packages/types (which are based on Effect Schemas)",
+        "Step 5: Create src/client.ts with database connection using Effect",
+        "Step 6: Create src/index.ts exporting client and re-exporting schemas from @packages/types",
+        "Step 7: Add migration scripts to package.json",
+        "Step 8: Create initial migration with all tables using imported schemas",
+        "Step 9: Verify package builds and connects to PostgreSQL"
       ],
+      "notes": "Do NOT define schemas here - import from @packages/types. This package only handles database connection and migrations. Drizzle schemas in @packages/types are derived from Effect Schemas.",
       "passes": false
     },
     {
@@ -89,13 +90,15 @@
       "steps": [
         "Step 1: Add better-auth and @better-auth/drizzle dependencies to admin app",
         "Step 2: Create src/lib/auth.ts with Better Auth configuration",
-        "Step 3: Configure Drizzle adapter pointing to @packages/database",
+        "Step 3: Configure Drizzle adapter pointing to @packages/database schemas",
         "Step 4: Add Google OAuth provider configuration",
         "Step 5: Add Microsoft OAuth provider configuration",
-        "Step 6: Create environment variables schema for OAuth credentials",
-        "Step 7: Add callback URL configuration for both providers",
-        "Step 8: Verify Better Auth initialises without errors"
+        "Step 6: Create Effect Schema for environment variables (OAuth credentials) using Schema.Struct",
+        "Step 7: Use branded types for OAuth client IDs and secrets",
+        "Step 8: Add callback URL configuration for both providers",
+        "Step 9: Verify Better Auth initialises without errors"
       ],
+      "notes": "Use schemas from @packages/database which imports from @packages/types (Effect Schemas). OAuth credentials should be in .env file. Use Effect Schema for env validation.",
       "passes": false
     },
     {
@@ -111,6 +114,7 @@
         "Step 7: Add vitest.config.ts to apps/admin",
         "Step 8: Verify vitest runs across all workspaces"
       ],
+      "notes": "Use TypeScript path aliases for workspace imports. Configure coverage reporting.",
       "passes": false
     },
     {
@@ -119,12 +123,13 @@
       "steps": [
         "Step 1: Add effect dependency to admin app",
         "Step 2: Create src/lib/effect/runtime.ts with Effect runtime configuration",
-        "Step 3: Create src/lib/effect/services/auth.ts with auth service layer",
-        "Step 4: Create src/lib/effect/services/database.ts wrapping Drizzle",
-        "Step 5: Create src/lib/effect/services/permissions.ts for RBAC checks",
+        "Step 3: Create src/lib/effect/services/auth.ts with auth service layer using Effect Schemas from @packages/types",
+        "Step 4: Create src/lib/effect/services/database.ts wrapping Drizzle client from @packages/database",
+        "Step 5: Create src/lib/effect/services/permissions.ts for RBAC checks using Effect Schemas and branded types from @packages/types",
         "Step 6: Create src/utils/effect-handler.ts for TanStack Start integration",
         "Step 7: Verify Effect services can be used in API routes"
       ],
+      "notes": "Follow Effect service pattern from context repos. Use dependency injection for services. Import Effect Schemas and branded types from @packages/types. Use Schema.decodeUnknown() for validation.",
       "passes": false
     },
     {
@@ -137,6 +142,7 @@
         "Step 4: Add proper CORS and security headers",
         "Step 5: Verify OAuth callback routes work correctly"
       ],
+      "notes": "Use effect-handler utility from previous task. Return proper HTTP responses. Handle OAuth callback errors gracefully.",
       "passes": false
     },
     {
@@ -145,14 +151,15 @@
       "steps": [
         "Step 1: Create src/utils/auth-middleware.ts using TanStack middleware pattern",
         "Step 2: Integrate Better Auth session verification",
-        "Step 3: Add role checking logic (admin, editor, viewer)",
-        "Step 4: Add granular permission checking (users:read, posts:write, etc.)",
+        "Step 3: Add role checking logic (admin, editor, viewer) using Effect Schemas and branded types from @packages/types",
+        "Step 4: Add granular permission checking (users:read, posts:write, etc.) using Effect Schemas and branded PermissionString type from @packages/types",
         "Step 5: Create requireAuth middleware that redirects unauthenticated users",
-        "Step 6: Create requireRole middleware for role-based access",
-        "Step 7: Create requirePermission middleware for granular access",
+        "Step 6: Create requireRole middleware for role-based access using branded RoleName type",
+        "Step 7: Create requirePermission middleware for granular access using branded PermissionString type",
         "Step 8: Wrap middleware with Effect for consistent error handling",
         "Step 9: Verify middleware can be composed with existing logging middleware"
       ],
+      "notes": "Use Effect services for permission checks. Use branded types (RoleName, PermissionString) from @packages/types for type safety. Middleware should be composable. Return proper error responses for unauthorized access.",
       "passes": false
     },
     {
@@ -167,6 +174,7 @@
         "Step 6: Style components using existing UI patterns from @packages/ui",
         "Step 7: Verify login/logout flow works end-to-end"
       ],
+      "notes": "Use shadcn/ui components from @packages/ui. Show loading states during auth. Handle auth errors in UI.",
       "passes": false
     },
     {
@@ -180,6 +188,7 @@
         "Step 5: Apply role-based restrictions to sensitive routes",
         "Step 6: Verify protected routes require authentication and proper permissions"
       ],
+      "notes": "Use middleware from previous task. Show 403 page for unauthorized access. Preserve query params in redirect URL.",
       "passes": false
     },
     {
@@ -188,12 +197,13 @@
       "steps": [
         "Step 1: Create src/routes/admin/users.tsx user list page",
         "Step 2: Create src/routes/admin/users.$userId.tsx user detail page",
-        "Step 3: Add role assignment functionality (admin only)",
-        "Step 4: Add permission management for roles",
-        "Step 5: Create API routes for user management operations",
+        "Step 3: Add role assignment functionality (admin only) using branded RoleName and UserId types",
+        "Step 4: Add permission management for roles using branded PermissionString and RoleId types",
+        "Step 5: Create API routes for user management operations using Effect Schemas for validation",
         "Step 6: Apply admin-only middleware to user management routes",
         "Step 7: Verify only admins can access user management"
       ],
+      "notes": "Use requireRole('admin') middleware. Use Effect Schemas and branded types (UserId, RoleId, RoleName, PermissionString) from @packages/types for type safety. Add optimistic UI updates. Validate inputs with Schema.decodeUnknown().",
       "passes": false
     },
     {
@@ -202,27 +212,30 @@
       "steps": [
         "Step 1: Set up test database configuration",
         "Step 2: Create tests for Better Auth configuration",
-        "Step 3: Create tests for Effect auth service",
-        "Step 4: Create tests for auth middleware (requireAuth)",
-        "Step 5: Create tests for role middleware (requireRole)",
-        "Step 6: Create tests for permission middleware (requirePermission)",
+        "Step 3: Create tests for Effect auth service using Effect Schemas",
+        "Step 4: Create tests for auth middleware (requireAuth) with branded UserId validation",
+        "Step 5: Create tests for role middleware (requireRole) with branded RoleName validation",
+        "Step 6: Create tests for permission middleware (requirePermission) with branded PermissionString validation",
         "Step 7: Create integration tests for OAuth flow (mocked providers)",
-        "Step 8: Create tests for role assignment logic",
+        "Step 8: Create tests for role assignment logic using branded types",
         "Step 9: Verify all tests pass"
       ],
+      "notes": "Use test database from Docker Compose. Mock Better Auth OAuth providers. Test all permission combinations. Use @effect/vitest for Effect testing utilities. Test Schema validation and branded type constraints.",
       "passes": false
     },
     {
       "category": "testing",
       "description": "Add tests for database package",
       "steps": [
-        "Step 1: Create tests for Drizzle schema validation",
+        "Step 1: Create tests for Drizzle schema validation (using Effect Schemas from @packages/types)",
         "Step 2: Create tests for database client connection",
-        "Step 3: Create tests for Effect-wrapped database operations",
-        "Step 4: Create tests for RBAC queries (get user roles, check permissions)",
-        "Step 5: Add migration test to verify schema applies correctly",
-        "Step 6: Verify all tests pass"
+        "Step 3: Create tests for Effect-wrapped database operations with branded types",
+        "Step 4: Create tests for RBAC queries (get user roles, check permissions) using branded UserId, RoleId, PermissionString",
+        "Step 5: Test that Drizzle schemas correctly map to Effect Schemas",
+        "Step 6: Add migration test to verify schema applies correctly",
+        "Step 7: Verify all tests pass"
       ],
+      "notes": "Test Effect Schema imports from @packages/types. Use test database. Verify all RBAC relationships work correctly. Test branded type constraints are enforced. Use @effect/vitest for Effect testing.",
       "passes": false
     }
   ]
