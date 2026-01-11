@@ -23,3 +23,17 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Re-exports all errors, type unions (AuthError, AuthenticationError, AuthorizationError, OAuthError), and utility constants (AuthErrorTags, AuthErrorHttpStatus)
 - Updated: prd.json item 2 (category: architectural) → passes: true
 - Notes: Uses branded types from @packages/types for UserId, RoleName, PermissionString, AuthProvider. Includes HTTP status mapping for Match-based error handlers. Step 7 (Schema.TaggedError) not needed - Data.TaggedError sufficient for all use cases; HTTP mapping added instead.
+
+## Iteration 3
+- Completed: Create AuthService as Effect service with typed interface
+- Changes:
+  - packages/auth/src/services/auth.ts: AuthService with getSession, requireSession, validateToken
+    - BetterAuthClient Context.Tag for framework-agnostic Better Auth integration
+    - BetterAuthSessionResult interface for raw Better Auth responses
+    - AuthServiceLive layer requiring BetterAuthClient dependency
+    - Full schema validation using Effect Schemas (UserSchema, SessionSchema, AuthContextSchema)
+    - Typed errors: NoSessionError, SessionValidationError, InvalidTokenError
+  - packages/auth/src/services/index.ts: Re-exports all service components
+  - packages/auth/src/index.ts: Exports services, service interfaces, and types
+- Updated: prd.json item 3 (category: architectural) → passes: true
+- Notes: Service is framework-agnostic - apps provide BetterAuthClient layer with their configured Better Auth instance. No type assertions used - proper Effect patterns with Schema.decodeUnknownSync and Effect.try. Option<AuthContext> used for getSession return type.

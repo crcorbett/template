@@ -45,7 +45,7 @@
         "Step 7: Export service tag, interface, and layer"
       ],
       "notes": "Service should return Effect types with explicit error channels. No 'as' casts or non-null assertions allowed.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",
