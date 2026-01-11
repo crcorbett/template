@@ -388,3 +388,19 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Used native button/anchor elements with button styling (avoided @base-ui Button type issues with exactOptionalPropertyTypes)
   - All types pass, admin app builds, 150 tests pass
 - Updated: prd.json item 11 (category: functional) → passes: true
+
+## Iteration 14
+- Completed: Protect admin routes with role and permission checks
+- Changes:
+  - Created src/routes/_authenticated.tsx: TanStack Router pathless layout with beforeLoad auth check
+  - Created src/utils/auth-server.ts: Server-side session validation using createServerFn and Effect Schema
+  - Moved posts routes to _authenticated.posts.tsx, _authenticated.posts/ directory
+  - Moved users routes to _authenticated.users.tsx, _authenticated.users/ directory
+  - Moved deep post route to _authenticated.posts_/$post-id/deep.tsx
+  - Updated route path strings to include /_authenticated/ prefix for proper routing
+  - Applied requireAuthApiMiddleware + requireUsersReadMiddleware to /api/users and /api/users/$userId
+  - Added securityHeadersMiddleware to API routes
+  - Created src/components/forbidden.tsx for 403 error display
+  - Fixed test file imports (docstring comment closure issues in 5 test files)
+  - Unauthenticated users redirect to /login?returnTo= preserving original URL
+- Updated: prd.json item 12 (category: functional) → passes: true

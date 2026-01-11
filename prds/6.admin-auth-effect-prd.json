@@ -189,7 +189,7 @@
         "Step 6: Verify protected routes require authentication and proper permissions"
       ],
       "notes": "Use middleware from previous task. Show 403 page for unauthorized access. Preserve query params in redirect URL.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",
