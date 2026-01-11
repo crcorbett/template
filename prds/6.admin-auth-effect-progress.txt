@@ -404,3 +404,20 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Fixed test file imports (docstring comment closure issues in 5 test files)
   - Unauthenticated users redirect to /login?returnTo= preserving original URL
 - Updated: prd.json item 12 (category: functional) → passes: true
+
+## Iteration 15
+- Completed: Create user management UI for admins
+- Changes:
+  - Created src/routes/_authenticated.admin.tsx: Admin panel layout wrapper
+  - Created src/routes/_authenticated.admin.users.tsx: User list with roles display
+  - Created src/routes/_authenticated.admin.users/$user-id.tsx: User detail with role assignment checkboxes
+  - Created src/routes/_authenticated.admin.users/index.tsx: Default view placeholder
+  - Created src/routes/api/admin/users.ts: GET /api/admin/users list endpoint
+  - Created src/routes/api/admin/users.$userId.ts: GET /api/admin/users/:userId detail endpoint
+  - Created src/routes/api/admin/users.$userId.roles.ts: PUT /api/admin/users/:userId/roles update endpoint
+  - Applied requireAdminMiddleware + securityHeadersMiddleware to all admin API routes
+  - Role assignment uses ALL_ROLES and DEFAULT_ROLE_PERMISSIONS from @packages/types
+  - Shows derived permissions based on selected roles
+  - Fixed commented-out imports in permissions.ts, auth-server.ts, and test files
+  - Changed getUserRolesImpl from Effect.gen to Effect.sync (no yield needed)
+- Updated: prd.json item 13 (category: functional) → passes: true

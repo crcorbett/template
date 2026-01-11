@@ -204,7 +204,7 @@
         "Step 7: Verify only admins can access user management"
       ],
       "notes": "Use requireRole('admin') middleware. Use Effect Schemas and branded types (UserId, RoleId, RoleName, PermissionString) from @packages/types for type safety. Add optimistic UI updates. Validate inputs with Schema.decodeUnknown().",
-      "passes": false
+      "passes": true
     },
     {
       "category": "testing",
