@@ -325,3 +325,34 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Verified OAuth callback routes work via build (requires runtime OAuth creds for live test)
   - Types pass, build succeeds, no lint errors
 - Updated: prd.json item 9 (category: functional) → passes: true
+
+## Iteration 10
+- Completed: Create permission-aware auth middleware
+- Changes:
+  - Created src/utils/auth-middleware.ts with TanStack Start middleware pattern
+  - Integrated Better Auth session verification via getSession service
+  - requireAuthMiddleware: redirects to /login?returnTo= on unauthenticated access
+  - requireAuthApiMiddleware: returns 401 JSON for unauthenticated API requests
+  - createRequireRoleMiddleware: factory creates role-checking middleware using branded RoleName
+  - createRequirePermissionMiddleware: factory creates permission-checking middleware using branded PermissionString
+  - Pre-built middlewares: requireAdminMiddleware, requireEditorMiddleware, requireViewerMiddleware
+  - Pre-built permission middlewares: requireUsersReadMiddleware, requireUsersWriteMiddleware, requirePostsReadMiddleware, requirePostsWriteMiddleware, requirePostsDeleteMiddleware
+  - Effect-based error handling with Cause extraction for proper error responses
+  - Composes with existing securityHeadersMiddleware and corsMiddleware
+  - Returns typed AuthErrorResponse with error, code, details fields
+  - Types pass
+- Updated: prd.json item 10 (category: functional) → passes: true
+
+## Iteration 11
+- Completed: Add tests for database package
+- Changes:
+  - Created packages/database/test/ directory with 3 test files
+  - schema.test.ts: 92 tests covering branded ID types, domain value types (Email, SessionToken, RoleName, PermissionString), entity schemas (User, Session, Account, Role, Permission, UserRole, RolePermission), insert schemas, Drizzle schema structure, and RBAC constants
+  - client.test.ts: 17 tests covering getDatabaseUrl, layer construction, Effect patterns, and package exports
+  - integration.test.ts: 15 tests covering database connection, schema migration verification, CRUD operations with branded types, and RBAC queries (skipped when PostgreSQL unavailable)
+  - All tests use Effect Schema.decodeUnknownEither for validation
+  - Tests verify Effect Schemas correctly validate data shapes with ISO date strings
+  - Tests verify Drizzle schemas have expected columns/constraints
+  - Tests verify branded types enforce UUID patterns
+  - Integration tests properly skip when DB unavailable (CI compatible)
+- Updated: prd.json item 15 (category: testing) → passes: true

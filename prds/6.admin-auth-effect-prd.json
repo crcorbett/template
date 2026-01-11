@@ -160,7 +160,7 @@
         "Step 9: Verify middleware can be composed with existing logging middleware"
       ],
       "notes": "Use Effect services for permission checks. Use branded types (RoleName, PermissionString) from @packages/types for type safety. Middleware should be composable. Return proper error responses for unauthorized access.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",
@@ -236,7 +236,7 @@
         "Step 7: Verify all tests pass"
       ],
       "notes": "Test Effect Schema imports from @packages/types. Use test database. Verify all RBAC relationships work correctly. Test branded type constraints are enforced. Use @effect/vitest for Effect testing.",
-      "passes": false
+      "passes": true
     }
   ]
 }
