@@ -7,16 +7,23 @@
   "scripts": {
     "dev": "bun --bun vite dev --host",
     "build": "bun --bun vite build && tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "preview": "bun --bun vite preview",
     "start": "bun run .output/server/index.mjs"
   },
   "dependencies": {
     "@packages/core": "workspace:*",
+    "@packages/database": "workspace:*",
+    "@packages/types": "workspace:*",
     "@packages/ui": "workspace:*",
     "@tanstack/react-router": "catalog:tanstack",
     "@tanstack/react-router-devtools": "catalog:tanstack",
     "@tanstack/react-start": "catalog:tanstack",
+    "better-auth": "^1.5.0-beta.3",
+    "drizzle-orm": "^0.41.0",
+    "effect": "^3.16.0",
     "nitro": "catalog:utils",
+    "pg": "^8.16.3",
     "react": "catalog:react",
     "react-dom": "catalog:react",
     "tailwind-merge": "catalog:utils",
@@ -24,6 +31,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:build",
+    "@types/pg": "^8.15.5",
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
     "@vitejs/plugin-react": "catalog:build",
