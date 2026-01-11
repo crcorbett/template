@@ -277,3 +277,37 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Fixed @packages/database/src/client.ts import (PgDrizzle was in comment)
   - All types pass, admin app builds successfully
 - Updated: prd.json item 6 (category: architectural) → passes: true
+
+## Iteration 7
+- Completed: Set up Vitest in monorepo with workspace configuration
+- Changes:
+  - Added vitest (v3.2.4) and @effect/vitest (v0.27.0) devDeps to root package.json
+  - Added test script ("turbo run test") to root package.json
+  - Added test task to turbo.json with build dependency and input patterns
+  - Created root vitest.config.ts with projects pattern for workspace discovery
+  - Created vitest.config.ts for all 8 workspaces (admin, docs, web, api, core, database, types, ui)
+  - Configured @effect/vitest inline dep for Effect testing support in database/types/admin
+  - Added test script ("vitest run") to all workspace package.json files
+  - Fixed deprecated test.workspace → test.projects in root config
+  - Verified vitest runs across all workspaces (passWithNoTests: true for now)
+- Updated: prd.json item 7 (category: architectural) → passes: true
+
+## Iteration 8
+- Completed: Integrate Effect TS into admin app API layer
+- Changes:
+  - Created src/lib/effect/runtime.ts with AppLayer and AppRuntime (ManagedRuntime)
+  - Created src/lib/effect/services/auth.ts with AuthService (getSession, requireSession, validateToken)
+  - Defined error types: NoSessionError, SessionValidationError, UserNotFoundError
+  - Auth service wraps Better Auth's getSession API with Effect patterns
+  - Created src/lib/effect/services/database.ts with error types (DatabaseQueryError, RecordNotFoundError, ConstraintViolationError)
+  - Re-exports DatabaseLive, SqlLive from @packages/database
+  - Created src/lib/effect/services/permissions.ts with PermissionsService
+  - Methods: getUserRoles, hasRole, hasPermission, requireRole, requirePermission, hasAnyRole, hasAllPermissions
+  - Defined error types: InsufficientRoleError, InsufficientPermissionError
+  - Uses DEFAULT_ROLE_PERMISSIONS from @packages/types for role→permission mapping
+  - Created src/lib/effect/index.ts re-exporting all services and types
+  - Created src/utils/effect-handler.ts with runEffect and runEffectWithServices
+  - Maps known errors to HTTP status codes (401, 403, 404, 409, 500)
+  - Uses Effect Match for exhaustive error handling
+  - Types pass, build succeeds
+- Updated: prd.json item 8 (category: architectural) → passes: true
