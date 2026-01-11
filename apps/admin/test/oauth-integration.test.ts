@@ -6,6 +6,7 @@
  * 2. Session creation and validation flow
  * 3. Token refresh patterns
  * 4. Provider-specific handling (Google, Microsoft)
+ */
 import type { AuthContext } from "@packages/types";
 
 import {
@@ -16,7 +17,6 @@ import {
 } from "$/lib/effect/services/auth";
 import { Account } from "@packages/types";
 import { Effect, Exit, Option, Schema } from "effect";
- */
 import { describe, expect, it } from "vitest";
 
 import {

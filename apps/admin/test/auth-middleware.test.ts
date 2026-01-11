@@ -7,6 +7,7 @@
  * 3. requirePermission middleware with branded PermissionString types
  * 4. Error handling and response codes
  * 5. Middleware composition patterns
+ */
 import {
   InsufficientRoleError,
   InsufficientPermissionError,
@@ -22,7 +23,6 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
 } from "@packages/types";
 import { Effect, Exit, Layer, Schema } from "effect";
- */
 import { describe, expect, it } from "vitest";
 
 import {

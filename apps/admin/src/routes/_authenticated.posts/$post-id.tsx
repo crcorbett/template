@@ -3,7 +3,7 @@ import { PostErrorComponent } from "$/components/post-error";
 import { fetchPost } from "$/utils/posts";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/posts/$post-id")({
+export const Route = createFileRoute("/_authenticated/posts/$post-id")({
   loader: ({ params }) => fetchPost({ data: params["post-id"] }),
   errorComponent: PostErrorComponent,
   component: PostComponent,

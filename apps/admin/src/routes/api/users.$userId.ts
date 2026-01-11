@@ -1,10 +1,20 @@
 import type { User } from "@packages/core/user";
 
+import {
+  requireAuthApiMiddleware,
+  requireUsersReadMiddleware,
+  securityHeadersMiddleware,
+} from "$/utils/auth-middleware";
 import { createFileRoute } from "@tanstack/react-router";
 import { json } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/api/users/$userId")({
   server: {
+    middleware: [
+      securityHeadersMiddleware,
+      requireAuthApiMiddleware,
+      requireUsersReadMiddleware,
+    ],
     handlers: {
       GET: async ({ params, request }) => {
         console.info(`Fetching users by id=${params.userId}... @`, request.url);

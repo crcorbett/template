@@ -4,7 +4,7 @@ import { NotFound } from "$/components/not-found";
 import { UserErrorComponent } from "$/components/user-error";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/users/$user-id")({
+export const Route = createFileRoute("/_authenticated/users/$user-id")({
   loader: async ({ params }) => {
     try {
       const res = await fetch(`/api/users/${params["user-id"]}`);

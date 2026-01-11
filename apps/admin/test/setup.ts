@@ -5,6 +5,7 @@
  * - Mock layers for testing without real database
  * - Test helpers for creating mock data
  * - Test fixtures for Effect-based testing
+ */
 import type { AuthServiceImpl } from "$/lib/effect/services/auth";
 import type { PermissionsServiceImpl } from "$/lib/effect/services/permissions";
 import type { AuthContext } from "@packages/types";
@@ -16,20 +17,19 @@ import {
 } from "$/lib/effect/services/auth";
 import { DatabaseQueryError } from "$/lib/effect/services/database";
 import {
-  PermissionsService,
-  InsufficientRoleError,
   InsufficientPermissionError,
+  InsufficientRoleError,
+  PermissionsService,
 } from "$/lib/effect/services/permissions";
 import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PermissionString as PermissionStringSchema,
+  RoleName as RoleNameSchema,
   Session as SessionSchema,
   User as UserSchema,
   UserId,
   UserWithRoles as UserWithRolesSchema,
-  RoleName as RoleNameSchema,
-  PermissionString as PermissionStringSchema,
-  DEFAULT_ROLE_PERMISSIONS,
 } from "@packages/types";
- */
 import { Effect, Layer, Option, Schema } from "effect";
 
 // =============================================================================

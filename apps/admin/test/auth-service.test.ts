@@ -6,6 +6,7 @@
  * 2. Session validation with Effect Schemas
  * 3. Error handling (NoSessionError, SessionValidationError)
  * 4. Service layer patterns with dependency injection
+ */
 import {
   AuthService,
   NoSessionError,
@@ -15,7 +16,6 @@ import {
   validateToken,
 } from "$/lib/effect/services/auth";
 import { Effect, Exit, Option } from "effect";
- */
 import { describe, expect, it } from "vitest";
 
 import {

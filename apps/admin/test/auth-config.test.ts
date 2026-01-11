@@ -6,6 +6,7 @@
  * 2. Branded type validation for OAuth credentials
  * 3. Database URL validation
  * 4. Auth configuration structure
+ */
 import {
   OAuthClientId,
   OAuthClientSecret,
@@ -17,7 +18,6 @@ import {
   getAuthEnv,
 } from "$/lib/env";
 import { Either, Schema } from "effect";
- */
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 
 // =============================================================================

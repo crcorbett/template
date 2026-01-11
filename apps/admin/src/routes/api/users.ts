@@ -1,5 +1,10 @@
 import type { User } from "@packages/core/user";
 
+import {
+  requireAuthApiMiddleware,
+  requireUsersReadMiddleware,
+  securityHeadersMiddleware,
+} from "$/utils/auth-middleware";
 import { createFileRoute } from "@tanstack/react-router";
 import { createMiddleware, json } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
@@ -13,35 +18,14 @@ const userLoggerMiddleware = createMiddleware().server(async ({ next }) => {
   return result;
 });
 
-const testParentMiddleware = createMiddleware().server(async ({ next }) => {
-  console.info("In: testParentMiddleware");
-  const result = await next();
-  result.response.headers.set("x-test-parent", "true");
-  console.info("Out: testParentMiddleware");
-  return result;
-});
-
-const testMiddleware = createMiddleware()
-  .middleware([testParentMiddleware])
-  .server(async ({ next }) => {
-    console.info("In: testMiddleware");
-    const result = await next();
-    result.response.headers.set("x-test", "true");
-
-    // if (Math.random() > 0.5) {
-    //   throw new Response(null, {
-    //     status: 302,
-    //     headers: { Location: 'https://www.google.com' },
-    //   })
-    // }
-
-    console.info("Out: testMiddleware");
-    return result;
-  });
-
 export const Route = createFileRoute("/api/users")({
   server: {
-    middleware: [testMiddleware, userLoggerMiddleware],
+    middleware: [
+      securityHeadersMiddleware,
+      requireAuthApiMiddleware,
+      requireUsersReadMiddleware,
+      userLoggerMiddleware,
+    ],
     handlers: {
       GET: async ({ request }) => {
         console.info("GET /api/users @", request.url);

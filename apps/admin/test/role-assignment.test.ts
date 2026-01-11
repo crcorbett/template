@@ -6,6 +6,7 @@
  * 2. Permission derivation from roles
  * 3. Multiple role handling
  * 4. Role hierarchy behavior
+ */
 import {
   getUserRoles,
   hasPermission,
@@ -26,7 +27,6 @@ import {
   ALL_PERMISSIONS,
 } from "@packages/types";
 import { Effect, Schema } from "effect";
- */
 import { describe, expect, it } from "vitest";
 
 import {
