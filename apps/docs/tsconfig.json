@@ -6,11 +6,10 @@
     "declaration": false,
     "declarationMap": false,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "$/*": ["./src/*"],
       "@/*": ["./src/*"],
-      "fumadocs-mdx:collections/*": [".source/*"]
+      "fumadocs-mdx:collections/*": ["./.source/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".source/**/*.ts"]
