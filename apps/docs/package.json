@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "bun --bun vite dev --host",
     "build": "bun --bun vite build",
-    "preview": "bun --bun vite preview",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "bun --bun vite preview"
   },
   "dependencies": {
     "@tanstack/react-router": "catalog:tanstack",

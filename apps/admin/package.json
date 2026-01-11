@@ -8,6 +8,7 @@
     "dev": "bun --bun vite dev --host",
     "build": "bun --bun vite build && tsc --noEmit",
     "check-types": "tsc --noEmit",
+    "test": "vitest run",
     "preview": "bun --bun vite preview",
     "start": "bun run .output/server/index.mjs"
   },
