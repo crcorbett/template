@@ -11,6 +11,8 @@
     { "path": "./apps/docs" },
     { "path": "./packages/core" },
     { "path": "./packages/api" },
-    { "path": "./packages/ui" }
+    { "path": "./packages/ui" },
+    { "path": "./packages/types" },
+    { "path": "./packages/database" }
   ]
 }

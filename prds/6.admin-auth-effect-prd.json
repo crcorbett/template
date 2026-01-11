@@ -82,7 +82,7 @@
         "Step 9: Verify package builds and connects to PostgreSQL"
       ],
       "notes": "Do NOT define schemas here - import from @packages/types. This package only handles database connection and migrations. Drizzle schemas in @packages/types are derived from Effect Schemas.",
-      "passes": false
+      "passes": true
     },
     {
       "category": "architectural",

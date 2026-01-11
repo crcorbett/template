@@ -248,3 +248,18 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - All types derived from Schemas using typeof Schema.Type pattern
   - All ID types use Schema.brand() with UUID pattern validation
 - Updated: prd.json item 4 (category: architectural) → passes: true
+
+## Iteration 5
+- Completed: Create @packages/database package with Drizzle + PostgreSQL + RBAC schema
+- Changes:
+  - Created packages/database directory with package.json
+  - Added deps: @effect/sql, @effect/sql-pg, @effect/sql-drizzle, drizzle-orm, drizzle-kit, pg, effect, @packages/types
+  - Created drizzle.config.ts pointing to @packages/types/src/schema.ts
+  - Created src/client.ts with Effect-based PostgreSQL layers (SqlLive, DrizzleLive, DatabaseLive)
+  - Added PgPool service for direct pg Pool access (Better Auth needs sync DB)
+  - Created src/index.ts re-exporting schemas from @packages/types and client layers
+  - Added db:generate, db:migrate, db:push, db:studio scripts
+  - Generated initial migration (0000_far_mephisto.sql) with all 7 tables: users, sessions, accounts, roles, permissions, user_roles, role_permissions
+  - Updated root tsconfig.json to include packages/database reference
+  - Verified package builds and type checks pass
+- Updated: prd.json item 5 (category: architectural) → passes: true
