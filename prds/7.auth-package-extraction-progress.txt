@@ -122,3 +122,20 @@ Started: 2026-01-11
   - packages/auth/src/index.ts: Exports all config components
 - Updated: prd.json item 8 (category: architectural) → passes: true
 - Notes: Uses Effect Config module for env loading with proper error mapping. ConfigError mapped to AuthConfigError. Branded types prevent sensitive value misuse. Layer-based config enables test mocking.
+
+## Iteration 9
+- Completed: Add Match-based error handling utilities
+- Changes:
+  - packages/auth/src/utils/error-handling.ts: Exhaustive error matching utilities
+    - AuthErrorHandlers<R> interface for type-safe handler objects
+    - matchAuthError: Exhaustive switch-based matcher (avoids Match.typeTags Unify<R> typing issues)
+    - mapAuthErrorToHttp: Maps errors to HTTP status codes using AuthErrorHttpStatus
+    - formatAuthError: User-friendly messages per error type
+    - authErrorToHttpResponse: Complete HTTP response object (status, error, message, code)
+    - Type guards: isAuthenticationError, isAuthorizationError, isOAuthError
+    - Partial matchers: matchAuthenticationError, matchAuthorizationError, matchOAuthError
+    - Utility guards: isReauthRequired, isRetryableError
+  - packages/auth/src/utils/index.ts: Re-exports all error handling utilities and types
+  - packages/auth/src/index.ts: Exports all utilities
+- Updated: prd.json item 9 (category: architectural) → passes: true
+- Notes: Used switch statement instead of Match.typeTags to avoid Effect's Unify<R> type compatibility issues. Still provides exhaustive matching via TypeScript's switch exhaustiveness checking. Added type guards for category-based error handling.
