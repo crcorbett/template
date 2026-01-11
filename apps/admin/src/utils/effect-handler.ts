@@ -22,7 +22,7 @@ import {
   InsufficientPermissionError,
   InsufficientRoleError,
 } from "$/lib/effect/services/permissions";
-import { AppRuntime } from "$/lib/effect/runtime";
+import { AppRuntime, type AppServices } from "$/lib/effect/runtime";
 
 // =============================================================================
 // Error Response Types
@@ -177,7 +177,7 @@ const mapErrorToResponse = (
  * ```
  */
 export const runEffect = async <A, E>(
-  effect: Effect.Effect<A, E, never>
+  effect: Effect.Effect<A, E, AppServices>
 ): Promise<Response> => {
   const exit = await AppRuntime.runPromiseExit(effect);
 
@@ -198,7 +198,7 @@ export const runEffect = async <A, E>(
  * @returns A Response object with JSON body
  */
 export const runEffectWithServices = async <A, E>(
-  effect: Effect.Effect<A, E, never>
+  effect: Effect.Effect<A, E, AppServices>
 ): Promise<Response> => {
   return runEffect(effect);
 };
@@ -270,4 +270,4 @@ function* iterateCauseDefects<E>(
 /**
  * Type helper for Effect handlers
  */
-export type EffectHandler<A, E> = Effect.Effect<A, E, never>;
+export type EffectHandler<A, E> = Effect.Effect<A, E, AppServices>;

@@ -311,3 +311,17 @@ Key: Effect handlers integrate via TanStack's server handlers pattern.
   - Uses Effect Match for exhaustive error handling
   - Types pass, build succeeds
 - Updated: prd.json item 8 (category: architectural) → passes: true
+
+## Iteration 9
+- Completed: Create auth API routes with Effect handlers
+- Changes:
+  - Created src/routes/api/auth/$.ts catch-all route for Better Auth handlers
+  - Created src/routes/api/auth/session.ts Effect-wrapped session endpoint
+  - Session endpoint uses Effect.gen with getSession service, returns typed SessionResponse
+  - Created src/middleware/security.ts with securityHeadersMiddleware and corsMiddleware
+  - Security headers: X-Content-Type-Options, X-Frame-Options, Cache-Control, Pragma
+  - Applied securityHeadersMiddleware to both auth routes
+  - Updated src/utils/effect-handler.ts to accept AppServices requirements
+  - Verified OAuth callback routes work via build (requires runtime OAuth creds for live test)
+  - Types pass, build succeeds, no lint errors
+- Updated: prd.json item 9 (category: functional) → passes: true

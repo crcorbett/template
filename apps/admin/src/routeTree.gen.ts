@@ -24,6 +24,8 @@ import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as PathlessLayoutNestedLayoutRouteImport } from './routes/_pathless-layout/_nested-layout'
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_/$post-id/deep'
 import { Route as ApiUsersUserIdRouteImport } from './routes/api/users.$userId'
+import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as PathlessLayoutNestedLayoutRouteBRouteImport } from './routes/_pathless-layout/_nested-layout/route-b'
 import { Route as PathlessLayoutNestedLayoutRouteARouteImport } from './routes/_pathless-layout/_nested-layout/route-a'
 
@@ -101,6 +103,16 @@ const ApiUsersUserIdRoute = ApiUsersUserIdRouteImport.update({
   path: '/$userId',
   getParentRoute: () => ApiUsersRoute,
 } as any)
+const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
+  id: '/api/auth/session',
+  path: '/api/auth/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PathlessLayoutNestedLayoutRouteBRoute =
   PathlessLayoutNestedLayoutRouteBRouteImport.update({
     id: '/route-b',
@@ -128,6 +140,8 @@ export interface FileRoutesByFullPath {
   '/users/': typeof UsersIndexRoute
   '/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
   '/posts/$post-id/deep': typeof PostsPostIdDeepRoute
 }
@@ -143,6 +157,8 @@ export interface FileRoutesByTo {
   '/users': typeof UsersIndexRoute
   '/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
   '/posts/$post-id/deep': typeof PostsPostIdDeepRoute
 }
@@ -163,6 +179,8 @@ export interface FileRoutesById {
   '/users/': typeof UsersIndexRoute
   '/_pathless-layout/_nested-layout/route-a': typeof PathlessLayoutNestedLayoutRouteARoute
   '/_pathless-layout/_nested-layout/route-b': typeof PathlessLayoutNestedLayoutRouteBRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/users/$userId': typeof ApiUsersUserIdRoute
   '/posts_/$post-id/deep': typeof PostsPostIdDeepRoute
 }
@@ -182,6 +200,8 @@ export interface FileRouteTypes {
     | '/users/'
     | '/route-a'
     | '/route-b'
+    | '/api/auth/$'
+    | '/api/auth/session'
     | '/api/users/$userId'
     | '/posts/$post-id/deep'
   fileRoutesByTo: FileRoutesByTo
@@ -197,6 +217,8 @@ export interface FileRouteTypes {
     | '/users'
     | '/route-a'
     | '/route-b'
+    | '/api/auth/$'
+    | '/api/auth/session'
     | '/api/users/$userId'
     | '/posts/$post-id/deep'
   id:
@@ -216,6 +238,8 @@ export interface FileRouteTypes {
     | '/users/'
     | '/_pathless-layout/_nested-layout/route-a'
     | '/_pathless-layout/_nested-layout/route-b'
+    | '/api/auth/$'
+    | '/api/auth/session'
     | '/api/users/$userId'
     | '/posts_/$post-id/deep'
   fileRoutesById: FileRoutesById
@@ -229,6 +253,8 @@ export interface RootRouteChildren {
   RedirectRoute: typeof RedirectRoute
   UsersRoute: typeof UsersRouteWithChildren
   ApiUsersRoute: typeof ApiUsersRouteWithChildren
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiAuthSessionRoute: typeof ApiAuthSessionRoute
   PostsPostIdDeepRoute: typeof PostsPostIdDeepRoute
 }
 
@@ -339,6 +365,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersUserIdRouteImport
       parentRoute: typeof ApiUsersRoute
     }
+    '/api/auth/session': {
+      id: '/api/auth/session'
+      path: '/api/auth/session'
+      fullPath: '/api/auth/session'
+      preLoaderRoute: typeof ApiAuthSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_pathless-layout/_nested-layout/route-b': {
       id: '/_pathless-layout/_nested-layout/route-b'
       path: '/route-b'
@@ -431,6 +471,8 @@ const rootRouteChildren: RootRouteChildren = {
   RedirectRoute: RedirectRoute,
   UsersRoute: UsersRouteWithChildren,
   ApiUsersRoute: ApiUsersRouteWithChildren,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiAuthSessionRoute: ApiAuthSessionRoute,
   PostsPostIdDeepRoute: PostsPostIdDeepRoute,
 }
 export const routeTree = rootRouteImport
