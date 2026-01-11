@@ -154,3 +154,40 @@ export type {
   OAuthCallbackResult,
   OAuthProviderConfig,
 } from "./services/index.js";
+
+// =============================================================================
+// Runtime and Layer Composition
+// =============================================================================
+
+// Layer compositions
+export {
+  // Individual service layers
+  AuthOnlyLayer,
+  PermissionsOnlyLayer,
+  SessionOnlyLayer,
+  OAuthOnlyLayer,
+  // Composite layers
+  AuthWithPermissionsLayer,
+  AuthWithSessionsLayer,
+  FullAuthLayer,
+  // Layer builder functions
+  makeBetterAuthClientLayer,
+  makeUserRolesProviderLayer,
+  makeSessionRepositoryLayer,
+  makeOAuthProviderLayer,
+  makeAccountRepositoryLayer,
+  // ManagedRuntime factory
+  makeAuthRuntime,
+} from "./runtime.js";
+
+// Dependency types for layer composition
+export type {
+  AuthDependencies,
+  AuthMinimalDependencies,
+  AuthWithPermissionsDependencies,
+  AuthWithSessionsDependencies,
+  // Service type unions
+  FullAuthServices,
+  AuthWithPermissionsServices,
+  AuthWithSessionsServices,
+} from "./runtime.js";
