@@ -86,3 +86,38 @@ export type {
   RawSessionData,
   SessionRefreshOptions,
 } from "./session.js";
+
+// =============================================================================
+// OAuth Service
+// =============================================================================
+
+export {
+  // Service tags
+  OAuthService,
+  OAuthProvider,
+  AccountRepository,
+  // Layers
+  OAuthServiceLive,
+  // Convenience functions
+  getAuthUrl,
+  handleOAuthCallback,
+  linkAccount,
+  getLinkedAccount,
+  getLinkedAccounts,
+  findAccountByProvider,
+  unlinkAccount,
+  refreshOAuthTokens,
+  isProviderSupported,
+} from "./oauth.js";
+
+export type {
+  // Service interfaces
+  OAuthServiceImpl,
+  OAuthProviderImpl,
+  AccountRepositoryImpl,
+  // Data types
+  RawAccountData,
+  OAuthAuthorizationUrl,
+  OAuthCallbackResult,
+  OAuthProviderConfig,
+} from "./oauth.js";

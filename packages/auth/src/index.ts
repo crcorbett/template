@@ -127,3 +127,30 @@ export type {
   RawSessionData,
   SessionRefreshOptions,
 } from "./services/index.js";
+
+// OAuth service
+export {
+  OAuthService,
+  OAuthProvider,
+  AccountRepository,
+  OAuthServiceLive,
+  getAuthUrl,
+  handleOAuthCallback,
+  linkAccount,
+  getLinkedAccount,
+  getLinkedAccounts,
+  findAccountByProvider,
+  unlinkAccount,
+  refreshOAuthTokens,
+  isProviderSupported,
+} from "./services/index.js";
+
+export type {
+  OAuthServiceImpl,
+  OAuthProviderImpl,
+  AccountRepositoryImpl,
+  RawAccountData,
+  OAuthAuthorizationUrl,
+  OAuthCallbackResult,
+  OAuthProviderConfig,
+} from "./services/index.js";
