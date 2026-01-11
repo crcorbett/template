@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+FROM docker/sandbox-templates:claude-code
+
+# Install Bun
+RUN <<EOF
+curl -fsSL https://bun.sh/install | bash
+EOF
+
+# Add Bun to PATH (sandbox runs as 'agent' user)
+ENV PATH="/home/agent/.bun/bin:$PATH"
