@@ -82,3 +82,23 @@ export type {
   BetterAuthClientImpl,
   BetterAuthSessionResult,
 } from "./services/index.js";
+
+// Permissions service
+export {
+  PermissionsService,
+  UserRolesProvider,
+  PermissionsServiceLive,
+  UserRolesLookupError,
+  getUserRoles,
+  hasRole,
+  hasPermission,
+  requireRole,
+  requirePermission,
+  hasAnyRole,
+  hasAllPermissions,
+} from "./services/index.js";
+
+export type {
+  PermissionsServiceImpl,
+  UserRolesProviderImpl,
+} from "./services/index.js";

@@ -27,3 +27,31 @@ export type {
   // Better Auth types
   BetterAuthSessionResult,
 } from "./auth.js";
+
+// =============================================================================
+// Permissions Service
+// =============================================================================
+
+export {
+  // Service tags
+  PermissionsService,
+  UserRolesProvider,
+  // Layers
+  PermissionsServiceLive,
+  // Error types
+  UserRolesLookupError,
+  // Convenience functions
+  getUserRoles,
+  hasRole,
+  hasPermission,
+  requireRole,
+  requirePermission,
+  hasAnyRole,
+  hasAllPermissions,
+} from "./permissions.js";
+
+export type {
+  // Service interfaces
+  PermissionsServiceImpl,
+  UserRolesProviderImpl,
+} from "./permissions.js";
