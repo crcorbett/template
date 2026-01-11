@@ -1,3 +1,14 @@
 # Progress Log
 
 Started: 2026-01-11
+
+## Iteration 1
+- Completed: Create @packages/auth package structure with Effect dependencies
+- Changes:
+  - packages/auth/package.json: deps effect, better-auth, @packages/types, @packages/database
+  - packages/auth/tsconfig.json: extends base config
+  - packages/auth/src/index.ts: re-exports auth types from @packages/types
+  - packages/auth/vitest.config.ts: standard vitest config for Effect testing
+  - bun.lock: updated with new workspace package
+- Updated: prd.json item 1 (category: architectural) → passes: true
+- Notes: Package structure follows existing patterns in packages/core, packages/database. No @effect/schema added separately as Schema is included in effect 3.x.
