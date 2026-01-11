@@ -6,3 +6,23 @@
 	path = .context/fumadocs
 	url = https://github.com/fuma-nama/fumadocs.git
 	ignore = all
+[submodule ".context/effect-better-auth-example"]
+	path = .context/effect-better-auth-example
+	url = https://github.com/kitlangton/effect-better-auth-example
+	ignore = all
+[submodule ".context/better-auth"]
+	path = .context/better-auth
+	url = https://github.com/better-auth/better-auth
+	ignore = all
+[submodule ".context/drizzle-orm"]
+	path = .context/drizzle-orm
+	url = https://github.com/drizzle-team/drizzle-orm
+	ignore = all
+[submodule ".context/effect"]
+	path = .context/effect
+	url = https://github.com/Effect-TS/effect
+	ignore = all
+[submodule ".context/effect-utils"]
+	path = .context/effect-utils
+	url = https://github.com/overengineeringstudio/effect-utils
+	ignore = all
