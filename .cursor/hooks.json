@@ -1,7 +1,4 @@
 {
   "version": 1,
-  "hooks": {
-    "afterFileEdit": [{ "command": "turbo fix > /dev/null 2>&1" }],
-    "stop": [{ "command": "turbo check-types > /dev/null 2>&1" }]
-  }
+  "hooks": {}
 }
