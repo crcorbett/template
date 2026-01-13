@@ -26,3 +26,7 @@
 	path = .context/effect-utils
 	url = https://github.com/overengineeringstudio/effect-utils
 	ignore = all
+[submodule ".context/distilled-aws"]
+	path = .context/distilled-aws
+	url = https://github.com/alchemy-run/distilled-aws.git
+	ignore = all
