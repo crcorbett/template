@@ -1,0 +1,60 @@
+{
+  "name": "@packages/posthog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "import": {
+        "@packages/source": "./src/services/*.ts",
+        "types": "./dist/src/services/*.d.ts",
+        "default": "./dist/src/services/*.js"
+      }
+    },
+    "./Credentials": {
+      "import": {
+        "@packages/source": "./src/credentials.ts",
+        "types": "./dist/src/credentials.d.ts",
+        "default": "./dist/src/credentials.js"
+      }
+    },
+    "./Errors": {
+      "import": {
+        "@packages/source": "./src/errors.ts",
+        "types": "./dist/src/errors.d.ts",
+        "default": "./dist/src/errors.js"
+      }
+    },
+    "./Traits": {
+      "import": {
+        "@packages/source": "./src/traits.ts",
+        "types": "./dist/src/traits.d.ts",
+        "default": "./dist/src/traits.js"
+      }
+    },
+    ".": {
+      "import": {
+        "@packages/source": "./src/index.ts",
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "bun run generate && tsc",
+    "check-types": "tsc --noEmit",
+    "generate": "bun run scripts/generate-clients.ts"
+  },
+  "peerDependencies": {
+    "effect": "^3.16.0",
+    "@effect/platform": "^0.82.0"
+  },
+  "devDependencies": {
+    "@effect/platform": "^0.82.0",
+    "@types/js-yaml": "^4.0.9",
+    "effect": "^3.16.0",
+    "js-yaml": "^4.1.1",
+    "typescript": "catalog:typescript",
+    "yaml": "^2.7.0"
+  }
+}

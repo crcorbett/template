@@ -1,0 +1,176 @@
+/**
+ * Response Parser for PostHog API
+ *
+ * Parses HTTP responses and decodes them using Effect Schema.
+ * Simplified from distilled-aws for REST-JSON only.
+ */
+
+import * as Effect from "effect/Effect";
+import * as S from "effect/Schema";
+
+import type { Operation } from "./operation.js";
+import type { Response } from "./response.js";
+
+import { PostHogError, type PostHogErrorType } from "../errors.js";
+
+/**
+ * Parse the response body as JSON
+ */
+async function parseJsonBody(response: Response): Promise<unknown> {
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+
+  // Combine chunks
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  // Decode as UTF-8 and parse JSON
+  const text = new TextDecoder().decode(combined);
+
+  if (text.trim() === "") {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    // If JSON parsing fails, return the raw text wrapped in an object
+    return { rawText: text };
+  }
+}
+
+export interface ResponseParserOptions {
+  /** Error schemas to try matching against */
+  errorSchemas?: readonly S.Schema.AnyNoContext[];
+}
+
+/**
+ * Create a response parser for a given operation.
+ *
+ * @param operation - The operation (with input/output schemas)
+ * @param options - Optional overrides
+ * @returns A function that parses responses into typed outputs
+ */
+export const makeResponseParser = (
+  operation: Operation,
+  _options?: ResponseParserOptions
+) => {
+  const outputSchema = operation.output;
+  const errorSchemas = _options?.errorSchemas ?? operation.errors ?? [];
+
+  // Return a function that parses responses
+  return (
+    response: Response
+  ): Effect.Effect<S.Schema.Type<typeof outputSchema>, PostHogErrorType> => {
+    return Effect.gen(function* () {
+      // Check for HTTP error status codes
+      if (response.status >= 400) {
+        // Try to parse error body
+        const errorBody = yield* Effect.tryPromise({
+          try: () => parseJsonBody(response),
+          catch: () =>
+            new PostHogError({
+              code: "PARSE_ERROR",
+              message: "Failed to parse error response body",
+            }),
+        });
+
+        // Try to match against known error schemas
+        for (const errorSchema of errorSchemas) {
+          const decoded = yield* S.decodeUnknown(errorSchema)(errorBody).pipe(
+            Effect.option
+          );
+
+          if (decoded._tag === "Some") {
+            // Return the typed error
+            return yield* Effect.fail(
+              new PostHogError({
+                code: String(response.status),
+                message: getErrorMessage(decoded.value),
+                details: decoded.value,
+              })
+            );
+          }
+        }
+
+        // Default error for unrecognized error responses
+        return yield* Effect.fail(
+          new PostHogError({
+            code: String(response.status),
+            message: getErrorMessage(errorBody) || response.statusText,
+            details: errorBody,
+          })
+        );
+      }
+
+      // Success response - parse the body
+      const body = yield* Effect.tryPromise({
+        try: () => parseJsonBody(response),
+        catch: () =>
+          new PostHogError({
+            code: "PARSE_ERROR",
+            message: "Failed to parse response body",
+          }),
+      });
+
+      // Decode the response using the output schema
+      const decoded = yield* S.decodeUnknown(outputSchema)(body).pipe(
+        Effect.mapError(
+          (parseError) =>
+            new PostHogError({
+              code: "PARSE_ERROR",
+              message: `Failed to parse response: ${parseError.message}`,
+              details: { body, parseError: String(parseError) },
+            })
+        )
+      );
+
+      return decoded;
+    });
+  };
+};
+
+/**
+ * Extract error message from various error body formats
+ */
+function getErrorMessage(errorBody: unknown): string {
+  if (errorBody === null || errorBody === undefined) {
+    return "Unknown error";
+  }
+
+  if (typeof errorBody === "string") {
+    return errorBody;
+  }
+
+  if (typeof errorBody === "object") {
+    const obj = errorBody as Record<string, unknown>;
+
+    // Try common error message field names
+    if (typeof obj["message"] === "string") return obj["message"];
+    if (typeof obj["error"] === "string") return obj["error"];
+    if (typeof obj["detail"] === "string") return obj["detail"];
+    if (typeof obj["details"] === "string") return obj["details"];
+    if (typeof obj["error_description"] === "string")
+      return obj["error_description"];
+
+    // Try nested error object
+    if (typeof obj["error"] === "object" && obj["error"] !== null) {
+      const nested = obj["error"] as Record<string, unknown>;
+      if (typeof nested["message"] === "string") return nested["message"];
+    }
+  }
+
+  return "Unknown error";
+}
