@@ -154,6 +154,22 @@
         "typescript": "catalog:typescript",
       },
     },
+    "packages/posthog": {
+      "name": "@packages/posthog",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@effect/platform": "^0.82.0",
+        "@types/js-yaml": "^4.0.9",
+        "effect": "^3.16.0",
+        "js-yaml": "^4.1.1",
+        "typescript": "catalog:typescript",
+        "yaml": "^2.7.0",
+      },
+      "peerDependencies": {
+        "@effect/platform": "^0.82.0",
+        "effect": "^3.16.0",
+      },
+    },
     "packages/types": {
       "name": "@packages/types",
       "version": "0.1.0",
@@ -362,7 +378,7 @@
 
     "@effect/experimental": ["@effect/experimental@0.40.1", "", { "dependencies": { "msgpackr": "^1.10.2", "uuid": "^11.0.3" }, "peerDependencies": { "@effect/platform": "^0.76.1", "@effect/platform-node": "^0.72.1", "effect": "^3.12.12", "ioredis": "^5", "lmdb": "^3", "ws": "^8" }, "optionalPeers": ["@effect/platform-node", "ioredis", "lmdb", "ws"] }, "sha512-RlvPwC5sDKKJfe0SO6fjYnTALXtery5EATU+RDul/myb34Z3kxn7kwUYuxRxvlPzHKOKy8ay4yaaL8VVHSSkQg=="],
 
-    "@effect/platform": ["@effect/platform@0.76.1", "", { "dependencies": { "find-my-way-ts": "^0.1.5", "multipasta": "^0.2.5" }, "peerDependencies": { "effect": "^3.12.12" } }, "sha512-r55Bq+hmuFqOBZ6cgYojWqrQmPM6JEnVZOgX3V4xDi+PfxnW3WEkQEHxb+pl8y36ooCRT/+8QlMuoFwUtz/pag=="],
+    "@effect/platform": ["@effect/platform@0.82.8", "", { "dependencies": { "find-my-way-ts": "^0.1.5", "msgpackr": "^1.11.4", "multipasta": "^0.2.5" }, "peerDependencies": { "effect": "^3.15.4" } }, "sha512-JEnIACWM2CfyKbf31dPzC903iF11SfiAk74Xs43Ez+n1ieQz2Ew2S/99KBbuesIKkDScLtn8PI23EBFMQiL0Ow=="],
 
     "@effect/sql": ["@effect/sql@0.36.0", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.33.0", "uuid": "^11.0.3" }, "peerDependencies": { "@effect/experimental": "^0.47.0", "@effect/platform": "^0.83.0", "effect": "^3.15.5" } }, "sha512-TanKMkPNBw4/uvVM8eOiAjeXpt/zxn02GYCZD8EFDZqOasWcByCjOOg93sLQNLEXWuiGLV+xTSFHEqbV+zBECA=="],
 
@@ -649,6 +665,8 @@
     "@packages/core": ["@packages/core@workspace:packages/core"],
 
     "@packages/database": ["@packages/database@workspace:packages/database"],
+
+    "@packages/posthog": ["@packages/posthog@workspace:packages/posthog"],
 
     "@packages/types": ["@packages/types@workspace:packages/types"],
 
@@ -955,6 +973,8 @@
     "@types/geojson": ["@types/geojson@7946.0.16", "", {}, "sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg=="],
 
     "@types/hast": ["@types/hast@3.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ=="],
+
+    "@types/js-yaml": ["@types/js-yaml@4.0.9", "", {}, "sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg=="],
 
     "@types/mdast": ["@types/mdast@4.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA=="],
 
@@ -2354,6 +2374,8 @@
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 
+    "yaml": ["yaml@2.8.2", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A=="],
+
     "yargs": ["yargs@17.7.2", "", { "dependencies": { "cliui": "^8.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "require-directory": "^2.1.1", "string-width": "^4.2.3", "y18n": "^5.0.5", "yargs-parser": "^21.1.1" } }, "sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w=="],
 
     "yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
@@ -2395,6 +2417,12 @@
     "@dotenvx/dotenvx/execa": ["execa@5.1.1", "", { "dependencies": { "cross-spawn": "^7.0.3", "get-stream": "^6.0.0", "human-signals": "^2.1.0", "is-stream": "^2.0.0", "merge-stream": "^2.0.0", "npm-run-path": "^4.0.1", "onetime": "^5.1.2", "signal-exit": "^3.0.3", "strip-final-newline": "^2.0.0" } }, "sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg=="],
 
     "@ecies/ciphers/@noble/ciphers": ["@noble/ciphers@1.3.0", "", {}, "sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw=="],
+
+    "@effect/experimental/@effect/platform": ["@effect/platform@0.76.1", "", { "dependencies": { "find-my-way-ts": "^0.1.5", "multipasta": "^0.2.5" }, "peerDependencies": { "effect": "^3.12.12" } }, "sha512-r55Bq+hmuFqOBZ6cgYojWqrQmPM6JEnVZOgX3V4xDi+PfxnW3WEkQEHxb+pl8y36ooCRT/+8QlMuoFwUtz/pag=="],
+
+    "@effect/sql/@effect/platform": ["@effect/platform@0.76.1", "", { "dependencies": { "find-my-way-ts": "^0.1.5", "multipasta": "^0.2.5" }, "peerDependencies": { "effect": "^3.12.12" } }, "sha512-r55Bq+hmuFqOBZ6cgYojWqrQmPM6JEnVZOgX3V4xDi+PfxnW3WEkQEHxb+pl8y36ooCRT/+8QlMuoFwUtz/pag=="],
+
+    "@effect/sql-pg/@effect/platform": ["@effect/platform@0.76.1", "", { "dependencies": { "find-my-way-ts": "^0.1.5", "multipasta": "^0.2.5" }, "peerDependencies": { "effect": "^3.12.12" } }, "sha512-r55Bq+hmuFqOBZ6cgYojWqrQmPM6JEnVZOgX3V4xDi+PfxnW3WEkQEHxb+pl8y36ooCRT/+8QlMuoFwUtz/pag=="],
 
     "@esbuild-kit/core-utils/esbuild": ["esbuild@0.18.20", "", { "optionalDependencies": { "@esbuild/android-arm": "0.18.20", "@esbuild/android-arm64": "0.18.20", "@esbuild/android-x64": "0.18.20", "@esbuild/darwin-arm64": "0.18.20", "@esbuild/darwin-x64": "0.18.20", "@esbuild/freebsd-arm64": "0.18.20", "@esbuild/freebsd-x64": "0.18.20", "@esbuild/linux-arm": "0.18.20", "@esbuild/linux-arm64": "0.18.20", "@esbuild/linux-ia32": "0.18.20", "@esbuild/linux-loong64": "0.18.20", "@esbuild/linux-mips64el": "0.18.20", "@esbuild/linux-ppc64": "0.18.20", "@esbuild/linux-riscv64": "0.18.20", "@esbuild/linux-s390x": "0.18.20", "@esbuild/linux-x64": "0.18.20", "@esbuild/netbsd-x64": "0.18.20", "@esbuild/openbsd-x64": "0.18.20", "@esbuild/sunos-x64": "0.18.20", "@esbuild/win32-arm64": "0.18.20", "@esbuild/win32-ia32": "0.18.20", "@esbuild/win32-x64": "0.18.20" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA=="],
 
