@@ -76,3 +76,6 @@ tmp
 # Context
 .context/
 .chief/
+
+# OpenAPI schemas (may have syntax issues)
+schema.yaml
