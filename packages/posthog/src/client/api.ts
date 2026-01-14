@@ -57,9 +57,11 @@ export const execute = <Op extends Operation>(
       })
     );
 
-    // Add body if present
     if (request.body !== undefined && typeof request.body === "string") {
-      httpRequest = httpRequest.pipe(HttpClientRequest.bodyText(request.body));
+      // bodyText() defaults to text/plain, must specify application/json
+      httpRequest = httpRequest.pipe(
+        HttpClientRequest.bodyText(request.body, "application/json")
+      );
     }
 
     // Execute the request

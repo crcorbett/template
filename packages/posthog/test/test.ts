@@ -13,10 +13,39 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
 import * as Scope from "effect/Scope";
+import * as net from "node:net";
 
 import { Credentials } from "../src/credentials.js";
 import { Endpoint } from "../src/endpoint.js";
 import * as Retry from "../src/retry.js";
+
+/**
+ * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
+ *
+ * PROBLEM:
+ * Node.js 20+ enables `autoSelectFamily` by default, which attempts to connect
+ * via both IPv4 and IPv6 in parallel. However, the implementation is broken:
+ * it cancels the first connection attempt after 250ms instead of racing them.
+ *
+ * When a machine has IPv6 DNS resolution but no actual IPv6 connectivity
+ * (common with VPNs like Tailscale, macOS system tunnels, or ISPs without IPv6),
+ * Node.js tries IPv4 first, cancels it after 250ms, then fails immediately on
+ * IPv6 with ENETUNREACH - causing an ETIMEDOUT AggregateError.
+ *
+ * AFFECTED:
+ * - PostHog API (us.posthog.com) - hosted on AWS with both A and AAAA records
+ * - Any dual-stack host when the client lacks IPv6 connectivity
+ * - macOS with Tailscale, iCloud Private Relay, or other tunnel interfaces
+ *
+ * REFERENCES:
+ * - https://github.com/nodejs/node/issues/54359
+ * - https://r1ch.net/blog/node-v20-aggregateeerror-etimedout-happy-eyeballs
+ *
+ * ALTERNATIVES:
+ * - CLI: node --no-network-family-autoselection
+ * - CLI: NODE_OPTIONS='--no-network-family-autoselection' bun run test
+ */
+net.setDefaultAutoSelectFamily(false);
 
 type Provided =
   | Scope.Scope
@@ -58,19 +87,17 @@ export function test(
       return provideTestEnv(
         Effect.gen(function* () {
           const fs = yield* FileSystem.FileSystem;
-          if (yield* fs.exists("../../.env")) {
-            const configProvider = ConfigProvider.orElse(
-              yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-              ConfigProvider.fromEnv
-            );
-            return yield* effect.pipe(
-              Effect.withConfigProvider(configProvider)
-            );
-          } else {
-            return yield* effect.pipe(
-              Effect.withConfigProvider(ConfigProvider.fromEnv())
-            );
-          }
+          const configProvider = (yield* fs.exists("../../.env"))
+            ? ConfigProvider.orElse(
+                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
+                ConfigProvider.fromEnv
+              )
+            : ConfigProvider.fromEnv();
+
+          return yield* effect.pipe(
+            Effect.provide(Credentials.fromEnv()),
+            Effect.withConfigProvider(configProvider)
+          );
         })
       );
     },
@@ -89,7 +116,26 @@ test.skip = function (
 export async function run<E>(
   effect: Effect.Effect<void, E, Provided>
 ): Promise<void> {
-  await Effect.runPromise(provideTestEnv(Effect.scoped(effect)));
+  await Effect.runPromise(
+    provideTestEnv(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          const configProvider = (yield* fs.exists("../../.env"))
+            ? ConfigProvider.orElse(
+                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
+                ConfigProvider.fromEnv
+              )
+            : ConfigProvider.fromEnv();
+
+          return yield* effect.pipe(
+            Effect.provide(Credentials.fromEnv()),
+            Effect.withConfigProvider(configProvider)
+          );
+        })
+      )
+    )
+  );
 }
 
 export const beforeAll = (
@@ -131,7 +177,6 @@ function provideTestEnv<A, E, R extends Provided>(
 ) {
   return effect.pipe(
     Effect.provide(platform),
-    Effect.provide(Credentials.fromEnv()),
     Effect.provideService(Endpoint, "https://us.posthog.com"),
     Logger.withMinimumLogLevel(
       process.env.DEBUG ? LogLevel.Debug : LogLevel.Info
