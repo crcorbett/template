@@ -1,11 +1,14 @@
-import { FetchHttpClient, HttpClient } from "@effect/platform";
+import { FetchHttpClient, FileSystem, HttpClient } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
+import * as Path from "@effect/platform/Path";
+import * as PlatformConfigProvider from "@effect/platform/PlatformConfigProvider";
 import {
   afterAll as _afterAll,
   beforeAll as _beforeAll,
   it,
   type TestContext,
 } from "@effect/vitest";
-import { LogLevel } from "effect";
+import { ConfigProvider, LogLevel } from "effect";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
@@ -13,10 +16,21 @@ import * as Scope from "effect/Scope";
 
 import { Credentials } from "../src/credentials.js";
 import { Endpoint } from "../src/endpoint.js";
+import * as Retry from "../src/retry.js";
 
-type Provided = Scope.Scope | HttpClient.HttpClient | Credentials | Endpoint;
+type Provided =
+  | Scope.Scope
+  | HttpClient.HttpClient
+  | FileSystem.FileSystem
+  | Path.Path
+  | Credentials
+  | Endpoint;
 
-const platform = Layer.mergeAll(FetchHttpClient.layer, Logger.pretty);
+const platform = Layer.mergeAll(
+  NodeContext.layer,
+  FetchHttpClient.layer,
+  Logger.pretty
+);
 
 type TestCase =
   | Effect.Effect<void, unknown, Provided>
@@ -41,7 +55,24 @@ export function test(
     name,
     (ctx) => {
       const effect = typeof testCase === "function" ? testCase(ctx) : testCase;
-      return provideTestEnv(effect);
+      return provideTestEnv(
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          if (yield* fs.exists("../../.env")) {
+            const configProvider = ConfigProvider.orElse(
+              yield* PlatformConfigProvider.fromDotEnv("../../.env"),
+              ConfigProvider.fromEnv
+            );
+            return yield* effect.pipe(
+              Effect.withConfigProvider(configProvider)
+            );
+          } else {
+            return yield* effect.pipe(
+              Effect.withConfigProvider(ConfigProvider.fromEnv())
+            );
+          }
+        })
+      );
     },
     options.timeout ?? 30_000
   );
@@ -77,12 +108,11 @@ function provideTestEnv<A, E, R extends Provided>(
   return effect.pipe(
     Effect.provide(platform),
     Effect.provide(Credentials.fromEnv()),
-    Effect.provideService(
-      Endpoint,
-      process.env.POSTHOG_ENDPOINT ?? "https://us.posthog.com"
-    ),
+    Effect.provideService(Endpoint, "https://us.posthog.com"),
     Logger.withMinimumLogLevel(
       process.env.DEBUG ? LogLevel.Debug : LogLevel.Info
-    )
+    ),
+    Effect.provide(NodeContext.layer),
+    Retry.transient
   );
 }

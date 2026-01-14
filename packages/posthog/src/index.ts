@@ -20,6 +20,9 @@ export {
   ValidationError,
 } from "./errors.js";
 
+// Retry policies
+export * as Retry from "./retry.js";
+
 // Trait annotations (for generated services)
 export * as Traits from "./traits.js";
 
