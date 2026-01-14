@@ -102,6 +102,30 @@ export const afterAll = (
   timeout?: number
 ) => _afterAll(() => run(effect), timeout ?? 30_000);
 
+export const expectSnapshot = (
+  ctx: TestContext,
+  value: unknown,
+  filename?: string
+): Effect.Effect<void> => {
+  const sanitize = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+
+  const suite = ctx.task.suite?.name ? sanitize(ctx.task.suite.name) : null;
+  const testName = sanitize(ctx.task.name);
+
+  const path =
+    filename ?? (suite ? `${suite}/${testName}.json` : `${testName}.json`);
+
+  return Effect.promise(() =>
+    ctx
+      .expect(JSON.stringify(value, null, 2))
+      .toMatchFileSnapshot(`__snapshots__/${path}`)
+  );
+};
+
 function provideTestEnv<A, E, R extends Provided>(
   effect: Effect.Effect<A, E, R>
 ) {
