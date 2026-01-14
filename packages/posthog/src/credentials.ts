@@ -4,6 +4,7 @@
  * Provides API key authentication for PostHog API.
  */
 
+import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -31,13 +32,12 @@ export class Credentials extends Context.Tag("@posthog/Credentials")<
     return Layer.effect(
       Credentials,
       Effect.gen(function* () {
-        const apiKey = process.env["POSTHOG_API_KEY"];
-        if (!apiKey) {
-          return yield* Effect.fail(
-            new Error("POSTHOG_API_KEY environment variable is not set")
-          );
-        }
-        return { apiKey: Redacted.make(apiKey) };
+        const apiKey = yield* Config.redacted("POSTHOG_API_KEY").pipe(
+          Effect.mapError(
+            () => new Error("POSTHOG_API_KEY environment variable is not set")
+          )
+        );
+        return { apiKey };
       })
     );
   }

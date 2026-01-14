@@ -32,6 +32,13 @@
         "default": "./dist/src/traits.js"
       }
     },
+    "./Retry": {
+      "import": {
+        "@packages/source": "./src/retry.ts",
+        "types": "./dist/src/retry.d.ts",
+        "default": "./dist/src/retry.js"
+      }
+    },
     ".": {
       "import": {
         "@packages/source": "./src/index.ts",
@@ -53,7 +60,7 @@
   },
   "devDependencies": {
     "@effect/platform": "^0.82.0",
-
+    "@effect/platform-node": "0.74.0",
     "@effect/vitest": "^0.18.0",
     "@types/js-yaml": "^4.0.9",
     "@vitest/coverage-v8": "^3.0.0",
