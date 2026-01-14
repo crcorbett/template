@@ -52,6 +52,7 @@
     "check-types": "tsc --noEmit",
     "generate": "bun run scripts/generate-clients.ts",
     "test": "vitest run",
+    "test:integration": "bun test/integration.ts",
     "test:watch": "vitest"
   },
   "peerDependencies": {

@@ -64,7 +64,7 @@ describe("PostHog Me Service", () => {
   });
 
   describe("integration tests", () => {
-    test.skip("should fetch current user", () =>
+    test("should fetch current user", () =>
       Effect.gen(function* () {
         const result = yield* getMe({});
 
@@ -79,7 +79,7 @@ describe("PostHog Me Service", () => {
         expect(result.distinct_id).toBeDefined();
       }));
 
-    test.skip("should return organization info if available", () =>
+    test("should return organization info if available", () =>
       Effect.gen(function* () {
         const result = yield* getMe({});
 
@@ -89,7 +89,7 @@ describe("PostHog Me Service", () => {
         }
       }));
 
-    test.skip("should return notification settings if available", () =>
+    test("should return notification settings if available", () =>
       Effect.gen(function* () {
         const result = yield* getMe({});
 
