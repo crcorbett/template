@@ -481,7 +481,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/traits.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Removed all 12 type assertions and 7 non-null assertions. Created getProps() helper using _tag discriminant narrowing (no cast needed), firstProp() helper with undefined guard. Replaced as T.HttpTrait/PostHogServiceTrait with typed getHttpTrait()/getPostHogService() helpers. Replaced as unknown as Date with unknown widening + instanceof guard. Replaced as unknown as S.Schema.Any double-cast with structurally-typed mock (self-referencing Annotatable + Record<symbol, unknown>). Zero as casts, zero ! assertions in file. 0 type errors, 41/41 traits tests passing, 224/224 total tests passing."
     },
     {
       "id": "P1-013",

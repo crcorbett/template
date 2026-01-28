@@ -695,3 +695,58 @@ Another approach would be to change the response parser to return `Effect.Effect
 ### Recommendation for P1-012 and P1-013
 
 The same discriminant narrowing pattern should be applied to `traits.test.ts`, `request-builder.test.ts`, and `credentials.test.ts` for their respective type assertions.
+
+## 16. P1-012 Research: Type Assertion Elimination in traits.test.ts
+
+### AST.TypeLiteral Narrowing via _tag Discriminant
+
+The `SchemaAST.AST` type is a discriminated union with `_tag` as the discriminant. Instead of `(struct.ast as AST.TypeLiteral).propertySignatures`, we can use control flow narrowing:
+
+```typescript
+const ast = schema.ast;
+if (ast._tag !== "TypeLiteral") throw new Error("Expected TypeLiteral");
+// TypeScript narrows ast to AST.TypeLiteral here
+return ast.propertySignatures;
+```
+
+This completely eliminates the need for `as AST.TypeLiteral` casts. Created `getProps()` and `firstProp()` helpers that combine the AST narrowing and array access guard into reusable functions.
+
+### Non-Null Assertion Elimination for Array Access
+
+Instead of `props[0]!`, use an explicit undefined guard:
+
+```typescript
+const prop = props[0];
+if (prop === undefined) throw new Error("Expected at least one property");
+// TypeScript narrows prop to AST.PropertySignature
+```
+
+### Structurally-Typed Mock for Annotatable
+
+The `JsonName` fallback test required `as unknown as S.Schema.Any` because the mock didn't satisfy the `Annotatable` constraint. Since `Annotatable` is not exported, the mock must structurally satisfy it:
+
+```typescript
+const notSchema: {
+  annotations(a: unknown): typeof notSchema;
+} & Record<symbol, unknown> = {
+  annotations(a) {
+    if (typeof a === "object" && a !== null) {
+      Object.assign(notSchema, a); // copies symbol keys
+    }
+    return notSchema;
+  },
+};
+```
+
+Key insight: `Object.assign` copies symbol-keyed properties, so when `JsonName` calls `schema.annotations({ [jsonNameSymbol]: name })`, the symbol is copied onto the mock. The `Record<symbol, unknown>` intersection type provides symbol indexing for the assertion.
+
+### TimestampFormat Type Erasure Workaround
+
+`TimestampFormat("epoch-seconds")` returns `A` (the same generic as input), so `S.Number.pipe(TimestampFormat(...))` is typed as `Schema<number>` even though it decodes to `Date` at runtime. To use `instanceof Date` without a cast, widen the result to `unknown`:
+
+```typescript
+const decoded: unknown = S.decodeUnknownSync(schema)(1700000000);
+if (decoded instanceof Date) { ... }
+```
+
+Widening to `unknown` is always safe (no information is fabricated) and enables TypeScript's type guards.

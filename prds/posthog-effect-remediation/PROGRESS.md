@@ -414,3 +414,30 @@
 - Zero `as` casts remaining in file (verified with grep)
 
 ---
+
+#### P1-012: Remove type assertions from traits.test.ts
+
+**Status:** Completed
+
+**Summary:** Eliminated all 12 type assertions (`as`) and 7 non-null assertions (`!`) from `test/traits.test.ts` using discriminant narrowing, typed helpers, and structural typing.
+
+**Changes:**
+- Created `getProps(schema)` helper that narrows `AST.AST` to `AST.TypeLiteral` via `_tag` discriminant check, returning `propertySignatures` — replaces 7 `as AST.TypeLiteral` casts
+- Created `firstProp(schema)` helper that combines `getProps` with an undefined guard on `[0]` — replaces 7 `props[0]!` non-null assertions
+- Replaced `as T.HttpTrait` with `T.getHttpTrait(schema.ast)` which returns typed `HttpTrait | undefined`
+- Replaced `as T.PostHogServiceTrait` with `T.getPostHogService(schema.ast)` which returns typed `PostHogServiceTrait | undefined`
+- Replaced `as unknown as S.Schema.Any` double-cast with a structurally-typed mock using `{ annotations(a: unknown): typeof notSchema } & Record<symbol, unknown>` — `Object.assign` copies symbol-keyed properties from the annotation argument
+- Replaced `as unknown as Record<symbol, unknown>` with direct symbol indexing via `Record<symbol, unknown>` intersection type
+- Replaced `as unknown as Date` with `const decoded: unknown` widening + `instanceof Date` guard (safe widening, not a cast)
+
+**Files changed:**
+- `test/traits.test.ts` -- Removed all 12 type assertions and 7 non-null assertions
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/traits.test.ts` -- 41/41 tests passing
+- `bun run test` -- 224/224 tests passing
+- Zero `as` casts in file (verified with grep, only `import * as` namespace imports found)
+- Zero `!` non-null assertions in file
+
+---
