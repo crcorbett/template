@@ -26,3 +26,12 @@
 - AnnotationAttrs: id (number, stable), content, dateMarker, scope, createdAt
 - Updated `src/posthog/annotations/index.ts` barrel export
 - `bun tsc -b` passes with no type errors
+
+## ANN-002: Implement Annotation provider with CRUD lifecycle
+- Created `src/posthog/annotations/annotation.provider.ts` with full CRUD lifecycle
+- Maps camelCase props to snake_case API params (dateMarker -> date_marker, creationType -> creation_type, dashboardItem -> dashboard_item)
+- Diff always returns undefined (no replacement triggers)
+- Delete uses hard HTTP DELETE via `deleteAnnotation`
+- Updated `annotations/index.ts` barrel and `posthog/index.ts` with Annotations namespace + `annotationProvider()` in `resources()`
+- Added `@packages/posthog/annotations` alias to `vitest.config.ts`
+- `bun tsc -b` passes with no type errors

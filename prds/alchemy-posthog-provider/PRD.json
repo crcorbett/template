@@ -589,8 +589,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created annotation.provider.ts following Action provider pattern. Imports from @packages/posthog/annotations. Maps camelCase props to snake_case API params (dateMarker -> date_marker, creationType -> creation_type, dashboardItem -> dashboard_item). Diff always returns undefined (no replacement triggers). Delete uses hard HTTP DELETE (deleteAnnotation). Updated annotations/index.ts barrel and posthog/index.ts with Annotations namespace export and annotationProvider() in resources(). Added @packages/posthog/annotations alias to vitest.config.ts. bun tsc -b passes."
     },
     {
       "id": "ANN-003",
