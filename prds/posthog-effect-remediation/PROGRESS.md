@@ -329,3 +329,34 @@
 - `bun run test test/persons.test.ts` -- 5/5 tests passing
 
 ---
+
+#### P1-009: Convert parseJsonBody from async/await to Effect
+
+**Status:** Completed
+
+**Summary:** Converted `parseJsonBody` from an `async function` with `while(true)` loop and `try/catch` to a pure Effect implementation using Effect primitives.
+
+**Changes:**
+- Replaced `async function parseJsonBody` with an Effect-returning function
+- Replaced the imperative `while(true) { await reader.read() }` loop with `Stream.fromReadableStream()` for idiomatic stream consumption
+- Replaced `try { JSON.parse(text) } catch { ... }` with `Effect.try({ try: ..., catch: ... }).pipe(Effect.orElseSucceed(...))`
+- Replaced mutable `let offset` accumulator with `Arr.reduce()` for chunk combining
+- Updated callers in `makeResponseParser` to use the Effect directly instead of wrapping with `Effect.tryPromise`
+- Added imports for `Arr` (effect/Array), `Chunk` (effect/Chunk), and `Stream` (effect/Stream)
+
+**Technical Details:**
+- `Stream.fromReadableStream(() => response.body, errorMapper)` handles the ReadableStream with proper error typing
+- `Chunk.toReadonlyArray()` converts the collected stream chunks for processing
+- `Arr.reduce()` used twice: once to calculate total length, once to copy chunks into combined buffer
+- JSON parse failure gracefully falls back to `{ rawText: text }` using `Effect.orElseSucceed()`
+- Error responses now use `Effect.catchAll(() => Effect.succeed(...))` instead of `Effect.tryPromise` wrapper
+
+**Files changed:**
+- `src/client/response-parser.ts` -- Complete rewrite of parseJsonBody function
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/client/response-parser.test.ts` -- 26/26 tests passing
+- `bun run test` -- 224/224 tests passing
+
+---

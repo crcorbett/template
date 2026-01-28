@@ -410,7 +410,9 @@
         "npx tsc --noEmit",
         "bun run test test/client/response-parser.test.ts",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Converted parseJsonBody from async/await to pure Effect. Used Stream.fromReadableStream for ReadableStream consumption, Chunk.toReadonlyArray + Arr.reduce for chunk combining (eliminating mutable offset variable), and Effect.try + Effect.orElseSucceed for JSON parsing fallback. Updated makeResponseParser to call parseJsonBody directly as an Effect. 0 type errors, 26/26 response-parser tests passing, 224/224 total tests passing."
     },
     {
       "id": "P1-010",
