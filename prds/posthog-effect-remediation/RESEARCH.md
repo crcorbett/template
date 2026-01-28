@@ -919,16 +919,34 @@ Similarly for `feature_flags_destroy`, `actions_destroy`, `cohorts_destroy`, `in
 
 ### Root Cause
 
-These 5 services were likely implemented before the SDK supported true DELETE operations. The soft-delete approach calls PATCH with `{deleted: true}`, which is a PostHog-specific convention (PostHog does support soft-delete via the `deleted` flag), but the standard REST API also supports HTTP DELETE.
+~~These 5 services were likely implemented before the SDK supported true DELETE operations.~~ **CORRECTED (2026-01-28):** The soft-delete approach is **intentional and correct**. See §19.1 below.
 
-### Fix Pattern
+### ~~Fix Pattern~~ BLOCKED — No Fix Needed
 
-Each of the 5 files needs:
-1. Add `T.Http({method: 'DELETE', uri: '/api/projects/{project_id}/{resource}/{id}/'})` to `DeleteXRequest`
-2. Add `T.HttpLabel()` on `project_id` and `id` fields
-3. Add a `VoidResponse = S.Struct({})` schema for the 204 response
-4. Create a proper `deleteXOperation` with the VoidResponse output
-5. Replace the soft-delete export with `makeClient(deleteXOperation)`
+~~Each of the 5 files needs:~~
+~~1. Add `T.Http({method: 'DELETE', uri: '/api/projects/{project_id}/{resource}/{id}/'})` to `DeleteXRequest`~~
+~~2. Add `T.HttpLabel()` on `project_id` and `id` fields~~
+~~3. Add a `VoidResponse = S.Struct({})` schema for the 204 response~~
+~~4. Create a proper `deleteXOperation` with the VoidResponse output~~
+~~5. Replace the soft-delete export with `makeClient(deleteXOperation)`~~
+
+### 19.1 Empirical Verification (2026-01-28): DELETE Returns 405
+
+**Finding:** The PostHog Cloud API (us.posthog.com) returns **405 Method Not Allowed** for HTTP DELETE on all 5 resource types, despite the OpenAPI spec documenting `delete` operations.
+
+Tested endpoints:
+- `DELETE /api/environments/{project_id}/dashboards/{id}/` → **405**
+- `DELETE /api/projects/{project_id}/dashboards/{id}/` → **405**
+- `DELETE /api/projects/{project_id}/feature_flags/{id}/` → **405**
+- `DELETE /api/projects/{project_id}/actions/{id}/` → **405**
+- `DELETE /api/projects/{project_id}/cohorts/{id}/` → **405**
+- `DELETE /api/projects/{project_id}/insights/{id}/` → **405**
+
+The `Allow` response header includes DELETE in the allowed methods list, yet the server responds with 405. This is likely a Django REST Framework quirk where the `destroy` action is defined in the viewset but disabled or overridden to return 405.
+
+The 3 services that DO support true HTTP DELETE (experiments, surveys, annotations) continue to work correctly.
+
+**Conclusion:** The soft-delete pattern (`PATCH` with `{deleted: true}`) is the only working delete mechanism for dashboards, feature-flags, actions, cohorts, and insights. The current implementation is correct. Task P4-003 is marked as passed with no code changes.
 
 ---
 

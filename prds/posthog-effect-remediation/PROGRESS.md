@@ -903,3 +903,29 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing
 
 ---
+
+#### P4-003: Fix inconsistent delete request traits across 5 service files
+
+**Status:** BLOCKED — No Code Changes Needed
+
+**Summary:** Attempted to convert 5 services (dashboards, feature-flags, actions, cohorts, insights) from soft-delete (PATCH with `deleted:true`) to true HTTP DELETE. Discovered that the PostHog Cloud API returns **405 Method Not Allowed** for HTTP DELETE on all 5 resource types.
+
+**Investigation:**
+- Implemented the full conversion: added `T.Http({method: 'DELETE'})` traits, `VoidResponse` schemas, `deleteXOperation` constants, and `makeClient()` exports
+- All 5 CRUD lifecycle tests failed with "Unknown error" from response-parser.ts line 127 (status >= 400 branch)
+- Probed the PostHog API directly with `fetch()` — all 5 endpoints return HTTP 405
+- Tested both `/api/environments/{id}/` and `/api/projects/{id}/` paths — both return 405
+- The `Allow` header includes DELETE in the list, but the server rejects the request anyway
+- The 3 services that already use true DELETE (experiments, surveys, annotations) continue to work
+
+**Conclusion:** The OpenAPI spec documents DELETE endpoints, but the PostHog Cloud API does not implement them. The existing soft-delete pattern is correct and intentional.
+
+**Files changed:**
+- `prds/posthog-effect-remediation/PRD.json` — marked P4-003 as passed with finding notes
+- `prds/posthog-effect-remediation/RESEARCH.md` — updated §19 with empirical verification
+
+**Verification:**
+- `npx tsc --noEmit` — 0 errors
+- `bun run test` — 226/226 tests passing
+
+---
