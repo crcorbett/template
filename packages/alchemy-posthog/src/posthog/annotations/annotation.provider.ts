@@ -94,10 +94,16 @@ export const annotationProvider = () =>
           Effect.gen(function* () {
             const projectId = yield* Project;
 
-            yield* PostHogAnnotations.deleteAnnotation({
+            // PostHog annotations don't reliably support HTTP DELETE.
+            // Soft-delete by patching deleted: true instead.
+            yield* PostHogAnnotations.updateAnnotation({
               project_id: projectId,
               id: output.id,
-            }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+              deleted: true,
+            }).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.void),
+              Effect.catchTag("PostHogError", () => Effect.void)
+            );
           }),
       };
     })

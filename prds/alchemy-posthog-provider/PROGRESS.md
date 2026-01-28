@@ -35,3 +35,11 @@
 - Updated `annotations/index.ts` barrel and `posthog/index.ts` with Annotations namespace + `annotationProvider()` in `resources()`
 - Added `@packages/posthog/annotations` alias to `vitest.config.ts`
 - `bun tsc -b` passes with no type errors
+
+## ANN-003: Implement Annotation provider integration tests
+- Created `test/posthog/annotations/annotation.provider.test.ts` with create/update/delete lifecycle test
+- DISCOVERY: PostHog annotations do NOT reliably support HTTP DELETE (returns PostHogError)
+- Fixed `annotation.provider.ts` to use soft delete via `updateAnnotation({ deleted: true })` instead of `deleteAnnotation()`
+- `assertAnnotationDeleted` checks for `deleted: true` field, `NotFoundError`, or `PostHogError` 404 with retry/backoff
+- `bun tsc -b` passes
+- `bun vitest run test/posthog/annotations/annotation.provider.test.ts` passes (1 test, ~2.5s)

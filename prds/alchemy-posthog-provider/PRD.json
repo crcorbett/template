@@ -610,8 +610,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/annotations/annotation.provider.test.ts passes"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created annotation.provider.test.ts with create/update/delete lifecycle test. IMPORTANT DISCOVERY: PostHog annotations do NOT reliably support HTTP DELETE (returns PostHogError). Fixed annotation.provider.ts to use soft delete via updateAnnotation({deleted: true}) instead of deleteAnnotation(). assertAnnotationDeleted checks for deleted:true field, NotFoundError, or PostHogError 404 with retry/backoff. Test passes against real PostHog API."
     },
     {
       "id": "INS-001",
