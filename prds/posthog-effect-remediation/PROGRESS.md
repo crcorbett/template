@@ -390,3 +390,27 @@
 - `bun run test` -- 224/224 tests passing
 
 ---
+
+#### P1-011: Remove type assertions from response-parser.test.ts
+
+**Status:** Completed
+
+**Summary:** Replaced all 26 `(error as PostHogError)` type assertions with a typed `assertPostHogError` helper function that uses `_tag` discriminant narrowing — zero `as` casts in the file.
+
+**Approach:**
+- Created `assertPostHogError(error: PostHogErrorType): PostHogError` helper at top of file
+- Helper uses `expect(error._tag).toBe("PostHogError")` for test assertion
+- Uses TypeScript's discriminated union narrowing (`if (error._tag !== "PostHogError") throw`) to return properly typed `PostHogError`
+- Imported `PostHogErrorType` from errors.ts to type the helper parameter
+- Replaced all 26 `(error as PostHogError)` casts with the narrowed `error` variable
+- Removed 12 redundant `expect(error).toBeInstanceOf(PostHogError)` calls since the helper already asserts the tag
+
+**Files changed:**
+- `test/client/response-parser.test.ts` -- Replaced 26 type assertions with discriminant-based narrowing
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/client/response-parser.test.ts` -- 26/26 tests passing
+- Zero `as` casts remaining in file (verified with grep)
+
+---

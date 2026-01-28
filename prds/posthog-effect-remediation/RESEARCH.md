@@ -669,3 +669,29 @@ Person properties are completely dynamic — they can contain any user-defined a
 - **Actions tags**: Changed from `S.Array(S.Unknown)` to `S.Array(S.String)` (confirmed from other services)
 - **ActionStep.properties**: Changed to `S.Array(ActionStepProperty)` to reuse existing typed schema
 - **Record values**: Kept as `S.Unknown` for all dynamic key-value stores (event properties, person properties, element attributes) since values are truly polymorphic
+
+---
+
+## 15. P1-011 Research: Type Assertion Elimination in Tests
+
+### Discriminant Narrowing Pattern for TaggedError
+
+When Effect functions return a union error type (`PostHogErrorType = PostHogError | UnknownPostHogError | ...`), using `as` casts to narrow is unsafe. The correct pattern is discriminant narrowing via `_tag`:
+
+```typescript
+const assertPostHogError = (error: PostHogErrorType): PostHogError => {
+  expect(error._tag).toBe("PostHogError");
+  if (error._tag !== "PostHogError") throw new Error("Expected PostHogError");
+  return error; // TypeScript narrows to PostHogError here
+};
+```
+
+This leverages TypeScript's discriminated union narrowing — after the `_tag` check, the type is automatically narrowed to `PostHogError` without any cast.
+
+### Alternative: Effect.flip Type Narrowing
+
+Another approach would be to change the response parser to return `Effect.Effect<T, PostHogError>` (specific error type) instead of `Effect.Effect<T, PostHogErrorType>` (union). However, this would lose the ability to later add typed error matching for specific HTTP status codes (e.g., returning `NotFoundError` for 404s), so the union approach is preferred.
+
+### Recommendation for P1-012 and P1-013
+
+The same discriminant narrowing pattern should be applied to `traits.test.ts`, `request-builder.test.ts`, and `credentials.test.ts` for their respective type assertions.

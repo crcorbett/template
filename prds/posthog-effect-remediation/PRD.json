@@ -458,7 +458,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/client/response-parser.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created assertPostHogError helper using _tag discriminant narrowing (zero type assertions). Replaced 26 instances of (error as PostHogError) across all test blocks. Also removed 12 redundant expect(error).toBeInstanceOf(PostHogError) checks since the helper performs _tag assertion. Imported PostHogErrorType for the helper parameter type. 0 type errors, 26/26 tests passing, zero as casts in file."
     },
     {
       "id": "P1-012",
