@@ -253,8 +253,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created dashboard.provider.ts following FeatureFlag provider pattern. Imports from @packages/posthog/dashboards. Maps camelCase props to snake_case API params (restrictionLevel -> restriction_level). Diff always returns undefined (no replacement triggers). Delete uses PostHog's soft delete (deleteDashboard patches deleted:true). Updated dashboards/index.ts barrel and posthog/index.ts to export Dashboards namespace and include dashboardProvider() in resources(). bun tsc -b passes."
     },
     {
       "id": "DASH-003",

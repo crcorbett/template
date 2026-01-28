@@ -90,6 +90,22 @@
   - Updated `dashboards/index.ts` barrel to export all from `dashboard.js`
   - `bun tsc -b` passes with no errors
 
+### DASH-002 - Implement Dashboard provider with CRUD lifecycle
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/dashboards/dashboard.provider.ts` with:
+  - `dashboardProvider()` function using `Dashboard.provider.effect(Effect.gen(...))`
+  - `stables: ['id']` - only id is stable (no replacement triggers)
+  - `diff` always returns undefined (all changes are updates)
+  - `read` with output.id check and NotFoundError handling
+  - `create` mapping props to API params (restrictionLevel -> restriction_level)
+  - `update` with session.note() for progress reporting
+  - `delete` using PostHog's soft delete (deleteDashboard patches deleted:true)
+  - Helper `mapResponseToAttrs()` for API response mapping
+  - Updated `dashboards/index.ts` to export provider
+  - Updated `posthog/index.ts` with Dashboards namespace export and added `dashboardProvider()` to `resources()`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -98,7 +114,7 @@
 |----------|-------|-----------|-------------|---------|
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
-| Dashboard | 3 | 1 | 0 | 2 |
+| Dashboard | 3 | 2 | 0 | 1 |
 | Experiment | 3 | 0 | 0 | 3 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
@@ -106,4 +122,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **7** | **0** | **22** |
+| **Total** | **29** | **8** | **0** | **21** |
