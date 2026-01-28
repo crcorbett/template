@@ -1018,8 +1018,8 @@
         "npx tsc --noEmit",
         "bun run test test/feature-flags.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Replaced S.Record({ key: S.String, value: S.Unknown }) with FeatureFlagFilters in both CreateFeatureFlagRequest and UpdateFeatureFlagRequest. The FeatureFlagFilters schema (defined at lines 50-58) provides typed validation for groups, multivariate, payloads, aggregation_group_type_index, and super_groups fields instead of any-object pass-through. 0 type errors, 7/7 feature-flags tests passing."
     },
     {
       "id": "P4-005",

@@ -929,3 +929,23 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing
 
 ---
+
+### P4-004: Use FeatureFlagFilters schema in create/update request filters field
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+**Summary:** Replaced generic `S.Record({ key: S.String, value: S.Unknown })` with the already-defined `FeatureFlagFilters` schema in both `CreateFeatureFlagRequest` and `UpdateFeatureFlagRequest`. This provides typed validation for groups, multivariate, payloads, aggregation_group_type_index, and super_groups fields instead of any-object pass-through.
+
+**Changes:**
+- `CreateFeatureFlagRequest.filters`: `S.optional(S.Record({ key: S.String, value: S.Unknown }))` → `S.optional(FeatureFlagFilters)`
+- `UpdateFeatureFlagRequest.filters`: `S.optional(S.Record({ key: S.String, value: S.Unknown }))` → `S.optional(FeatureFlagFilters)`
+
+**Files changed:**
+- `src/services/feature-flags.ts` — 2 lines changed (lines 142 and 164)
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/feature-flags.test.ts` — 7/7 tests passing
+
+---
