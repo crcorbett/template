@@ -466,8 +466,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created cohort.provider.ts following Survey provider pattern. Imports from @packages/posthog/cohorts. Maps camelCase props to snake_case API params (isStatic -> is_static). Diff uses Effect.sync for isStatic change detection triggering replace. Delete uses soft delete via deleteCohort (internally patches deleted:true). Updated cohorts/index.ts barrel and posthog/index.ts with Cohorts namespace export and cohortProvider() in resources(). Added @packages/posthog/cohorts alias to vitest.config.ts. bun tsc -b passes."
     },
     {
       "id": "COH-003",

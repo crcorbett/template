@@ -209,6 +209,23 @@
   - Updated `cohorts/index.ts` barrel to export all from `cohort.js`
   - `bun tsc -b` passes with no errors
 
+### COH-002 - Implement Cohort provider with CRUD lifecycle
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/cohorts/cohort.provider.ts` with:
+  - `cohortProvider()` function using `Cohort.provider.effect(Effect.gen(...))`
+  - `stables: ['id']` — only id is stable
+  - `diff` using `Effect.sync()` to detect `isStatic` changes -> replace action
+  - `read` with output.id check and NotFoundError handling
+  - `create` mapping camelCase props to snake_case API params (isStatic -> is_static)
+  - `update` with session.note() for progress reporting
+  - `delete` using soft delete via `deleteCohort()` (internally patches `deleted: true`) with NotFoundError handling
+  - Helper `mapResponseToAttrs()` for API response mapping (is_calculating -> isCalculating, created_at -> createdAt)
+  - Updated `cohorts/index.ts` to export provider
+  - Updated `posthog/index.ts` with Cohorts namespace export and added `cohortProvider()` to `resources()`
+  - Added `@packages/posthog/cohorts` alias to `vitest.config.ts`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -220,9 +237,9 @@
 | Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 3 | 0 | 0 |
 | Survey | 3 | 3 | 0 | 0 |
-| Cohort | 3 | 1 | 0 | 2 |
+| Cohort | 3 | 2 | 0 | 1 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **16** | **0** | **13** |
+| **Total** | **29** | **17** | **0** | **12** |
