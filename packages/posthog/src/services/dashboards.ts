@@ -2,7 +2,7 @@ import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import * as T from "../traits.js";
 
@@ -214,7 +214,7 @@ const updateDashboardOperation: Operation = {
   errors: [],
 };
 
-export const listDashboards = makeClient(listDashboardsOperation);
+export const listDashboards = makePaginated(listDashboardsOperation);
 export const getDashboard = makeClient(getDashboardOperation);
 export const createDashboard = makeClient(createDashboardOperation);
 export const updateDashboard = makeClient(updateDashboardOperation);

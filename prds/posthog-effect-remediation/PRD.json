@@ -765,7 +765,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Added makePaginated to src/client/api.ts using Stream.unfoldEffect. Extracts offset from PostHog next URL. Provides .pages(input) returning Stream of paginated result pages and .items(input) returning Stream of individual items. Updated dashboards.ts listDashboards to use makePaginated. Exported makePaginated from index.ts. Added 2 integration tests (pages + items streaming). 0 type errors, 226/226 tests passing."
     },
     {
       "id": "P3-001",

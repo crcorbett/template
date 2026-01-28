@@ -709,3 +709,35 @@ The `process.env.DEBUG` ternary in `provideTestEnv` was evaluated for replacemen
 - `bun run test` — 222/224 tests passing (2 pre-existing: cohorts CRUD race condition, events timeout)
 
 ---
+
+### P2-008: Add pagination support with Stream.unfoldEffect
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` with Stream-based pagination. Uses `Stream.unfoldEffect` for `.pages()` and `Stream.mapConcat` for `.items()`.
+
+**Design:**
+- `makePaginated(operation)` returns a callable identical to `makeClient`, plus `.pages(input)` and `.items(input)` methods
+- `.pages(input)` returns a `Stream` of paginated result pages, automatically following `next` URLs
+- `.items(input)` returns a `Stream` of individual result items across all pages
+- Offset extraction from PostHog `next` URL (full URL like `https://us.posthog.com/api/...?offset=20`) via `parseNextOffset` helper using `URL` API
+- Typed with `PaginatedInput` (offset/limit) and `PaginatedOutput` (next/results) interfaces matching all PostHog paginated endpoints
+
+**Changes:**
+- Added `makePaginated`, `PaginatedInput`, `PaginatedOutput`, `parseNextOffset` to `src/client/api.ts`
+- Updated `listDashboards` in `src/services/dashboards.ts` from `makeClient` to `makePaginated`
+- Exported `makePaginated` from `src/index.ts`
+- Added 2 integration tests: `.pages()` streaming and `.items()` streaming
+
+**Files changed:**
+- `src/client/api.ts` — Added makePaginated function with Stream.unfoldEffect pagination
+- `src/services/dashboards.ts` — listDashboards now uses makePaginated
+- `src/index.ts` — Exported makePaginated
+- `test/dashboards.test.ts` — Added 2 pagination streaming tests
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 226/226 tests passing (224 existing + 2 new)
+
+---

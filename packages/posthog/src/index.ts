@@ -9,6 +9,9 @@ export { Credentials, type PostHogCredentials } from "./credentials.js";
 export { UserBasic } from "./common.js";
 export { Endpoint } from "./endpoint.js";
 
+// Client utilities
+export { makePaginated } from "./client/api.js";
+
 // Error types
 export {
   AuthenticationError,

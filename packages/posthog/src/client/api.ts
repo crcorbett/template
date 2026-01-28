@@ -10,6 +10,7 @@ import type * as S from "effect/Schema";
 import { HttpClient, HttpClientRequest } from "@effect/platform";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
 
@@ -148,6 +149,99 @@ export const makeClient = <Op extends Operation>(operation: Op) => {
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
   > => execute(operation, input);
+};
+
+/**
+ * A paginated response shape common to all PostHog list endpoints.
+ */
+interface PaginatedOutput<Item> {
+  readonly next?: string | null | undefined;
+  readonly results: ReadonlyArray<Item>;
+}
+
+/**
+ * A paginated input shape common to all PostHog list endpoints.
+ */
+interface PaginatedInput {
+  readonly offset?: number | undefined;
+  readonly limit?: number | undefined;
+}
+
+/**
+ * Extract the offset from a PostHog "next" URL (e.g. "…?limit=10&offset=20").
+ */
+const parseNextOffset = (nextUrl: string): Option.Option<number> => {
+  try {
+    const url = new URL(nextUrl);
+    const offsetStr = url.searchParams.get("offset");
+    if (offsetStr === null) return Option.none();
+    const offset = Number(offsetStr);
+    return Number.isNaN(offset) ? Option.none() : Option.some(offset);
+  } catch {
+    return Option.none();
+  }
+};
+
+/**
+ * Create a paginated API client for a list operation.
+ *
+ * Returns a callable with two additional methods:
+ * - `.pages(input)` — a Stream of paginated result pages
+ * - `.items(input)` — a Stream of individual result items across all pages
+ */
+export const makePaginated = <Op extends Operation>(operation: Op) => {
+  type Input = S.Schema.Type<Op["input"]> & PaginatedInput;
+  type Output = S.Schema.Type<Op["output"]> & PaginatedOutput<unknown>;
+
+  const fn = (
+    input: Input
+  ): Effect.Effect<
+    Output,
+    PostHogErrorType,
+    HttpClient.HttpClient | Credentials | Endpoint
+  > => execute(operation, input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>;
+
+  const pages = (
+    input: Input
+  ): Stream.Stream<
+    Output,
+    PostHogErrorType,
+    HttpClient.HttpClient | Credentials | Endpoint
+  > =>
+    Stream.unfoldEffect(input as Input | undefined, (cursor) => {
+      if (cursor === undefined) {
+        return Effect.succeed(Option.none<readonly [Output, Input | undefined]>());
+      }
+      return fn(cursor).pipe(
+        Effect.map((page) => {
+          const nextOffset = Option.flatMap(
+            Option.fromNullable(page.next),
+            parseNextOffset
+          );
+          const nextCursor = Option.match(nextOffset, {
+            onNone: (): Input | undefined => undefined,
+            onSome: (offset): Input | undefined => ({
+              ...cursor,
+              offset,
+            }),
+          });
+          return Option.some([page, nextCursor] as const);
+        })
+      );
+    });
+
+  const items = (
+    input: Input
+  ): Stream.Stream<
+    unknown,
+    PostHogErrorType,
+    HttpClient.HttpClient | Credentials | Endpoint
+  > =>
+    pages(input).pipe(
+      Stream.mapConcat((page) => page.results)
+    );
+
+  return Object.assign(fn, { pages, items });
 };
 
 /**
