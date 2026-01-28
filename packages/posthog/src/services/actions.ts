@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
+import type * as Stream from "effect/Stream";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -163,7 +164,7 @@ export class DeleteActionRequest extends S.Class<DeleteActionRequest>(
   id: S.Number,
 }) {}
 
-const listActionsOperation: Operation = {
+const listActionsOperation: PaginatedOperation = {
   input: ListActionsRequest,
   output: PaginatedActionList,
   errors: [...COMMON_ERRORS],
@@ -191,9 +192,16 @@ const updateActionOperation: Operation = {
 /** Dependencies required by all action operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listActions: (
+export const listActions: ((
   input: ListActionsRequest
-) => Effect.Effect<PaginatedActionList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listActionsOperation);
+) => Effect.Effect<PaginatedActionList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListActionsRequest
+  ) => Stream.Stream<PaginatedActionList, PostHogErrorType, Deps>;
+  items: (
+    input: ListActionsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listActionsOperation);
 
 export const getAction: (
   input: GetActionRequest

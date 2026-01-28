@@ -1351,8 +1351,8 @@
         "npx tsc --noEmit",
         "bun run test test/actions.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listActions from makeClient to makePaginated. Updated listActionsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Added 2 new pagination streaming tests. 0 type errors, 10/10 actions tests passing."
     },
     {
       "id": "P5-005",

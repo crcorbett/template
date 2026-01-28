@@ -1,5 +1,5 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 
 import {
   createAction,
@@ -216,6 +216,30 @@ describe("PostHog Actions Service", () => {
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages via listActions.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const pages = yield* listActions
+          .pages({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        expect(pages.length).toBeGreaterThanOrEqual(1);
+        for (const page of pages) {
+          expect(page.results).toBeDefined();
+          expect(Array.isArray(page.results)).toBe(true);
+        }
+      }));
+
+    test("should stream items via listActions.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const items = yield* listActions
+          .items({ project_id: projectId, limit: 10 })
+          .pipe(Stream.take(5), Stream.runCollect);
+
+        expect(items.length).toBeGreaterThanOrEqual(0);
       }));
   });
 });

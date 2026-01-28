@@ -1244,3 +1244,32 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test test/insights.test.ts` — 10/10 tests passing
 
 ---
+
+#### P5-004: Wire up actions listActions to use makePaginated for .pages()/.items() streaming
+
+**Status:** Completed
+**Date:** 2026-01-29
+
+**Summary:** Changed `listActions` from `makeClient` to `makePaginated` to enable Stream-based pagination via `.pages()` and `.items()` methods. Added 2 new pagination streaming tests.
+
+**Changes:**
+- Updated imports in `src/services/actions.ts`:
+  - Added `import type * as Stream from "effect/Stream"`
+  - Added `PaginatedOperation` to the operation.ts import
+  - Added `makePaginated` to the api.js import
+- Changed `listActionsOperation` type from `Operation` to `PaginatedOperation`
+- Changed `listActions` export from `makeClient(listActionsOperation)` to `makePaginated(listActionsOperation)`
+- Added explicit type signature for `listActions` including `.pages()` and `.items()` methods
+- Updated `test/actions.test.ts`:
+  - Added `Stream` import from `effect`
+  - Added 2 new tests: `.pages()` streaming and `.items()` streaming
+
+**Files changed:**
+- `src/services/actions.ts` — listActions now uses makePaginated with full type signature
+- `test/actions.test.ts` — Added 2 pagination streaming tests
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/actions.test.ts` — 10/10 tests passing
+
+---
