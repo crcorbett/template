@@ -42,15 +42,26 @@ import { test, afterAll, TEST_PROJECT_ID } from "./test.js";
 const TEST_PREFIX = `acme-${Date.now()}`;
 
 // Track created resources for cleanup
-const created = {
-  cohorts: [] as number[],
-  featureFlags: [] as number[],
-  insights: [] as number[],
-  dashboards: [] as number[],
-  surveys: [] as string[],
-  actions: [] as number[],
-  annotations: [] as number[],
-  experiments: [] as number[],
+interface ResourceTracker {
+  cohorts: number[];
+  featureFlags: number[];
+  insights: number[];
+  dashboards: number[];
+  surveys: string[];
+  actions: number[];
+  annotations: number[];
+  experiments: number[];
+}
+
+const created: ResourceTracker = {
+  cohorts: [],
+  featureFlags: [],
+  insights: [],
+  dashboards: [],
+  surveys: [],
+  actions: [],
+  annotations: [],
+  experiments: [],
 };
 
 // Cleanup function to remove all created resources

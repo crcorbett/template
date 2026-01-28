@@ -497,3 +497,24 @@
 - Zero `as` casts in any of the three files
 
 ---
+
+#### P1-015: Remove type assertions from saas-analytics-setup.test.ts
+
+**Status:** Completed
+
+**Summary:** Replaced 8 `[] as number[]` / `[] as string[]` type assertions in the resource tracking object with a properly typed `ResourceTracker` interface.
+
+**Changes:**
+- Defined `ResourceTracker` interface with typed arrays for all 8 resource categories (cohorts, featureFlags, insights, dashboards as `number[]`, surveys as `string[]`, actions, annotations, experiments as `number[]`)
+- Changed `const created = { ... }` to `const created: ResourceTracker = { ... }` with plain `[]` literals
+- All 8 `as` casts eliminated
+
+**Files changed:**
+- `test/saas-analytics-setup.test.ts` — 8 type assertions removed via ResourceTracker interface
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/saas-analytics-setup.test.ts` — 44/44 tests passing
+- Zero `as` casts in file
+
+---

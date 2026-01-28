@@ -557,7 +557,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/saas-analytics-setup.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Defined ResourceTracker interface with typed arrays for all 8 resource categories. Replaced 8 instances of `[] as number[]` / `[] as string[]` with unadorned `[]` typed by the interface. Zero as casts remain in file. 0 type errors, 44/44 tests passing."
     },
     {
       "id": "P1-016",
