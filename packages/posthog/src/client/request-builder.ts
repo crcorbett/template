@@ -12,6 +12,7 @@ import * as Effect from "effect/Effect";
 import type { Operation } from "./operation.js";
 import type { Request } from "./request.js";
 
+import { MissingHttpTraitError } from "../errors.js";
 import {
   getHttpHeader,
   getHttpQuery,
@@ -114,19 +115,26 @@ export interface RequestBuilderOptions {
  *
  * @param operation - The operation (with input/output schemas)
  * @param options - Optional overrides
- * @returns A function that builds requests from input values
+ * @returns An Effect that resolves to a function that builds requests from input values
  */
 export const makeRequestBuilder = (
   operation: Operation,
   _options?: RequestBuilderOptions
-) => {
+): Effect.Effect<
+  (input: unknown) => Effect.Effect<Request>,
+  MissingHttpTraitError
+> => {
   const inputSchema = operation.input;
   const inputAst = inputSchema.ast;
 
   // Get HTTP trait from schema annotations
   const httpTrait = _options?.httpTrait ?? getHttpTrait(inputAst);
   if (!httpTrait) {
-    throw new Error("No HTTP trait found on input schema");
+    return Effect.fail(
+      new MissingHttpTraitError({
+        message: "No HTTP trait found on input schema",
+      })
+    );
   }
 
   // Get property signatures from input schema
@@ -153,20 +161,24 @@ export const makeRequestBuilder = (
 
     if (hasHttpLabel(prop)) {
       labelProps.set(propName, prop);
-    } else if (getHttpQuery(prop)) {
-      queryProps.set(propName, { queryName: getHttpQuery(prop)!, prop });
-    } else if (getHttpHeader(prop)) {
-      headerProps.set(propName, { headerName: getHttpHeader(prop)!, prop });
-    } else if (hasHttpPayload(prop)) {
-      payloadProp = { propName, prop };
     } else {
-      // Default: goes in JSON body
-      bodyProps.push({ propName, prop });
+      const queryName = getHttpQuery(prop);
+      const headerName = getHttpHeader(prop);
+      if (queryName !== undefined) {
+        queryProps.set(propName, { queryName, prop });
+      } else if (headerName !== undefined) {
+        headerProps.set(propName, { headerName, prop });
+      } else if (hasHttpPayload(prop)) {
+        payloadProp = { propName, prop };
+      } else {
+        // Default: goes in JSON body
+        bodyProps.push({ propName, prop });
+      }
     }
   }
 
   // Return a function that builds requests synchronously wrapped in Effect.succeed
-  return (input: unknown): Effect.Effect<Request> => {
+  const requestBuilder = (input: unknown): Effect.Effect<Request> => {
     const inputObj = input as Record<string, unknown>;
 
     // Build the path with label substitutions
@@ -247,4 +259,6 @@ export const makeRequestBuilder = (
 
     return Effect.succeed(request);
   };
+
+  return Effect.succeed(requestBuilder);
 };

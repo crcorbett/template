@@ -85,6 +85,17 @@ export class ServerError extends S.TaggedError<ServerError>()("ServerError", {
 }) {}
 
 /**
+ * Missing HTTP trait error - Schema is missing required HTTP annotation
+ * This is an internal error indicating a programming mistake.
+ */
+export class MissingHttpTraitError extends S.TaggedError<MissingHttpTraitError>()(
+  "MissingHttpTraitError",
+  {
+    message: S.String,
+  }
+) {}
+
+/**
  * Common errors that can occur on any operation
  */
 export const COMMON_ERRORS = [
@@ -119,4 +130,5 @@ export type PostHogErrorType =
   | NotFoundError
   | ValidationError
   | RateLimitError
-  | ServerError;
+  | ServerError
+  | MissingHttpTraitError;

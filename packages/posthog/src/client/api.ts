@@ -40,7 +40,7 @@ export const execute = <Op extends Operation>(
     const endpoint = yield* Endpoint;
 
     // Build the request
-    const requestBuilder = makeRequestBuilder(operation);
+    const requestBuilder = yield* makeRequestBuilder(operation);
     const request = yield* requestBuilder(input);
 
     // Build the full URL

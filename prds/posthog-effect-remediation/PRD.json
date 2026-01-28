@@ -435,7 +435,9 @@
         "npx tsc --noEmit",
         "bun run test test/client/request-builder.test.ts",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created MissingHttpTraitError TaggedError in errors.ts. Refactored makeRequestBuilder to return Effect<RequestBuilder, MissingHttpTraitError> instead of throwing synchronously. Removed 2 non-null assertions by storing getHttpQuery/getHttpHeader results in variables before conditional check. Updated api.ts to yield* the Effect. Updated 14 tests to use new Effect-based API. 0 type errors, 224/224 tests passing."
     },
     {
       "id": "P1-011",

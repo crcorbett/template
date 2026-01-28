@@ -360,3 +360,33 @@
 - `bun run test` -- 224/224 tests passing
 
 ---
+
+#### P1-010: Replace synchronous throw with Effect.fail in request-builder.ts
+
+**Status:** Completed
+
+**Summary:** Converted `makeRequestBuilder` from a function that throws synchronously to one that returns an Effect with a proper error channel, and removed non-null assertions.
+
+**Changes:**
+- Created `MissingHttpTraitError` TaggedError in `src/errors.ts` for when a schema lacks HTTP annotations
+- Added `MissingHttpTraitError` to the `PostHogErrorType` union
+- Changed `makeRequestBuilder` signature from `(operation) => (input) => Effect<Request>` to `(operation) => Effect<(input) => Effect<Request>, MissingHttpTraitError>`
+- Replaced `throw new Error('No HTTP trait found on input schema')` with `Effect.fail(new MissingHttpTraitError(...))`
+- Wrapped the returned request builder function in `Effect.succeed()`
+- Fixed 2 non-null assertions (`getHttpQuery(prop)!` and `getHttpHeader(prop)!`) by storing results in variables before conditional checks
+- Updated `api.ts` to `yield*` the Effect from `makeRequestBuilder` before calling the returned function
+- Updated all 14 tests in `request-builder.test.ts` to use `yield* makeRequestBuilder(operation)` pattern
+- Converted the error test from `expect(() => ...).toThrow()` to Effect-based test using `Effect.flip`
+
+**Files changed:**
+- `src/errors.ts` -- Added MissingHttpTraitError TaggedError class
+- `src/client/request-builder.ts` -- Changed return type to Effect, replaced throw with Effect.fail, removed non-null assertions
+- `src/client/api.ts` -- Updated caller to yield* the Effect
+- `test/client/request-builder.test.ts` -- Updated all 14 tests for Effect-based signature
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/client/request-builder.test.ts` -- 14/14 tests passing
+- `bun run test` -- 224/224 tests passing
+
+---
