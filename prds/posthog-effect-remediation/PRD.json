@@ -957,8 +957,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added 4 Effect.logDebug calls at key transformation points in executeWithInit: (1) Payload — logs input before request building, (2) Built Request — logs method and path after request building, (3) Raw Response — logs HTTP status after receiving response, (4) Parsed Response — logs result after parsing. All use Effect.annotateLogs for structured data. Credentials/Authorization headers are never logged. Zero runtime cost unless debug log layer is provided. 0 type errors, 226/226 tests passing."
     },
     {
       "id": "P4-003",

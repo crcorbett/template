@@ -55,7 +55,15 @@ const executeWithInit = <Op extends Operation>(
     const endpoint = yield* Endpoint;
 
     // Build the request (uses cached request builder)
+    yield* Effect.logDebug("Payload").pipe(
+      Effect.annotateLogs("input", JSON.stringify(input))
+    );
     const request = yield* init.buildRequest(input);
+
+    yield* Effect.logDebug("Built Request").pipe(
+      Effect.annotateLogs("method", request.method),
+      Effect.annotateLogs("path", request.path)
+    );
 
     // Build the full URL
     const baseUrl = endpoint.replace(/\/$/, "");
@@ -113,6 +121,10 @@ const executeWithInit = <Op extends Operation>(
           )
         );
 
+    yield* Effect.logDebug("Raw Response").pipe(
+      Effect.annotateLogs("status", String(platformResponse.status))
+    );
+
     // Build our Response type
     const response: Response = {
       status: platformResponse.status,
@@ -123,6 +135,10 @@ const executeWithInit = <Op extends Operation>(
 
     // Parse the response (uses cached response parser)
     const result = yield* init.parseResponse(response);
+
+    yield* Effect.logDebug("Parsed Response").pipe(
+      Effect.annotateLogs("result", JSON.stringify(result))
+    );
 
     return result;
   });

@@ -882,3 +882,24 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing
 
 ---
+
+### P4-002: Add Effect.logDebug at key transformation points in execute()
+
+**Status:** ✅ Complete
+**Task:** Add 4 Effect.logDebug calls at key transformation points in executeWithInit matching distilled-aws pattern.
+
+**Changes:**
+- Added 4 `Effect.logDebug` calls in `executeWithInit` in `src/client/api.ts`:
+  1. **Payload** — logs input (JSON-serialized) before request building
+  2. **Built Request** — logs method and path after request building
+  3. **Raw Response** — logs HTTP status code after receiving platform response
+  4. **Parsed Response** — logs result (JSON-serialized) after parsing
+- All use `Effect.annotateLogs` for structured log data
+- Credentials and Authorization headers are never logged
+- Zero runtime cost unless a debug-level log layer is provided
+
+**Verification:**
+- `npx tsc --noEmit` — 0 errors
+- `bun run test` — 226/226 tests passing
+
+---
