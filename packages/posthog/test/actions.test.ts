@@ -8,21 +8,18 @@ import {
   listActions,
   updateAction,
 } from "../src/services/actions.js";
-import { test } from "./test.js";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteAction({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+const cleanup = (project_id: string, id: number) =>
+  deleteAction({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
 
 describe("PostHog Actions Service", () => {
   describe("integration tests", () => {
     test("should list actions", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listActions({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +30,9 @@ describe("PostHog Actions Service", () => {
 
     test("should list actions with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listActions({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
           offset: 0,
         });
@@ -44,7 +42,7 @@ describe("PostHog Actions Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listActions({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 5,
             offset: 5,
           });
@@ -54,13 +52,14 @@ describe("PostHog Actions Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const actionName = `test-action-${Date.now()}`;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           // Create
           const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: actionName,
             description: "Integration test action",
             steps: [
@@ -78,7 +77,7 @@ describe("PostHog Actions Service", () => {
 
           // Read
           const fetched = yield* getAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -88,7 +87,7 @@ describe("PostHog Actions Service", () => {
           // Update
           const updatedName = `${actionName}-updated`;
           const updated = yield* updateAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             name: updatedName,
             description: "Updated description",
@@ -99,24 +98,27 @@ describe("PostHog Actions Service", () => {
 
           // Delete (soft delete)
           yield* deleteAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           }).pipe(Effect.catchAll(() => Effect.void));
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create action with URL matching", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-url-action-${Date.now()}`,
             description: "Action with URL matching",
             steps: [
@@ -132,22 +134,25 @@ describe("PostHog Actions Service", () => {
           expect(created.steps).toBeDefined();
           expect(created.steps?.length).toBe(1);
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create action with multiple steps", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-multistep-action-${Date.now()}`,
             description: "Action with multiple steps",
             steps: [
@@ -166,22 +171,25 @@ describe("PostHog Actions Service", () => {
 
           expect(created.steps?.length).toBe(3);
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create action with element selector", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-selector-action-${Date.now()}`,
             description: "Action with CSS selector",
             steps: [
@@ -197,22 +205,25 @@ describe("PostHog Actions Service", () => {
 
           expect(created.steps).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create action with tags", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-tagged-action-${Date.now()}`,
             description: "Action with tags",
             tags: ["conversion", "funnel"],
@@ -226,19 +237,22 @@ describe("PostHog Actions Service", () => {
 
           expect(created.tags).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should handle action not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 

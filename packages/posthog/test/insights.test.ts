@@ -8,21 +8,18 @@ import {
   listInsights,
   updateInsight,
 } from "../src/services/insights.js";
-import { test } from "./test.js";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteInsight({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+const cleanup = (project_id: string, id: number) =>
+  deleteInsight({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
 
 describe("PostHog Insights Service", () => {
   describe("integration tests", () => {
     test("should list insights", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +30,9 @@ describe("PostHog Insights Service", () => {
 
     test("should list saved insights only", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           saved: true,
           limit: 10,
         });
@@ -44,8 +42,9 @@ describe("PostHog Insights Service", () => {
 
     test("should list insights with basic metadata only", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           basic: true,
           limit: 10,
         });
@@ -55,12 +54,13 @@ describe("PostHog Insights Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insightName = `test-insight-${Date.now()}`;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: insightName,
             description: "Integration test insight",
             query: {
@@ -83,7 +83,7 @@ describe("PostHog Insights Service", () => {
           expect(created.description).toBe("Integration test insight");
 
           const fetched = yield* getInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -92,7 +92,7 @@ describe("PostHog Insights Service", () => {
 
           const updatedName = `${insightName}-updated`;
           const updated = yield* updateInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             name: updatedName,
             description: "Updated description",
@@ -102,7 +102,7 @@ describe("PostHog Insights Service", () => {
           expect(updated.description).toBe("Updated description");
 
           const deleted = yield* deleteInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -110,18 +110,21 @@ describe("PostHog Insights Service", () => {
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create trends insight", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-trends-${Date.now()}`,
             query: {
               kind: "TrendsQuery",
@@ -147,22 +150,25 @@ describe("PostHog Insights Service", () => {
 
           expect(created.query).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create funnel insight", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-funnel-${Date.now()}`,
             query: {
               kind: "FunnelsQuery",
@@ -185,22 +191,25 @@ describe("PostHog Insights Service", () => {
 
           expect(created.query).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create retention insight", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-retention-${Date.now()}`,
             query: {
               kind: "RetentionQuery",
@@ -223,19 +232,22 @@ describe("PostHog Insights Service", () => {
 
           expect(created.query).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should handle insight not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 

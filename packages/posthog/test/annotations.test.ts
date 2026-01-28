@@ -8,21 +8,18 @@ import {
   listAnnotations,
   updateAnnotation,
 } from "../src/services/annotations.js";
-import { test } from "./test.js";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteAnnotation({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+const cleanup = (project_id: string, id: number) =>
+  deleteAnnotation({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
 
 describe("PostHog Annotations Service", () => {
   describe("integration tests", () => {
     test("should list annotations", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listAnnotations({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +30,9 @@ describe("PostHog Annotations Service", () => {
 
     test("should list annotations with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listAnnotations({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 2,
           offset: 0,
         });
@@ -43,7 +41,7 @@ describe("PostHog Annotations Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listAnnotations({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 2,
             offset: 2,
           });
@@ -53,13 +51,14 @@ describe("PostHog Annotations Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const now = new Date().toISOString();
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           // Create
           const created = yield* createAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             content: `test-annotation-${Date.now()}`,
             date_marker: now,
             scope: "project",
@@ -73,7 +72,7 @@ describe("PostHog Annotations Service", () => {
 
           // Read
           const fetched = yield* getAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -83,7 +82,7 @@ describe("PostHog Annotations Service", () => {
           // Update
           const updatedContent = `updated-annotation-${Date.now()}`;
           const updated = yield* updateAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             content: updatedContent,
           });
@@ -91,22 +90,25 @@ describe("PostHog Annotations Service", () => {
           expect(updated.content).toBe(updatedContent);
 
           // Delete (cleanup handles failure)
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create annotation for deployment", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             content: `v2.0.0 deployed - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "project",
@@ -117,22 +119,25 @@ describe("PostHog Annotations Service", () => {
           expect(created.content).toContain("v2.0.0 deployed");
           expect(created.scope).toBe("project");
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create annotation for marketing campaign", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             content: `Q1 Marketing Campaign Start - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "project",
@@ -141,22 +146,25 @@ describe("PostHog Annotations Service", () => {
 
           expect(created.content).toContain("Marketing Campaign");
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create organization-scoped annotation", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             content: `Organization-wide notice - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "organization",
@@ -165,24 +173,27 @@ describe("PostHog Annotations Service", () => {
 
           expect(created.scope).toBe("organization");
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should search annotations by content", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
         const uniqueMarker = `searchable-${Date.now()}`;
 
         yield* Effect.gen(function* () {
           // Create an annotation with unique content
           const created = yield* createAnnotation({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             content: uniqueMarker,
             date_marker: new Date().toISOString(),
             scope: "project",
@@ -191,7 +202,7 @@ describe("PostHog Annotations Service", () => {
 
           // Search for it
           const searchResults = yield* listAnnotations({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             search: uniqueMarker,
           });
 
@@ -200,19 +211,22 @@ describe("PostHog Annotations Service", () => {
             searchResults.results.some((a) => a.content === uniqueMarker)
           ).toBe(true);
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should handle annotation not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getAnnotation({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 

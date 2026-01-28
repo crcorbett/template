@@ -12,17 +12,13 @@ import {
   createFeatureFlag,
   deleteFeatureFlag,
 } from "../src/services/feature-flags.js";
-import { test } from "./test.js";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
+const cleanupExperiment = (project_id: string, id: number) =>
+  deleteExperiment({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
 
-const cleanupExperiment = (id: number) =>
-  deleteExperiment({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
-
-const cleanupFlag = (id: number) =>
-  deleteFeatureFlag({ project_id: TEST_PROJECT_ID, id }).pipe(
+const cleanupFlag = (project_id: string, id: number) =>
+  deleteFeatureFlag({ project_id, id }).pipe(
     Effect.catchAll(() => Effect.void)
   );
 
@@ -30,8 +26,9 @@ describe("PostHog Experiments Service", () => {
   describe("integration tests", () => {
     test("should list experiments", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listExperiments({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -42,8 +39,9 @@ describe("PostHog Experiments Service", () => {
 
     test("should list experiments with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listExperiments({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 2,
           offset: 0,
         });
@@ -52,7 +50,7 @@ describe("PostHog Experiments Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listExperiments({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 2,
             offset: 2,
           });
@@ -62,6 +60,7 @@ describe("PostHog Experiments Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
         const experimentName = `test-experiment-${timestamp}`;
         const flagKey = `test-exp-flag-${timestamp}`;
@@ -71,7 +70,7 @@ describe("PostHog Experiments Service", () => {
         yield* Effect.gen(function* () {
           // First create a feature flag for the experiment
           const flag = yield* createFeatureFlag({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             key: flagKey,
             name: `Test Experiment Flag ${timestamp}`,
             filters: {
@@ -93,7 +92,7 @@ describe("PostHog Experiments Service", () => {
 
           // Create experiment
           const created = yield* createExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: experimentName,
             description: "Integration test experiment",
             feature_flag_key: flagKey,
@@ -108,7 +107,7 @@ describe("PostHog Experiments Service", () => {
 
           // Read
           const fetched = yield* getExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -118,7 +117,7 @@ describe("PostHog Experiments Service", () => {
           // Update
           const updatedName = `${experimentName}-updated`;
           const updated = yield* updateExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             name: updatedName,
             description: "Updated description",
@@ -128,18 +127,18 @@ describe("PostHog Experiments Service", () => {
           expect(updated.description).toBe("Updated description");
 
           // Cleanup
-          yield* cleanupExperiment(created.id);
+          yield* cleanupExperiment(projectId, created.id);
           createdExperimentId = undefined;
-          yield* cleanupFlag(flag.id);
+          yield* cleanupFlag(projectId, flag.id);
           createdFlagId = undefined;
         }).pipe(
           Effect.ensuring(
             Effect.all([
               createdExperimentId !== undefined
-                ? cleanupExperiment(createdExperimentId)
+                ? cleanupExperiment(projectId, createdExperimentId)
                 : Effect.void,
               createdFlagId !== undefined
-                ? cleanupFlag(createdFlagId)
+                ? cleanupFlag(projectId, createdFlagId)
                 : Effect.void,
             ])
           )
@@ -148,6 +147,7 @@ describe("PostHog Experiments Service", () => {
 
     test("should create experiment with start date", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
         const flagKey = `test-exp-start-${timestamp}`;
         let createdExperimentId: number | undefined;
@@ -155,7 +155,7 @@ describe("PostHog Experiments Service", () => {
 
         yield* Effect.gen(function* () {
           const flag = yield* createFeatureFlag({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             key: flagKey,
             name: `Test Start Date Flag ${timestamp}`,
             filters: {
@@ -172,7 +172,7 @@ describe("PostHog Experiments Service", () => {
 
           const startDate = new Date().toISOString();
           const created = yield* createExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-experiment-started-${timestamp}`,
             feature_flag_key: flagKey,
             start_date: startDate,
@@ -181,18 +181,18 @@ describe("PostHog Experiments Service", () => {
 
           expect(created.start_date).toBeDefined();
 
-          yield* cleanupExperiment(created.id);
+          yield* cleanupExperiment(projectId, created.id);
           createdExperimentId = undefined;
-          yield* cleanupFlag(flag.id);
+          yield* cleanupFlag(projectId, flag.id);
           createdFlagId = undefined;
         }).pipe(
           Effect.ensuring(
             Effect.all([
               createdExperimentId !== undefined
-                ? cleanupExperiment(createdExperimentId)
+                ? cleanupExperiment(projectId, createdExperimentId)
                 : Effect.void,
               createdFlagId !== undefined
-                ? cleanupFlag(createdFlagId)
+                ? cleanupFlag(projectId, createdFlagId)
                 : Effect.void,
             ])
           )
@@ -201,6 +201,7 @@ describe("PostHog Experiments Service", () => {
 
     test("should archive experiment", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
         const flagKey = `test-exp-archive-${timestamp}`;
         let createdExperimentId: number | undefined;
@@ -208,7 +209,7 @@ describe("PostHog Experiments Service", () => {
 
         yield* Effect.gen(function* () {
           const flag = yield* createFeatureFlag({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             key: flagKey,
             name: `Test Archive Flag ${timestamp}`,
             filters: {
@@ -224,7 +225,7 @@ describe("PostHog Experiments Service", () => {
           createdFlagId = flag.id;
 
           const created = yield* createExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-experiment-archive-${timestamp}`,
             feature_flag_key: flagKey,
           });
@@ -232,25 +233,25 @@ describe("PostHog Experiments Service", () => {
 
           // Archive the experiment
           const archived = yield* updateExperiment({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             archived: true,
           });
 
           expect(archived.archived).toBe(true);
 
-          yield* cleanupExperiment(created.id);
+          yield* cleanupExperiment(projectId, created.id);
           createdExperimentId = undefined;
-          yield* cleanupFlag(flag.id);
+          yield* cleanupFlag(projectId, flag.id);
           createdFlagId = undefined;
         }).pipe(
           Effect.ensuring(
             Effect.all([
               createdExperimentId !== undefined
-                ? cleanupExperiment(createdExperimentId)
+                ? cleanupExperiment(projectId, createdExperimentId)
                 : Effect.void,
               createdFlagId !== undefined
-                ? cleanupFlag(createdFlagId)
+                ? cleanupFlag(projectId, createdFlagId)
                 : Effect.void,
             ])
           )
@@ -259,8 +260,9 @@ describe("PostHog Experiments Service", () => {
 
     test("should handle experiment not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getExperiment({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 

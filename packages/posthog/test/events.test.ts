@@ -2,16 +2,15 @@ import { describe, expect } from "@effect/vitest";
 import { Effect } from "effect";
 
 import { listEvents } from "../src/services/events.js";
-import { test } from "./test.js";
-
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
 describe("PostHog Events Service", () => {
   describe("integration tests", () => {
     test("should list events", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listEvents({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -22,8 +21,9 @@ describe("PostHog Events Service", () => {
 
     test("should filter events by event type", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listEvents({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           event: "$pageview",
           limit: 10,
         });
@@ -36,11 +36,12 @@ describe("PostHog Events Service", () => {
 
     test("should filter events by date range", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const now = new Date();
         const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
         const result = yield* listEvents({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           after: yesterday.toISOString(),
           before: now.toISOString(),
           limit: 10,
@@ -58,8 +59,9 @@ describe("PostHog Events Service", () => {
 
     test("should return event properties", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listEvents({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
         });
 
@@ -74,8 +76,9 @@ describe("PostHog Events Service", () => {
 
     test("should handle pagination with next cursor", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listEvents({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
         });
 

@@ -8,7 +8,7 @@ import {
   it,
   type TestContext,
 } from "@effect/vitest";
-import { ConfigProvider, LogLevel } from "effect";
+import { Config, ConfigProvider, LogLevel } from "effect";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
@@ -18,6 +18,19 @@ import * as net from "node:net";
 import { Credentials } from "../src/credentials.js";
 import { Endpoint } from "../src/endpoint.js";
 import * as Retry from "../src/retry.js";
+
+/**
+ * The PostHog project ID used for integration tests.
+ * Resolved from POSTHOG_PROJECT_ID via the Effect Config system,
+ * which reads from `.env` at runtime.
+ */
+export const TEST_PROJECT_ID: Effect.Effect<string, Error> = Config.string(
+  "POSTHOG_PROJECT_ID"
+).pipe(
+  Effect.mapError(
+    () => new Error("POSTHOG_PROJECT_ID is required. Set it in your .env file.")
+  )
+);
 
 /**
  * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.

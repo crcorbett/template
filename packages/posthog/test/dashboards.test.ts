@@ -8,21 +8,18 @@ import {
   listDashboards,
   updateDashboard,
 } from "../src/services/dashboards.js";
-import { test } from "./test.js";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteDashboard({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+const cleanup = (project_id: string, id: number) =>
+  deleteDashboard({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
 
 describe("PostHog Dashboards Service", () => {
   describe("integration tests", () => {
     test("should list dashboards", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listDashboards({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +30,9 @@ describe("PostHog Dashboards Service", () => {
 
     test("should list dashboards with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listDashboards({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 2,
           offset: 0,
         });
@@ -43,7 +41,7 @@ describe("PostHog Dashboards Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listDashboards({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 2,
             offset: 2,
           });
@@ -53,12 +51,13 @@ describe("PostHog Dashboards Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const dashboardName = `test-dashboard-${Date.now()}`;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createDashboard({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: dashboardName,
             description: "Integration test dashboard",
             pinned: false,
@@ -72,7 +71,7 @@ describe("PostHog Dashboards Service", () => {
           expect(created.pinned).toBe(false);
 
           const fetched = yield* getDashboard({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -81,7 +80,7 @@ describe("PostHog Dashboards Service", () => {
 
           const updatedName = `${dashboardName}-updated`;
           const updated = yield* updateDashboard({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
             name: updatedName,
             description: "Updated description",
@@ -93,7 +92,7 @@ describe("PostHog Dashboards Service", () => {
           expect(updated.pinned).toBe(true);
 
           const deleted = yield* deleteDashboard({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             id: created.id,
           });
 
@@ -101,18 +100,21 @@ describe("PostHog Dashboards Service", () => {
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should create dashboard with tags", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         let createdId: number | undefined;
 
         yield* Effect.gen(function* () {
           const created = yield* createDashboard({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             name: `test-dashboard-tags-${Date.now()}`,
             description: "Dashboard with tags",
             tags: ["test", "integration"],
@@ -121,19 +123,22 @@ describe("PostHog Dashboards Service", () => {
 
           expect(created.tags).toBeDefined();
 
-          yield* cleanup(created.id);
+          yield* cleanup(projectId, created.id);
           createdId = undefined;
         }).pipe(
           Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
+            createdId !== undefined
+              ? cleanup(projectId, createdId)
+              : Effect.void
           )
         );
       }));
 
     test("should handle dashboard not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getDashboard({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 

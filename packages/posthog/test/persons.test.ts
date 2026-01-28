@@ -2,16 +2,15 @@ import { describe, expect } from "@effect/vitest";
 import { Effect } from "effect";
 
 import { listPersons } from "../src/services/persons.js";
-import { test } from "./test.js";
-
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
+import { test, TEST_PROJECT_ID } from "./test.js";
 
 describe("PostHog Persons Service", () => {
   describe("integration tests", () => {
     test("should list persons", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listPersons({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -22,8 +21,9 @@ describe("PostHog Persons Service", () => {
 
     test("should list persons with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listPersons({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
           offset: 0,
         });
@@ -33,7 +33,7 @@ describe("PostHog Persons Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listPersons({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 5,
             offset: 5,
           });
@@ -43,8 +43,9 @@ describe("PostHog Persons Service", () => {
 
     test("should return person properties", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listPersons({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
         });
 
@@ -59,8 +60,9 @@ describe("PostHog Persons Service", () => {
 
     test("should search persons by query", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listPersons({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           search: "test",
           limit: 10,
         });
@@ -70,8 +72,9 @@ describe("PostHog Persons Service", () => {
 
     test("should filter persons by distinct_id", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const allPersons = yield* listPersons({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 1,
         });
 
@@ -79,7 +82,7 @@ describe("PostHog Persons Service", () => {
           const distinctId = allPersons.results[0].distinct_ids[0];
           if (distinctId) {
             const filtered = yield* listPersons({
-              project_id: TEST_PROJECT_ID,
+              project_id: projectId,
               distinct_id: distinctId,
               limit: 10,
             });
