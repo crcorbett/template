@@ -518,3 +518,23 @@
 - Zero `as` casts in file
 
 ---
+
+#### P1-016: Remove type assertions and non-null assertion from generate-clients.ts
+
+**Status:** Completed
+
+**Summary:** Removed 3 type assertions (`as SchemaObject`, `as SchemaObject`, `as OpenAPISpec`) and 1 non-null assertion (`groups.get(tag)!`) from `scripts/generate-clients.ts`.
+
+**Changes:**
+- Removed 2 `as SchemaObject` casts in `typeToSchema` and `collectSchemaRefs` — after `isRef()` type predicate early-returns, TypeScript's control flow narrowing already knows the type is `SchemaObject`
+- Replaced `YAML.load(schemaContent) as OpenAPISpec` with a runtime `isOpenAPISpec()` type guard that validates the presence and types of `openapi` and `paths` fields
+- Replaced `groups.get(tag)!.push(...)` with `const group = groups.get(tag); if (group) { group.push(...) }` guard pattern
+
+**Files changed:**
+- `scripts/generate-clients.ts` — 3 type assertions removed, 1 non-null assertion removed, 1 type guard added
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- Zero avoidable `as` casts (only `as Record<string, unknown>` inside type guard and `as const`)
+
+---

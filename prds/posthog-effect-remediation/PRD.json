@@ -577,7 +577,9 @@
       ],
       "verify": [
         "npx tsc --noEmit"
-      ]
+      ],
+      "passes": true,
+      "notes": "Removed 2 `as SchemaObject` casts by relying on control flow narrowing after `isRef()` type predicate. Replaced `YAML.load() as OpenAPISpec` with `isOpenAPISpec()` runtime type guard (one internal `as Record<string, unknown>` in the guard is unavoidable for unknown narrowing). Replaced `groups.get(tag)!.push()` with a guarded `const group = groups.get(tag); if (group)` pattern. Zero non-null assertions, zero avoidable type assertions remain. 0 type errors."
     },
     {
       "id": "P2-001",
