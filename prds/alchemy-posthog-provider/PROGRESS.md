@@ -198,6 +198,17 @@
   - PostHog surveys use real HTTP DELETE (hard delete) - survey is no longer accessible after deletion
   - `bun tsc -b` and `bun vitest run test/posthog/surveys/survey.provider.test.ts` pass
 
+### COH-001 - Implement Cohort resource contract
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/cohorts/cohort.ts` with:
+  - `CohortProps` interface with JSDoc: name (string|null, required), description, groups, filters, isStatic (replaces on change)
+  - `CohortAttrs` interface: id (number, stable), name (string|null|undefined), description, isCalculating, count (number|null|undefined), createdAt (string|null|undefined)
+  - `Cohort` interface extending `Resource<"PostHog.Cohorts.Cohort", ...>`
+  - `Cohort` const exported via `Resource<CtorSignature>()` factory
+  - Updated `cohorts/index.ts` barrel to export all from `cohort.js`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -209,9 +220,9 @@
 | Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 3 | 0 | 0 |
 | Survey | 3 | 3 | 0 | 0 |
-| Cohort | 3 | 0 | 0 | 3 |
+| Cohort | 3 | 1 | 0 | 2 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **15** | **0** | **14** |
+| **Total** | **29** | **16** | **0** | **13** |

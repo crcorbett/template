@@ -1,1 +1,1 @@
-// Cohorts barrel - providers will be added incrementally
+export * from "./cohort.js";

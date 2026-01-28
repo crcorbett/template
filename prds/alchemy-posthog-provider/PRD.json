@@ -444,8 +444,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created cohort.ts with CohortProps (name as string|null, description, groups, filters, isStatic) and CohortAttrs (id as number, name as string|null|undefined, description, isCalculating, count as number|null|undefined, createdAt as string|null|undefined). Follows Survey contract pattern with Resource from alchemy-effect npm package. Updated cohorts/index.ts to export all from cohort.js. bun tsc -b passes."
     },
     {
       "id": "COH-002",
