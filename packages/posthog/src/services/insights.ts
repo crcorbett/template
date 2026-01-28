@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
+import type * as Stream from "effect/Stream";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -323,7 +324,7 @@ export class DeleteInsightRequest extends S.Class<DeleteInsightRequest>(
 // Operations
 // ---------------------------------------------------------------------------
 
-const listInsightsOperation: Operation = {
+const listInsightsOperation: PaginatedOperation = {
   input: ListInsightsRequest,
   output: PaginatedInsightList,
   errors: [...COMMON_ERRORS],
@@ -351,9 +352,16 @@ const updateInsightOperation: Operation = {
 /** Dependencies required by all insight operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listInsights: (
+export const listInsights: ((
   input: ListInsightsRequest
-) => Effect.Effect<PaginatedInsightList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listInsightsOperation);
+) => Effect.Effect<PaginatedInsightList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListInsightsRequest
+  ) => Stream.Stream<PaginatedInsightList, PostHogErrorType, Deps>;
+  items: (
+    input: ListInsightsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listInsightsOperation);
 
 export const getInsight: (
   input: GetInsightRequest

@@ -1330,8 +1330,8 @@
         "npx tsc --noEmit",
         "bun run test test/insights.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listInsights from makeClient to makePaginated. Updated listInsightsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Added 2 new pagination streaming tests. 0 type errors, 10/10 insights tests passing."
     },
     {
       "id": "P5-004",
