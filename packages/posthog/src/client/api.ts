@@ -15,6 +15,7 @@ import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
 
 import type { Operation } from "./operation.js";
+import type { Request as ApiRequest } from "./request.js";
 import type { Response } from "./response.js";
 
 import { Credentials } from "../credentials.js";
@@ -24,10 +25,23 @@ import { makeRequestBuilder } from "./request-builder.js";
 import { makeResponseParser } from "./response-parser.js";
 
 /**
- * Execute an API operation
+ * Cached init result for an operation — contains the request builder and response parser.
+ * Built once per operation via the ??= lazy init pattern (matching distilled-aws).
  */
-export const execute = <Op extends Operation>(
-  operation: Op,
+interface OperationInit {
+  readonly buildRequest: (
+    input: Record<string, unknown>
+  ) => Effect.Effect<ApiRequest>;
+  readonly parseResponse: (
+    response: Response
+  ) => Effect.Effect<S.Schema.Type<Operation["output"]>, PostHogErrorType>;
+}
+
+/**
+ * Execute an API operation with a cached init.
+ */
+const executeWithInit = <Op extends Operation>(
+  init: OperationInit,
   input: S.Schema.Type<Op["input"]>
 ): Effect.Effect<
   S.Schema.Type<Op["output"]>,
@@ -40,9 +54,8 @@ export const execute = <Op extends Operation>(
     const credentials = yield* Credentials;
     const endpoint = yield* Endpoint;
 
-    // Build the request
-    const requestBuilder = yield* makeRequestBuilder(operation);
-    const request = yield* requestBuilder(input);
+    // Build the request (uses cached request builder)
+    const request = yield* init.buildRequest(input);
 
     // Build the full URL
     const baseUrl = endpoint.replace(/\/$/, "");
@@ -108,11 +121,28 @@ export const execute = <Op extends Operation>(
       body: responseBody,
     };
 
-    // Parse the response
-    const responseParser = makeResponseParser(operation);
-    const result = yield* responseParser(response);
+    // Parse the response (uses cached response parser)
+    const result = yield* init.parseResponse(response);
 
     return result;
+  });
+};
+
+/**
+ * Execute an API operation (builds init on each call — use makeClient for cached version)
+ */
+export const execute = <Op extends Operation>(
+  operation: Op,
+  input: S.Schema.Type<Op["input"]>
+): Effect.Effect<
+  S.Schema.Type<Op["output"]>,
+  PostHogErrorType,
+  HttpClient.HttpClient | Credentials | Endpoint
+> => {
+  return Effect.gen(function* () {
+    const buildRequest = yield* makeRequestBuilder(operation);
+    const parseResponse = makeResponseParser(operation);
+    return yield* executeWithInit({ buildRequest, parseResponse }, input);
   });
 };
 
@@ -140,16 +170,27 @@ function buildQueryString(
 }
 
 /**
- * Create a typed API client for a specific operation
+ * Create a typed API client for a specific operation.
+ *
+ * Caches makeRequestBuilder and makeResponseParser per operation using
+ * the ??= lazy init pattern (matching distilled-aws). The expensive
+ * schema AST analysis runs once on first call, not on every request.
  */
 export const makeClient = <Op extends Operation>(operation: Op) => {
+  let _init: OperationInit | undefined;
+  const init = (): OperationInit =>
+    (_init ??= {
+      buildRequest: Effect.runSync(makeRequestBuilder(operation)),
+      parseResponse: makeResponseParser(operation),
+    });
+
   return (
     input: S.Schema.Type<Op["input"]>
   ): Effect.Effect<
     S.Schema.Type<Op["output"]>,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > => execute(operation, input);
+  > => executeWithInit(init(), input);
 };
 
 /**
@@ -194,13 +235,21 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
   type Input = S.Schema.Type<Op["input"]> & PaginatedInput;
   type Output = S.Schema.Type<Op["output"]> & PaginatedOutput<unknown>;
 
+  // Share the cached init with the single-page client
+  let _init: OperationInit | undefined;
+  const init = (): OperationInit =>
+    (_init ??= {
+      buildRequest: Effect.runSync(makeRequestBuilder(operation)),
+      parseResponse: makeResponseParser(operation),
+    });
+
   const fn = (
     input: Input
   ): Effect.Effect<
     Output,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > => execute(operation, input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>;
+  > => executeWithInit(init(), input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>;
 
   const pages = (
     input: Input

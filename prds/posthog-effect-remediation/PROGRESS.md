@@ -859,6 +859,26 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 | `console.log` in `scripts/` | 7 in generate-clients.ts — sync code gen script, not an Effect context |
 | `throw` in `src/` | PASS — Zero |
 
-**All PRD tasks complete. Remediation finished.**
+**P0-P3 + VERIFY-001 complete.**
+
+---
+
+### P4-001: Cache makeRequestBuilder and makeResponseParser per operation ✅
+
+**Date:** 2026-01-28
+**Status:** PASSED
+
+**Changes:**
+- Created `OperationInit` interface in `src/client/api.ts` holding cached `buildRequest` and `parseResponse`
+- Extracted `executeWithInit` helper that operates on a pre-built init (no per-call AST analysis)
+- Updated `makeClient` with closure-scoped `_init` variable using `??=` lazy init pattern
+- Updated `makePaginated` with its own closure-scoped `_init` (same pattern)
+- `makeRequestBuilder` runs via `Effect.runSync` at init time (pure computation, no async/context deps)
+- `makeResponseParser` called once at init time (synchronous)
+- Added `ApiRequest` import alias to avoid global `Request` name clash
+
+**Verification:**
+- `npx tsc --noEmit` — 0 errors
+- `bun run test` — 226/226 tests passing
 
 ---

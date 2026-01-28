@@ -932,8 +932,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added lazy init caching via ??= pattern matching distilled-aws. Created OperationInit interface holding cached buildRequest and parseResponse. Extracted executeWithInit helper that operates on cached init. makeClient and makePaginated each create closure-scoped _init that runs makeRequestBuilder (via Effect.runSync) and makeResponseParser once on first call. Subsequent calls reuse the cached builders — zero AST traversal after first call. 0 type errors, 226/226 tests passing."
     },
     {
       "id": "P4-002",
