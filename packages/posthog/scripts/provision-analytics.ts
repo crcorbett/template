@@ -10,7 +10,14 @@
 import { FetchHttpClient, FileSystem } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import * as PlatformConfigProvider from "@effect/platform/PlatformConfigProvider";
-import { ConfigProvider, Effect, Layer, LogLevel, Logger } from "effect";
+import {
+  Config,
+  ConfigProvider,
+  Effect,
+  Layer,
+  LogLevel,
+  Logger,
+} from "effect";
 import * as net from "node:net";
 
 import { Credentials } from "../src/credentials.js";
@@ -27,7 +34,6 @@ import { createSurvey } from "../src/services/surveys.js";
 // Disable Happy Eyeballs (IPv6 issues)
 net.setDefaultAutoSelectFamily(false);
 
-const PROJECT_ID = process.env["POSTHOG_PROJECT_ID"] ?? "289739";
 const PREFIX = `acme-${Date.now()}`;
 
 const created = {
@@ -42,6 +48,8 @@ const created = {
 };
 
 const provision = Effect.gen(function* () {
+  const PROJECT_ID = yield* Config.string("POSTHOG_PROJECT_ID");
+
   console.log("\n🚀 Provisioning Acme Project Manager Analytics Stack\n");
   console.log(`   Project ID: ${PROJECT_ID}`);
   console.log(`   Prefix: ${PREFIX}\n`);

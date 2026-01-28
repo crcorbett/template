@@ -8,7 +8,7 @@ import {
   it,
   type TestContext,
 } from "@effect/vitest";
-import { ConfigProvider, LogLevel } from "effect";
+import { Config, ConfigProvider, LogLevel } from "effect";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
@@ -18,6 +18,19 @@ import * as net from "node:net";
 import { Credentials } from "../src/credentials.js";
 import { Endpoint } from "../src/endpoint.js";
 import * as Retry from "../src/retry.js";
+
+/**
+ * The PostHog project ID used for integration tests.
+ * Resolved from POSTHOG_PROJECT_ID via the Effect Config system,
+ * which reads from `.env` at runtime.
+ */
+export const TEST_PROJECT_ID: Effect.Effect<string, Error> = Config.string(
+  "POSTHOG_PROJECT_ID"
+).pipe(
+  Effect.mapError(
+    () => new Error("POSTHOG_PROJECT_ID is required. Set it in your .env file.")
+  )
+);
 
 /**
  * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
@@ -147,6 +160,26 @@ export const afterAll = (
   effect: Effect.Effect<void, unknown, Provided>,
   timeout?: number
 ) => _afterAll(() => run(effect), timeout ?? 30_000);
+
+/**
+ * Test helper that guarantees resource cleanup via Effect.acquireUseRelease.
+ *
+ * Replaces the broken `let createdId` + `Effect.ensuring` pattern where the
+ * ternary was eagerly evaluated at Effect construction time (before the
+ * resource was created), so cleanup never ran on test failure.
+ *
+ * @param acquire - Effect that creates the resource (e.g. createAction)
+ * @param use - Test body that receives the created resource
+ * @param release - Cleanup function called with the resource (always runs)
+ */
+export const withResource = <A, E, R>(options: {
+  readonly acquire: Effect.Effect<A, E, R>;
+  readonly use: (resource: A) => Effect.Effect<void, E, R>;
+  readonly release: (resource: A) => Effect.Effect<void, unknown, R>;
+}): Effect.Effect<void, E, R> =>
+  Effect.acquireUseRelease(options.acquire, options.use, (resource) =>
+    options.release(resource).pipe(Effect.catchAll(() => Effect.void))
+  );
 
 export const expectSnapshot = (
   ctx: TestContext,
