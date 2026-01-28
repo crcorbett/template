@@ -229,8 +229,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created dashboard.ts with DashboardProps (name required, description, pinned, tags, restrictionLevel optional) and DashboardAttrs (id, name, description, pinned, createdAt). Follows FeatureFlag contract pattern. Updated dashboards/index.ts barrel export. bun tsc -b passes."
     },
     {
       "id": "DASH-002",

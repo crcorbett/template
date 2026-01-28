@@ -79,6 +79,17 @@
   - Both tests pass with POSTHOG_API_KEY and POSTHOG_PROJECT_ID env vars set
   - `bun tsc -b` and `bun vitest run test/posthog/feature-flags/feature-flag.provider.test.ts` pass
 
+### DASH-001 - Implement Dashboard resource contract
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/dashboards/dashboard.ts` with:
+  - `DashboardProps` interface with JSDoc: name (required), description, pinned, tags, restrictionLevel (all optional except name)
+  - `DashboardAttrs` interface: id (number, stable), name, description, pinned, createdAt
+  - `Dashboard` interface extending `Resource<"PostHog.Dashboards.Dashboard", ...>`
+  - `Dashboard` const exported via `Resource<CtorSignature>()` factory
+  - Updated `dashboards/index.ts` barrel to export all from `dashboard.js`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -87,7 +98,7 @@
 |----------|-------|-----------|-------------|---------|
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
-| Dashboard | 3 | 0 | 0 | 3 |
+| Dashboard | 3 | 1 | 0 | 2 |
 | Experiment | 3 | 0 | 0 | 3 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
@@ -95,4 +106,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **6** | **0** | **23** |
+| **Total** | **29** | **7** | **0** | **22** |
