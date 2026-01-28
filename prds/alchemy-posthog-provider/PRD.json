@@ -383,8 +383,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created survey.ts with SurveyProps (name, description, type, questions, appearance, startDate, endDate, responsesLimit, linkedFlagId) and SurveyAttrs (id as string UUID, name, type, startDate, endDate, archived, createdAt). Follows Experiment contract pattern but with string UUID id instead of number. Updated surveys/index.ts barrel export. bun tsc -b passes."
     },
     {
       "id": "SRV-002",

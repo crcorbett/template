@@ -1,1 +1,1 @@
-// Surveys barrel - providers will be added incrementally
+export * from "./survey.js";

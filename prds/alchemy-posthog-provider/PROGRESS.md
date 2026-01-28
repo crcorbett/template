@@ -158,6 +158,18 @@
   - Updated RESEARCH.md with experiment soft delete behavior documentation
   - `bun tsc -b` and `bun vitest run test/posthog/experiments/experiment.provider.test.ts` pass (2 tests)
 
+### SRV-001 - Implement Survey resource contract
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/surveys/survey.ts` with:
+  - `SurveyProps` interface with JSDoc: name (required), type (required, replaces on change), description, questions, appearance, startDate, endDate, responsesLimit, linkedFlagId
+  - `SurveyAttrs` interface: id (string UUID, stable), name, type (stable), startDate, endDate, archived, createdAt
+  - Key difference from other resources: Survey IDs are string UUIDs, not numbers
+  - `Survey` interface extending `Resource<"PostHog.Surveys.Survey", ...>`
+  - `Survey` const exported via `Resource<CtorSignature>()` factory
+  - Updated `surveys/index.ts` barrel to export all from `survey.js`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -168,10 +180,10 @@
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 3 | 0 | 0 |
-| Survey | 3 | 0 | 0 | 3 |
+| Survey | 3 | 1 | 0 | 2 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **12** | **0** | **17** |
+| **Total** | **29** | **13** | **0** | **16** |
