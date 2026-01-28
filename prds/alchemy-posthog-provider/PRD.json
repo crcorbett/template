@@ -275,8 +275,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/dashboards/dashboard.provider.test.ts passes"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created dashboard.provider.test.ts with create/update/delete test. Added @packages/posthog/dashboards and @packages/posthog/errors path aliases to vitest.config.ts. PostHog dashboards return 404 after soft delete (unlike feature flags which return deleted:true), so assertDashboardDeleted catches both NotFoundError and PostHogError with code '404'."
     },
     {
       "id": "EXP-001",

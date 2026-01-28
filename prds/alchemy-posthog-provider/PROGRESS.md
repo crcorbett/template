@@ -106,6 +106,18 @@
   - Updated `posthog/index.ts` with Dashboards namespace export and added `dashboardProvider()` to `resources()`
   - `bun tsc -b` passes with no errors
 
+### DASH-003 - Implement Dashboard provider integration tests
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created integration tests for Dashboard provider:
+  - Test file at `test/posthog/dashboards/dashboard.provider.test.ts`
+  - Test: "create, update, delete dashboard" - exercises full CRUD lifecycle, verifies via direct API calls
+  - Added `@packages/posthog/dashboards` and `@packages/posthog/errors` path aliases to vitest.config.ts
+  - Discovery: PostHog dashboards return HTTP 404 after soft delete (unlike feature flags which return `deleted: true` in the response)
+  - `assertDashboardDeleted` helper catches both `NotFoundError` and `PostHogError` with code "404"
+  - Updated RESEARCH.md with Dashboard soft delete behavior documentation
+  - `bun tsc -b` and `bun vitest run test/posthog/dashboards/dashboard.provider.test.ts` pass
+
 ---
 
 ## Task Status Summary
@@ -114,7 +126,7 @@
 |----------|-------|-----------|-------------|---------|
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
-| Dashboard | 3 | 2 | 0 | 1 |
+| Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 0 | 0 | 3 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
@@ -122,4 +134,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **8** | **0** | **21** |
+| **Total** | **29** | **9** | **0** | **20** |

@@ -444,3 +444,33 @@ resolve: {
 ```
 
 This ensures vitest can resolve imports to the TypeScript source files during test execution.
+
+---
+
+## PostHog Dashboard Soft Delete Behavior (DASH-003)
+
+Unlike feature flags, PostHog dashboards return **HTTP 404** after soft deletion. When `deleteDashboard` is called (which internally PATCHes `deleted: true`), subsequent GET requests return 404 instead of the deleted resource with `deleted: true`.
+
+This affects test verification patterns:
+
+```typescript
+// ✅ Correct pattern for dashboards - catch 404 error
+const assertDashboardDeleted = (id: number) =>
+  getDashboard({ id }).pipe(
+    Effect.flatMap((dashboard) =>
+      dashboard.deleted === true
+        ? Effect.void
+        : Effect.fail(new NotDeletedError({ id }))
+    ),
+    Effect.catchTag("NotFoundError", () => Effect.void),
+    // PostHog returns PostHogError with code "404" for deleted dashboards
+    Effect.catchTag("PostHogError", (err) => {
+      if (err.code === "404") return Effect.void;
+      return Effect.fail(err);
+    })
+  );
+```
+
+**Key Difference:** Feature flags remain accessible with `deleted: true`, but dashboards return 404 after deletion.
+
+**Reference:** `packages/posthog/src/services/dashboards.ts` - `deleteDashboard` calls `updateDashboard` with `deleted: true`.

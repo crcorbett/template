@@ -17,6 +17,14 @@ export default defineConfig({
         __dirname,
         "../posthog/src/services/feature-flags.ts"
       ),
+      "@packages/posthog/dashboards": path.resolve(
+        __dirname,
+        "../posthog/src/services/dashboards.ts"
+      ),
+      "@packages/posthog/errors": path.resolve(
+        __dirname,
+        "../posthog/src/errors.ts"
+      ),
       "@packages/posthog/Credentials": path.resolve(
         __dirname,
         "../posthog/src/credentials.ts"
