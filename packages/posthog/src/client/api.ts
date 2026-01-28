@@ -260,31 +260,16 @@ export const makeClient = <Op extends Operation>(operation: Op) => {
 };
 
 /**
- * A paginated response shape common to all PostHog list endpoints.
+ * Extract a query parameter value from a PostHog "next" URL.
+ * Works for both offset-based ("…?offset=20") and cursor-based ("…?cursor=abc") pagination.
  */
-interface PaginatedOutput<Item> {
-  readonly next?: string | null | undefined;
-  readonly results: ReadonlyArray<Item>;
-}
-
-/**
- * A paginated input shape common to all PostHog list endpoints.
- */
-interface PaginatedInput {
-  readonly offset?: number | undefined;
-  readonly limit?: number | undefined;
-}
-
-/**
- * Extract the offset from a PostHog "next" URL (e.g. "…?limit=10&offset=20").
- */
-const parseNextOffset = (nextUrl: string): Option.Option<number> => {
+const parseNextToken = (
+  nextUrl: string,
+  paramName: string
+): Option.Option<string> => {
   try {
     const url = new URL(nextUrl);
-    const offsetStr = url.searchParams.get("offset");
-    if (offsetStr === null) return Option.none();
-    const offset = Number(offsetStr);
-    return Number.isNaN(offset) ? Option.none() : Option.some(offset);
+    return Option.fromNullable(url.searchParams.get(paramName));
   } catch {
     return Option.none();
   }
@@ -293,15 +278,18 @@ const parseNextOffset = (nextUrl: string): Option.Option<number> => {
 /**
  * Create a paginated API client for a list operation.
  *
- * Returns a callable with two additional methods:
+ * Uses `operation.pagination` metadata to generically handle both offset-based
+ * and cursor-based pagination. Returns a callable with two additional methods:
  * - `.pages(input)` — a Stream of paginated result pages
  * - `.items(input)` — a Stream of individual result items across all pages
  *
  * Each individual page fetch is wrapped with retry logic matching makeClient.
  */
 export const makePaginated = <Op extends Operation>(operation: Op) => {
-  type Input = S.Schema.Type<Op["input"]> & PaginatedInput;
-  type Output = S.Schema.Type<Op["output"]> & PaginatedOutput<unknown>;
+  type Input = S.Schema.Type<Op["input"]>;
+  type Output = S.Schema.Type<Op["output"]>;
+
+  const pagination = operation.pagination!;
 
   // Share the cached init with the single-page client
   let _init: OperationInit | undefined;
@@ -321,7 +309,7 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
     Effect.gen(function* () {
       const { lastError, policy } = yield* resolveRetryPolicy;
       return yield* withRetry(
-        executeWithInit(init(), input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>,
+        executeWithInit<Op>(init(), input),
         lastError,
         policy,
       );
@@ -334,27 +322,39 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
   > =>
-    Stream.unfoldEffect(input as Input | undefined, (cursor) => {
-      if (cursor === undefined) {
-        return Effect.succeed(Option.none<readonly [Output, Input | undefined]>());
-      }
-      return fn(cursor).pipe(
-        Effect.map((page) => {
-          const nextOffset = Option.flatMap(
-            Option.fromNullable(page.next),
-            parseNextOffset
+    Stream.unfoldEffect(
+      input as Input | undefined,
+      (cursor: Input | undefined) => {
+        if (cursor === undefined) {
+          return Effect.succeed(
+            Option.none<readonly [Output, Input | undefined]>()
           );
-          const nextCursor = Option.match(nextOffset, {
-            onNone: (): Input | undefined => undefined,
-            onSome: (offset): Input | undefined => ({
-              ...cursor,
-              offset,
-            }),
-          });
-          return Option.some([page, nextCursor] as const);
-        })
-      );
-    });
+        }
+        return fn(cursor).pipe(
+          Effect.map((page) => {
+            const record = page as Record<string, unknown>;
+            const nextUrl = record[pagination.outputToken] as
+              | string
+              | null
+              | undefined;
+            const nextTokenValue = Option.flatMap(
+              Option.fromNullable(nextUrl),
+              (url) => parseNextToken(url, pagination.inputToken)
+            );
+            const nextCursor = Option.match(nextTokenValue, {
+              onNone: (): Input | undefined => undefined,
+              onSome: (token): Input | undefined => ({
+                ...cursor,
+                [pagination.inputToken]: token,
+              }),
+            });
+            return Option.some(
+              [page, nextCursor] as const
+            );
+          })
+        );
+      }
+    );
 
   const items = (
     input: Input
@@ -362,10 +362,15 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
     unknown,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > =>
-    pages(input).pipe(
-      Stream.mapConcat((page) => page.results)
+  > => {
+    const itemsKey = pagination.items ?? "results";
+    return pages(input).pipe(
+      Stream.mapConcat(
+        (page) =>
+          (page as Record<string, unknown>)[itemsKey] as ReadonlyArray<unknown>
+      )
     );
+  };
 
   return Object.assign(fn, { pages, items });
 };

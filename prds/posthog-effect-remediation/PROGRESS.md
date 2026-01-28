@@ -989,3 +989,33 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 224/224 non-events tests passing (2 pre-existing events timeouts)
 
 ---
+
+#### P4-007: Generic Pagination with Operation Metadata
+
+**Status:** Completed
+
+**Summary:** Refactored `makePaginated` to use `operation.pagination` metadata instead of hardcoded PostHog field names. Added pagination metadata to all 10 list operations across service files.
+
+**Changes:**
+- `api.ts`: Replaced `parseNextOffset` with generic `parseNextToken(url, paramName)` that extracts any named query param from a PostHog "next" URL. Removed `PaginatedInput`/`PaginatedOutput` interfaces — Input/Output types now derived directly from `Op["input"]`/`Op["output"]`. `makePaginated` now reads `inputToken`, `outputToken`, and `items` from `operation.pagination` instead of hardcoding `"offset"`, `"next"`, `"results"`.
+- 9 offset-based services (dashboards, cohorts, feature-flags, insights, actions, annotations, experiments, persons, surveys): Added `pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" }` to list operations.
+- 1 date-cursor-based service (events): Added `pagination: { inputToken: "after", outputToken: "next", items: "results" }` to list operation.
+
+**Files changed:**
+- `src/client/api.ts` — parseNextToken, removed PaginatedInput/PaginatedOutput, generic makePaginated
+- `src/services/dashboards.ts` — pagination metadata on listDashboardsOperation
+- `src/services/cohorts.ts` — pagination metadata on listCohortsOperation
+- `src/services/feature-flags.ts` — pagination metadata on listFeatureFlagsOperation
+- `src/services/insights.ts` — pagination metadata on listInsightsOperation
+- `src/services/actions.ts` — pagination metadata on listActionsOperation
+- `src/services/annotations.ts` — pagination metadata on listAnnotationsOperation
+- `src/services/experiments.ts` — pagination metadata on listExperimentsOperation
+- `src/services/persons.ts` — pagination metadata on listPersonsOperation
+- `src/services/surveys.ts` — pagination metadata on listSurveysOperation
+- `src/services/events.ts` — pagination metadata on listEventsOperation
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 225/226 tests passing (1 pre-existing annotation timeout)
+
+---

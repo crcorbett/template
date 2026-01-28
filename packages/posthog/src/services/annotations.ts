@@ -162,6 +162,7 @@ const listAnnotationsOperation: Operation = {
   input: ListAnnotationsRequest,
   output: PaginatedAnnotationList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getAnnotationOperation: Operation = {

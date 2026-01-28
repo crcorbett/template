@@ -323,6 +323,7 @@ const listInsightsOperation: Operation = {
   input: ListInsightsRequest,
   output: PaginatedInsightList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getInsightOperation: Operation = {

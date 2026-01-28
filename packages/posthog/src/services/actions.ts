@@ -163,6 +163,7 @@ const listActionsOperation: Operation = {
   input: ListActionsRequest,
   output: PaginatedActionList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getActionOperation: Operation = {

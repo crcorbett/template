@@ -124,6 +124,7 @@ const listEventsOperation: Operation = {
   input: ListEventsRequest,
   output: PaginatedClickhouseEventList,
   errors: [],
+  pagination: { inputToken: "after", outputToken: "next", items: "results" },
 };
 
 const getEventOperation: Operation = {

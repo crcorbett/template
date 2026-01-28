@@ -86,6 +86,7 @@ const listPersonsOperation: Operation = {
   input: ListPersonsRequest,
   output: PaginatedPersonList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getPersonOperation: Operation = {

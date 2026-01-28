@@ -200,6 +200,7 @@ const listDashboardsOperation: Operation = {
   input: ListDashboardsRequest,
   output: PaginatedDashboardList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getDashboardOperation: Operation = {

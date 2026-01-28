@@ -1144,8 +1144,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Refactored makePaginated to use operation.pagination metadata instead of hardcoded field names. Replaced parseNextOffset with generic parseNextToken(url, paramName) that extracts any named query param. Removed PaginatedInput/PaginatedOutput interfaces — Input/Output types now derived directly from Op['input']/Op['output']. Added pagination metadata to all 10 list operations: 9 offset-based (dashboards, cohorts, feature-flags, insights, actions, annotations, experiments, persons, surveys) with { inputToken: 'offset', outputToken: 'next', items: 'results', pageSize: 'limit' }, and 1 date-cursor-based (events) with { inputToken: 'after', outputToken: 'next', items: 'results' }. Operation.pagination interface already existed in operation.ts. 4 as casts remain in makePaginated (dynamic key access on typed objects — addressed by P4-010). 0 type errors, 225/226 tests passing (1 pre-existing annotation timeout)."
     },
     {
       "id": "P4-008",

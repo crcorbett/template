@@ -413,6 +413,7 @@ const listExperimentsOperation: Operation = {
   input: ListExperimentsRequest,
   output: PaginatedExperimentList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getExperimentOperation: Operation = {

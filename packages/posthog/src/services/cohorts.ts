@@ -197,6 +197,7 @@ const listCohortsOperation: Operation = {
   input: ListCohortsRequest,
   output: PaginatedCohortList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getCohortOperation: Operation = {

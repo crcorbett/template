@@ -187,6 +187,7 @@ const listFeatureFlagsOperation: Operation = {
   input: ListFeatureFlagsRequest,
   output: PaginatedFeatureFlagList,
   errors: [],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getFeatureFlagOperation: Operation = {
