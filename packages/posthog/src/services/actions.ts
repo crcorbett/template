@@ -178,10 +178,10 @@ const updateActionOperation: Operation = {
   errors: [],
 };
 
-export const listActions = makeClient(listActionsOperation);
-export const getAction = makeClient(getActionOperation);
-export const createAction = makeClient(createActionOperation);
-export const updateAction = makeClient(updateActionOperation);
+export const listActions = /*@__PURE__*/ /*#__PURE__*/ makeClient(listActionsOperation);
+export const getAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(getActionOperation);
+export const createAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(createActionOperation);
+export const updateAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateActionOperation);
 
 // Delete via soft-delete (marking as deleted: true)
 export const deleteAction = (input: DeleteActionRequest) =>

@@ -87,4 +87,4 @@ export const getMeOperation: Operation = {
  * );
  * ```
  */
-export const getMe = makeClient(getMeOperation);
+export const getMe = /*@__PURE__*/ /*#__PURE__*/ makeClient(getMeOperation);

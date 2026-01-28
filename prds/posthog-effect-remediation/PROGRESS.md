@@ -741,3 +741,32 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing (224 existing + 2 new)
 
 ---
+
+#### P3-001: Add /*@__PURE__*/ annotations for tree-shaking
+
+**Status:** Completed
+
+**Summary:** Added `/*@__PURE__*/ /*#__PURE__*/` annotations before all `makeClient()` and `makePaginated()` calls across 11 service files, enabling bundlers to tree-shake unused service operations.
+
+**Changes:**
+- 40 `makeClient()` calls annotated across: actions, annotations, cohorts, dashboards, events, experiments, feature-flags, insights, me, persons, surveys
+- 1 `makePaginated()` call annotated in dashboards.ts
+
+**Files changed:**
+- `src/services/actions.ts` — 4 annotations
+- `src/services/annotations.ts` — 5 annotations
+- `src/services/cohorts.ts` — 4 annotations
+- `src/services/dashboards.ts` — 4 annotations (1 makePaginated + 3 makeClient)
+- `src/services/events.ts` — 2 annotations
+- `src/services/experiments.ts` — 5 annotations
+- `src/services/feature-flags.ts` — 4 annotations
+- `src/services/insights.ts` — 4 annotations
+- `src/services/me.ts` — 1 annotation
+- `src/services/persons.ts` — 3 annotations
+- `src/services/surveys.ts` — 5 annotations
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 226/226 tests passing
+
+---

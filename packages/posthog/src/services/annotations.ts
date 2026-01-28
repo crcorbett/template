@@ -183,8 +183,8 @@ const deleteAnnotationOperation: Operation = {
   errors: [],
 };
 
-export const listAnnotations = makeClient(listAnnotationsOperation);
-export const getAnnotation = makeClient(getAnnotationOperation);
-export const createAnnotation = makeClient(createAnnotationOperation);
-export const updateAnnotation = makeClient(updateAnnotationOperation);
-export const deleteAnnotation = makeClient(deleteAnnotationOperation);
+export const listAnnotations = /*@__PURE__*/ /*#__PURE__*/ makeClient(listAnnotationsOperation);
+export const getAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(getAnnotationOperation);
+export const createAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(createAnnotationOperation);
+export const updateAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateAnnotationOperation);
+export const deleteAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteAnnotationOperation);

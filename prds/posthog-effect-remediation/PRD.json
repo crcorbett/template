@@ -797,7 +797,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Added /*@__PURE__*/ /*#__PURE__*/ annotations to all 40 makeClient() calls and 1 makePaginated() call across 11 service files (dashboards, cohorts, feature-flags, insights, events, persons, surveys, actions, annotations, experiments, me). 0 type errors, 226/226 tests passing."
     },
     {
       "id": "P3-002",

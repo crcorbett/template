@@ -335,10 +335,10 @@ const updateInsightOperation: Operation = {
   errors: [],
 };
 
-export const listInsights = makeClient(listInsightsOperation);
-export const getInsight = makeClient(getInsightOperation);
-export const createInsight = makeClient(createInsightOperation);
-export const updateInsight = makeClient(updateInsightOperation);
+export const listInsights = /*@__PURE__*/ /*#__PURE__*/ makeClient(listInsightsOperation);
+export const getInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(getInsightOperation);
+export const createInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(createInsightOperation);
+export const updateInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateInsightOperation);
 
 export const deleteInsight = (input: DeleteInsightRequest) =>
   updateInsight({

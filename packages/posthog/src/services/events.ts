@@ -127,5 +127,5 @@ const getEventOperation: Operation = {
   errors: [],
 };
 
-export const listEvents = makeClient(listEventsOperation);
-export const getEvent = makeClient(getEventOperation);
+export const listEvents = /*@__PURE__*/ /*#__PURE__*/ makeClient(listEventsOperation);
+export const getEvent = /*@__PURE__*/ /*#__PURE__*/ makeClient(getEventOperation);

@@ -95,6 +95,6 @@ const deletePersonOperation: Operation = {
   errors: [],
 };
 
-export const listPersons = makeClient(listPersonsOperation);
-export const getPerson = makeClient(getPersonOperation);
-export const deletePerson = makeClient(deletePersonOperation);
+export const listPersons = /*@__PURE__*/ /*#__PURE__*/ makeClient(listPersonsOperation);
+export const getPerson = /*@__PURE__*/ /*#__PURE__*/ makeClient(getPersonOperation);
+export const deletePerson = /*@__PURE__*/ /*#__PURE__*/ makeClient(deletePersonOperation);

@@ -434,8 +434,8 @@ const deleteExperimentOperation: Operation = {
   errors: [],
 };
 
-export const listExperiments = makeClient(listExperimentsOperation);
-export const getExperiment = makeClient(getExperimentOperation);
-export const createExperiment = makeClient(createExperimentOperation);
-export const updateExperiment = makeClient(updateExperimentOperation);
-export const deleteExperiment = makeClient(deleteExperimentOperation);
+export const listExperiments = /*@__PURE__*/ /*#__PURE__*/ makeClient(listExperimentsOperation);
+export const getExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(getExperimentOperation);
+export const createExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(createExperimentOperation);
+export const updateExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateExperimentOperation);
+export const deleteExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteExperimentOperation);

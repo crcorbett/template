@@ -202,10 +202,10 @@ const updateFeatureFlagOperation: Operation = {
   errors: [],
 };
 
-export const listFeatureFlags = makeClient(listFeatureFlagsOperation);
-export const getFeatureFlag = makeClient(getFeatureFlagOperation);
-export const createFeatureFlag = makeClient(createFeatureFlagOperation);
-export const updateFeatureFlag = makeClient(updateFeatureFlagOperation);
+export const listFeatureFlags = /*@__PURE__*/ /*#__PURE__*/ makeClient(listFeatureFlagsOperation);
+export const getFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(getFeatureFlagOperation);
+export const createFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(createFeatureFlagOperation);
+export const updateFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateFeatureFlagOperation);
 
 export const deleteFeatureFlag = (input: DeleteFeatureFlagRequest) =>
   updateFeatureFlag({

@@ -214,10 +214,10 @@ const updateDashboardOperation: Operation = {
   errors: [],
 };
 
-export const listDashboards = makePaginated(listDashboardsOperation);
-export const getDashboard = makeClient(getDashboardOperation);
-export const createDashboard = makeClient(createDashboardOperation);
-export const updateDashboard = makeClient(updateDashboardOperation);
+export const listDashboards = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listDashboardsOperation);
+export const getDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(getDashboardOperation);
+export const createDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(createDashboardOperation);
+export const updateDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateDashboardOperation);
 
 export const deleteDashboard = (input: DeleteDashboardRequest) =>
   updateDashboard({

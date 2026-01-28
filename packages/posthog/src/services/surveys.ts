@@ -338,8 +338,8 @@ const deleteSurveyOperation: Operation = {
   errors: [],
 };
 
-export const listSurveys = makeClient(listSurveysOperation);
-export const getSurvey = makeClient(getSurveyOperation);
-export const createSurvey = makeClient(createSurveyOperation);
-export const updateSurvey = makeClient(updateSurveyOperation);
-export const deleteSurvey = makeClient(deleteSurveyOperation);
+export const listSurveys = /*@__PURE__*/ /*#__PURE__*/ makeClient(listSurveysOperation);
+export const getSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(getSurveyOperation);
+export const createSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(createSurveyOperation);
+export const updateSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateSurveyOperation);
+export const deleteSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteSurveyOperation);

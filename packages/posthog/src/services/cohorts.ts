@@ -210,10 +210,10 @@ const updateCohortOperation: Operation = {
   errors: [],
 };
 
-export const listCohorts = makeClient(listCohortsOperation);
-export const getCohort = makeClient(getCohortOperation);
-export const createCohort = makeClient(createCohortOperation);
-export const updateCohort = makeClient(updateCohortOperation);
+export const listCohorts = /*@__PURE__*/ /*#__PURE__*/ makeClient(listCohortsOperation);
+export const getCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(getCohortOperation);
+export const createCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(createCohortOperation);
+export const updateCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateCohortOperation);
 
 export const deleteCohort = (input: DeleteCohortRequest) =>
   updateCohort({
