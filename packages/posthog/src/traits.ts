@@ -350,14 +350,10 @@ export const getPostHogService = (
  * Helper to get a value from an object using a dot-separated path.
  * Used for pagination traits where outputToken and items can be paths.
  */
-export const getPath = (obj: unknown, path: string): unknown => {
-  const parts = path.split(".");
-  let current: unknown = obj;
-  for (const part of parts) {
+export const getPath = (obj: unknown, path: string): unknown =>
+  path.split(".").reduce<unknown>((current, part) => {
     if (current == null || typeof current !== "object") {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-};
+    return (current as Record<string, unknown>)[part];
+  }, obj);

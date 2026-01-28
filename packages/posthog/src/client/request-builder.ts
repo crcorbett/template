@@ -87,24 +87,20 @@ function buildPath(
   input: Record<string, unknown>,
   labelProps: Map<string, AST.PropertySignature>
 ): string {
-  let path = uriTemplate;
+  // Handle greedy labels like {Key+} and simple labels like {Key}
+  return Array.from(labelProps).reduce((path, [propName]) => {
+    const value = input[propName];
+    if (value === undefined) return path;
 
-  // Handle greedy labels like {Key+}
-  for (const [propName, _prop] of labelProps) {
+    const stringValue = String(value);
     const greedyPattern = new RegExp(`\\{${propName}\\+\\}`, "g");
     const simplePattern = new RegExp(`\\{${propName}\\}`, "g");
 
-    const value = input[propName];
-    if (value !== undefined) {
-      const stringValue = String(value);
-      // Greedy labels don't encode slashes
-      path = path.replace(greedyPattern, stringValue);
-      // Simple labels encode the value
-      path = path.replace(simplePattern, encodeURIComponent(stringValue));
-    }
-  }
-
-  return path;
+    // Greedy labels don't encode slashes, simple labels encode the value
+    return path
+      .replace(greedyPattern, stringValue)
+      .replace(simplePattern, encodeURIComponent(stringValue));
+  }, uriTemplate);
 }
 
 export interface RequestBuilderOptions {
@@ -152,9 +148,6 @@ export const makeRequestBuilder = (
     string,
     { headerName: string; prop: AST.PropertySignature }
   >();
-  let payloadProp:
-    | { propName: string; prop: AST.PropertySignature }
-    | undefined;
   const bodyProps: Array<{ propName: string; prop: AST.PropertySignature }> =
     [];
 
@@ -170,14 +163,17 @@ export const makeRequestBuilder = (
         queryProps.set(propName, { queryName, prop });
       } else if (headerName !== undefined) {
         headerProps.set(propName, { headerName, prop });
-      } else if (hasHttpPayload(prop)) {
-        payloadProp = { propName, prop };
-      } else {
+      } else if (!hasHttpPayload(prop)) {
         // Default: goes in JSON body
         bodyProps.push({ propName, prop });
       }
     }
   }
+
+  // Find the single payload property (if any)
+  const payloadProp = props
+    .filter((prop) => hasHttpPayload(prop))
+    .map((prop) => ({ propName: String(prop.name), prop }))[0];
 
   // Return a function that builds requests synchronously wrapped in Effect.succeed
   const requestBuilder = (
@@ -219,36 +215,51 @@ export const makeRequestBuilder = (
     }
 
     // Build body
-    let body: string | undefined;
-
-    if (payloadProp) {
-      // Single field becomes the entire body
-      const payloadValue = input[payloadProp.propName];
-      if (payloadValue !== undefined) {
-        body = JSON.stringify(encodeJsonValue(payloadValue));
+    const buildBody = (): string | undefined => {
+      // Don't send body for GET/HEAD/DELETE without explicit payload
+      if (
+        (httpTrait.method === "GET" ||
+          httpTrait.method === "HEAD" ||
+          httpTrait.method === "DELETE") &&
+        !payloadProp
+      ) {
+        return undefined;
       }
-    } else if (bodyProps.length > 0) {
-      // Collect all body properties into a JSON object
-      const bodyObj: Record<string, unknown> = {};
-      for (const { propName } of bodyProps) {
-        const value = input[propName];
-        if (value !== undefined) {
-          bodyObj[propName] = encodeJsonValue(value);
+
+      if (payloadProp) {
+        // Single field becomes the entire body
+        const payloadValue = input[payloadProp.propName];
+        return payloadValue !== undefined
+          ? JSON.stringify(encodeJsonValue(payloadValue))
+          : undefined;
+      }
+
+      if (bodyProps.length > 0) {
+        // Collect all body properties into a JSON object
+        const bodyObj: Record<string, unknown> = {};
+        for (const { propName } of bodyProps) {
+          const value = input[propName];
+          if (value !== undefined) {
+            bodyObj[propName] = encodeJsonValue(value);
+          }
         }
+        return Object.keys(bodyObj).length > 0
+          ? JSON.stringify(bodyObj)
+          : undefined;
       }
-      if (Object.keys(bodyObj).length > 0) {
-        body = JSON.stringify(bodyObj);
-      }
-    }
 
-    // Don't send body for GET/HEAD/DELETE without explicit payload
+      return undefined;
+    };
+
+    const body = buildBody();
+
+    // Don't send Content-Type for bodyless requests
     if (
+      body === undefined &&
       (httpTrait.method === "GET" ||
         httpTrait.method === "HEAD" ||
-        httpTrait.method === "DELETE") &&
-      !payloadProp
+        httpTrait.method === "DELETE")
     ) {
-      body = undefined;
       delete headers["Content-Type"];
     }
 

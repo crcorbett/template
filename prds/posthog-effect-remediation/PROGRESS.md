@@ -796,3 +796,21 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 225/226 tests passing (1 pre-existing cohorts CRUD race condition)
 
 ---
+
+### P3-003: Replace mutable let variables with functional patterns
+**Date:** 2026-01-28
+**Status:** PASSED
+
+**Changes:**
+- `src/client/api.ts` — replaced `let httpRequest` with `const baseRequest` + ternary expression
+- `src/client/request-builder.ts` — replaced `let path` in `buildPath` with `Array.from().reduce()`, replaced `let payloadProp` with functional `.filter().map()[0]`, replaced `let body` with `const buildBody()` function + `const body = buildBody()`
+- `src/traits.ts` — replaced `let current` in `getPath` with `.reduce()`
+- `src/client/response-parser.ts` — removed stale comment (let offset already eliminated in P1-009)
+
+**Result:** Zero `let` declarations remain in any of the 4 target source files.
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 224/224 core tests passing (2 pre-existing saas-analytics-setup failures: annotation timeout + summary count)
+
+---

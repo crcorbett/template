@@ -45,7 +45,6 @@ const parseJsonBody = (
     );
     const combined = new Uint8Array(totalLength);
 
-    // Use reduce to avoid mutable let offset
     Arr.reduce(chunkArray, 0, (offset, chunk) => {
       combined.set(chunk, offset);
       return offset + chunk.length;

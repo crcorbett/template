@@ -51,19 +51,20 @@ export const execute = <Op extends Operation>(
 
     // Create the HTTP request with authentication
     const apiKey = Redacted.value(credentials.apiKey);
-    let httpRequest = HttpClientRequest.make(request.method)(fullUrl).pipe(
+    const baseRequest = HttpClientRequest.make(request.method)(fullUrl).pipe(
       HttpClientRequest.setHeaders({
         ...request.headers,
         Authorization: `Bearer ${apiKey}`,
       })
     );
 
-    if (request.body !== undefined && typeof request.body === "string") {
-      // bodyText() defaults to text/plain, must specify application/json
-      httpRequest = httpRequest.pipe(
-        HttpClientRequest.bodyText(request.body, "application/json")
-      );
-    }
+    const httpRequest =
+      request.body !== undefined && typeof request.body === "string"
+        ? baseRequest.pipe(
+            // bodyText() defaults to text/plain, must specify application/json
+            HttpClientRequest.bodyText(request.body, "application/json")
+          )
+        : baseRequest;
 
     // Execute the request
     const platformResponse = yield* httpClient.execute(httpRequest).pipe(
