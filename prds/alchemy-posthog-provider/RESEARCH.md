@@ -474,3 +474,32 @@ const assertDashboardDeleted = (id: number) =>
 **Key Difference:** Feature flags remain accessible with `deleted: true`, but dashboards return 404 after deletion.
 
 **Reference:** `packages/posthog/src/services/dashboards.ts` - `deleteDashboard` calls `updateDashboard` with `deleted: true`.
+
+---
+
+## PostHog Experiments Delete Behavior (EXP-003)
+
+**CRITICAL DISCOVERY:** The PostHog experiments API does **NOT support HTTP DELETE** (returns **405 Method Not Allowed**). The SPEC's claim that experiments use "Hard (HTTP DELETE)" is incorrect.
+
+Instead, experiments must be **soft-deleted via PATCH** with `archived: true`:
+
+```bash
+# ❌ Returns 405 Method Not Allowed
+curl -X DELETE "https://us.posthog.com/api/projects/{project_id}/experiments/{id}/"
+
+# ✅ Correct approach - soft delete via archive
+curl -X PATCH "https://us.posthog.com/api/projects/{project_id}/experiments/{id}/" \
+  -d '{"archived": true}'
+```
+
+The `experiment.provider.ts` was updated to use `updateExperiment({ archived: true })` instead of `deleteExperiment()`.
+
+After archiving, experiments remain retrievable via `getExperiment()` with `archived: true` in the response (similar to feature flags with `deleted: true`).
+
+**Corrected Delete Strategy Table:**
+
+| Resource | Strategy | Implementation |
+|----------|----------|---------------|
+| Experiments | Soft (PATCH archived: true) | `updateExperiment({ archived: true })` |
+
+**Note:** The `deleteExperiment` function in `@packages/posthog/experiments` exists but is non-functional (the PostHog API rejects DELETE requests for this resource type).

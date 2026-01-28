@@ -139,12 +139,24 @@
   - `read` with output.id check and NotFoundError handling
   - `create` mapping props to snake_case API params (featureFlagKey -> feature_flag_key, startDate -> start_date, endDate -> end_date, holdoutId -> holdout_id, metricsSecondary -> metrics_secondary)
   - `update` with session.note() for progress reporting
-  - `delete` using hard DELETE (Experiments use HTTP DELETE, not soft delete)
+  - `delete` using soft delete via `updateExperiment({ archived: true })` (PostHog experiments API returns 405 for HTTP DELETE)
   - Helper `mapResponseToAttrs()` for API response mapping
   - Added `@packages/posthog/experiments` alias to vitest.config.ts
   - Updated `experiments/index.ts` to export provider
   - Updated `posthog/index.ts` with Experiments namespace export and added `experimentProvider()` to `resources()`
   - `bun tsc -b` passes with no errors
+
+### EXP-003 - Implement Experiment provider integration tests
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created integration tests for Experiment provider:
+  - Test file at `test/posthog/experiments/experiment.provider.test.ts`
+  - Test 1: "create, update, delete experiment" - exercises full CRUD lifecycle, verifies via direct API calls
+  - Test 2: "replace experiment on feature flag key change" - verifies featureFlagKey change triggers replacement with new ID
+  - **CRITICAL FIX:** PostHog experiments API returns 405 for HTTP DELETE. Fixed `experiment.provider.ts` to use soft delete via `updateExperiment({ archived: true })` instead of `deleteExperiment()`
+  - `assertExperimentDeleted` helper checks for `archived: true` field (similar to feature flags' `deleted: true` pattern)
+  - Updated RESEARCH.md with experiment soft delete behavior documentation
+  - `bun tsc -b` and `bun vitest run test/posthog/experiments/experiment.provider.test.ts` pass (2 tests)
 
 ---
 
@@ -155,11 +167,11 @@
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
-| Experiment | 3 | 2 | 0 | 1 |
+| Experiment | 3 | 3 | 0 | 0 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **11** | **0** | **18** |
+| **Total** | **29** | **12** | **0** | **17** |

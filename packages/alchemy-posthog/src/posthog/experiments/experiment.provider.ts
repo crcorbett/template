@@ -116,9 +116,12 @@ export const experimentProvider = () =>
           Effect.gen(function* () {
             const projectId = yield* Project;
 
-            yield* PostHogExperiments.deleteExperiment({
+            // PostHog experiments don't support HTTP DELETE (returns 405).
+            // Soft-delete by archiving the experiment instead.
+            yield* PostHogExperiments.updateExperiment({
               project_id: projectId,
               id: output.id,
+              archived: true,
             }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
           }),
       };

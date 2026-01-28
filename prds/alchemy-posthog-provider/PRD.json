@@ -354,8 +354,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/experiments/experiment.provider.test.ts passes"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created integration tests with 2 test cases: (1) create/update/delete lifecycle and (2) replace on key change. IMPORTANT DISCOVERY: PostHog experiments API does NOT support HTTP DELETE (returns 405 Method Not Allowed). Fixed experiment.provider.ts to use soft delete via updateExperiment({archived: true}) instead of deleteExperiment(). assertExperimentDeleted checks for archived:true field. Tests also handle NotFoundError as fallback."
     },
     {
       "id": "SRV-001",
