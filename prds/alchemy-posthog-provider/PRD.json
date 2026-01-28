@@ -691,8 +691,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/ -- all tests pass"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "bun tsc -b passes with no type errors. All 8 service namespaces exported (FeatureFlags, Dashboards, Experiments, Surveys, Cohorts, Actions, Annotations, Insights). All 8 providers included in resources(). providers() includes Project, Credentials, Endpoint, FetchHttpClient layers. All 10 package.json export entries present. All 10 tests across 8 test files pass (8.64s)."
     },
     {
       "id": "FINAL-002",
