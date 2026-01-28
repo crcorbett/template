@@ -397,3 +397,50 @@ export const providers = () =>
 ### Import Extension Convention
 
 This repo uses `moduleResolution: "Bundler"` without `allowImportingTsExtensions`, so relative imports must use `.js` extensions (not `.ts`). This matches the convention used in `@packages/posthog`.
+
+---
+
+## PostHog Soft Delete Behavior (FF-003)
+
+PostHog feature flags use **soft delete** - when `deleteFeatureFlag` is called, it internally PATCHes the flag with `deleted: true`. The flag remains retrievable via `getFeatureFlag` and will include `deleted: true` in the response.
+
+This affects test verification patterns:
+
+```typescript
+// ❌ Won't work - soft-deleted flags don't return NotFoundError
+const assertFeatureFlagDeleted = (id: number) =>
+  getFeatureFlag({ id }).pipe(
+    Effect.catchTag("NotFoundError", () => Effect.void)
+  );
+
+// ✅ Correct pattern - check for deleted field
+const assertFeatureFlagDeleted = (id: number) =>
+  getFeatureFlag({ id }).pipe(
+    Effect.flatMap((flag) =>
+      flag.deleted === true
+        ? Effect.void
+        : Effect.fail(new NotDeletedError({ id }))
+    ),
+    Effect.catchTag("NotFoundError", () => Effect.void) // Future-proofing
+  );
+```
+
+**Reference:** `packages/posthog/src/services/feature-flags.ts` - `deleteFeatureFlag` calls `updateFeatureFlag` with `deleted: true`.
+
+---
+
+## vitest Path Alias Resolution
+
+When importing from workspace packages with wildcard exports (e.g., `@packages/posthog/feature-flags`), vitest may fail to resolve the custom export conditions. Solution is to use explicit path aliases in `vitest.config.ts`:
+
+```typescript
+resolve: {
+  conditions: ["@packages/source", "import", "default"],
+  alias: {
+    "@packages/posthog/feature-flags": path.resolve(__dirname, "../posthog/src/services/feature-flags.ts"),
+    // ... other aliases
+  },
+}
+```
+
+This ensures vitest can resolve imports to the TypeScript source files during test execution.

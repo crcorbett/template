@@ -203,8 +203,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/feature-flags/feature-flag.provider.test.ts passes (requires POSTHOG_API_KEY and POSTHOG_PROJECT_ID env vars)"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created integration tests with 2 test cases: (1) create/update/delete lifecycle and (2) replace on key change. Test helper in test/posthog/test.ts provides App, State, CLI layers for alchemy-effect plus Credentials and Endpoint for @packages/posthog. PostHog soft-deletes feature flags (deleted: true), so assertFeatureFlagDeleted checks for this field rather than NotFoundError. vitest.config.ts includes path aliases for @packages/posthog imports."
     },
     {
       "id": "DASH-001",

@@ -67,6 +67,18 @@
   - Updated `posthog/index.ts` with FeatureFlags namespace export and `resources()` using `Layer.mergeAll()`
   - `bun tsc -b` passes with no errors
 
+### FF-003 - Implement FeatureFlag provider integration tests
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created integration tests for FeatureFlag provider:
+  - Test helper at `test/posthog/test.ts` providing alchemy-effect layers (App, State, CLI) and PostHog layers (Credentials, Endpoint)
+  - vitest.config.ts with path aliases for @packages/posthog imports
+  - Test 1: "create, update, delete feature flag" - exercises full CRUD lifecycle, verifies via direct API calls
+  - Test 2: "replace feature flag on key change" - verifies key change triggers replacement with new ID
+  - `assertFeatureFlagDeleted` helper checks for soft delete (`deleted: true` field) rather than NotFoundError
+  - Both tests pass with POSTHOG_API_KEY and POSTHOG_PROJECT_ID env vars set
+  - `bun tsc -b` and `bun vitest run test/posthog/feature-flags/feature-flag.provider.test.ts` pass
+
 ---
 
 ## Task Status Summary
@@ -74,7 +86,7 @@
 | Category | Total | Completed | In Progress | Pending |
 |----------|-------|-----------|-------------|---------|
 | Setup | 3 | 3 | 0 | 0 |
-| FeatureFlag | 3 | 2 | 0 | 1 |
+| FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 0 | 0 | 3 |
 | Experiment | 3 | 0 | 0 | 3 |
 | Survey | 3 | 0 | 0 | 3 |
@@ -83,4 +95,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **5** | **0** | **24** |
+| **Total** | **29** | **6** | **0** | **23** |
