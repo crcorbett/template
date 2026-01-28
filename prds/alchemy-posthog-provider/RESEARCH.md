@@ -321,6 +321,32 @@ Package.json exports follow: `"./{cloud}/{service}"` → `"src/{cloud}/{service}
 
 ---
 
+## Module Augmentation from External Package (SETUP-002)
+
+Since `@packages/alchemy-posthog` is a **separate package** from `alchemy-effect`, the `declare module` augmentation syntax must use the **npm package name** rather than a relative path:
+
+```typescript
+// ✅ External package — use package name
+declare module "alchemy-effect" {
+  interface StageConfig {
+    posthog?: PostHogStageConfig;
+  }
+}
+
+// ❌ This only works inside alchemy-effect itself
+declare module "../stage.ts" { ... }
+```
+
+This works because `alchemy-effect/src/index.ts` re-exports `StageConfig` via `export * from "./stage.ts"`, making it part of the `"alchemy-effect"` module declaration.
+
+### Endpoint Default Difference
+
+- `@packages/posthog` defaults to `https://app.posthog.com` (Endpoint.DEFAULT)
+- The SPEC specifies `https://us.posthog.com` as the provider default
+- The `endpoint.ts` bridge uses `https://us.posthog.com` per SPEC
+
+---
+
 ## Package.json Export Pattern
 
 Each subpath export has three conditions:

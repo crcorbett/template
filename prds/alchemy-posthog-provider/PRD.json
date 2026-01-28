@@ -65,8 +65,8 @@
         "All four files exist: config.ts, project.ts, credentials.ts, endpoint.ts",
         "Verify config.ts augments StageConfig interface correctly"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created config.ts (module augmentation of alchemy-effect StageConfig), project.ts (Context.Tag with fromStageConfig reading from stage config or POSTHOG_PROJECT_ID env), credentials.ts (bridge to @packages/posthog Credentials from stage config or POSTHOG_API_KEY env), endpoint.ts (bridge to @packages/posthog Endpoint from stage config or default https://us.posthog.com). Module augmentation uses 'declare module \"alchemy-effect\"' since StageConfig is re-exported from the root. Default endpoint is https://us.posthog.com per SPEC (differs from @packages/posthog default of https://app.posthog.com)."
     },
     {
       "id": "SETUP-003",
