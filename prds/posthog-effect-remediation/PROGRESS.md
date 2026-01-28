@@ -969,3 +969,23 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing
 
 ---
+
+#### P4-006: Add Retry Factory pattern with Ref for retry-after support
+
+**Status:** Completed
+
+**Summary:** Added the Factory pattern with `Ref` for retry-after header support, matching the distilled-aws retry architecture. The retry policy is now resolved from context on each API call, with a default factory that reads `retryAfter` from `RateLimitError` via a `Ref` tracking the last error.
+
+**Changes:**
+- `retry.ts`: Added `Factory` type `(Ref<unknown>) => Options`, `Policy` union `Options | Factory`, `makeDefault` factory (exponential backoff 100ms×2, retry-after extraction, 500ms throttle floor, 5 retries, jitter). Updated `Retry` Context.Tag to accept `Policy`. Added dual `policy()` overloads.
+- `api.ts`: Added `resolveRetryPolicy` helper (creates `Ref.make<unknown>`, resolves `Retry` from context via `Effect.serviceOption`, falls back to `makeDefault`). Added `withRetry` helper (`Effect.tapError` + conditional `Effect.retry`). Wrapped `makeClient` and `makePaginated` returned functions with retry logic.
+
+**Files changed:**
+- `src/retry.ts` — Factory/Policy types, makeDefault, updated Retry tag and policy overloads
+- `src/client/api.ts` — resolveRetryPolicy, withRetry, retry wrapping in makeClient/makePaginated
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 224/224 non-events tests passing (2 pre-existing events timeouts)
+
+---

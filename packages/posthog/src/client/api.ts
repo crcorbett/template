@@ -9,9 +9,11 @@ import type * as S from "effect/Schema";
 
 import { HttpClient, HttpClientRequest } from "@effect/platform";
 import * as Effect from "effect/Effect";
+import { pipe } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
+import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
 import type { Operation } from "./operation.js";
@@ -21,6 +23,7 @@ import type { Response } from "./response.js";
 import { Credentials } from "../credentials.js";
 import { Endpoint } from "../endpoint.js";
 import { PostHogError, type PostHogErrorType } from "../errors.js";
+import { type Options as RetryOptions, makeDefault, Retry } from "../retry.js";
 import { makeRequestBuilder } from "./request-builder.js";
 import { makeResponseParser } from "./response-parser.js";
 
@@ -145,6 +148,41 @@ const executeWithInit = <Op extends Operation>(
 };
 
 /**
+ * Resolve the retry policy from context, falling back to the default factory.
+ * Creates a Ref to track the last error for retry-after header support.
+ */
+const resolveRetryPolicy = Effect.gen(function* () {
+  const lastError = yield* Ref.make<unknown>(undefined);
+  const policy = (yield* Effect.serviceOption(Retry)).pipe(
+    Option.map((value) =>
+      typeof value === "function" ? value(lastError) : value,
+    ),
+    Option.getOrElse(() => makeDefault(lastError)),
+  );
+  return { lastError, policy };
+});
+
+/**
+ * Wrap an effect with retry logic using the resolved policy.
+ */
+const withRetry = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  lastError: Ref.Ref<unknown>,
+  policy: RetryOptions,
+): Effect.Effect<A, E, R> =>
+  pipe(
+    effect,
+    Effect.tapError((error) => Ref.set(lastError, error)),
+    policy.while
+      ? (eff) =>
+          Effect.retry(eff, {
+            while: policy.while,
+            schedule: policy.schedule,
+          })
+      : (eff) => eff,
+  );
+
+/**
  * Execute an API operation (builds init on each call — use makeClient for cached version)
  */
 export const execute = <Op extends Operation>(
@@ -191,6 +229,10 @@ function buildQueryString(
  * Caches makeRequestBuilder and makeResponseParser per operation using
  * the ??= lazy init pattern (matching distilled-aws). The expensive
  * schema AST analysis runs once on first call, not on every request.
+ *
+ * Wraps execution with retry logic: creates a Ref to track the last error,
+ * resolves the Retry policy from context (or uses makeDefault), and applies
+ * Effect.retry with tapError for retry-after header support.
  */
 export const makeClient = <Op extends Operation>(operation: Op) => {
   let _init: OperationInit | undefined;
@@ -206,7 +248,15 @@ export const makeClient = <Op extends Operation>(operation: Op) => {
     S.Schema.Type<Op["output"]>,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > => executeWithInit(init(), input);
+  > =>
+    Effect.gen(function* () {
+      const { lastError, policy } = yield* resolveRetryPolicy;
+      return yield* withRetry(
+        executeWithInit(init(), input),
+        lastError,
+        policy,
+      );
+    });
 };
 
 /**
@@ -246,6 +296,8 @@ const parseNextOffset = (nextUrl: string): Option.Option<number> => {
  * Returns a callable with two additional methods:
  * - `.pages(input)` — a Stream of paginated result pages
  * - `.items(input)` — a Stream of individual result items across all pages
+ *
+ * Each individual page fetch is wrapped with retry logic matching makeClient.
  */
 export const makePaginated = <Op extends Operation>(operation: Op) => {
   type Input = S.Schema.Type<Op["input"]> & PaginatedInput;
@@ -265,7 +317,15 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
     Output,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > => executeWithInit(init(), input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>;
+  > =>
+    Effect.gen(function* () {
+      const { lastError, policy } = yield* resolveRetryPolicy;
+      return yield* withRetry(
+        executeWithInit(init(), input) as Effect.Effect<Output, PostHogErrorType, HttpClient.HttpClient | Credentials | Endpoint>,
+        lastError,
+        policy,
+      );
+    });
 
   const pages = (
     input: Input

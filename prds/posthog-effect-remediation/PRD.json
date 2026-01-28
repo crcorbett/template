@@ -1091,8 +1091,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added Factory type (Ref<unknown> => Options), Policy union type (Options | Factory), and makeDefault factory to retry.ts. makeDefault uses exponential backoff (100ms base, factor 2), reads retryAfter from RateLimitError via Ref, enforces 500ms minimum for throttling, limits to 5 retries with jitter. Updated Retry Context.Tag to accept Policy instead of Options. Added dual policy() overloads for Options and Factory. Updated api.ts: added resolveRetryPolicy helper (creates Ref, resolves Retry from context via Effect.serviceOption, falls back to makeDefault), withRetry helper (tapError to track last error + conditional Effect.retry). Wrapped makeClient and makePaginated with retry logic. Existing Retry.transient/throttling/none still work (Options is a subtype of Policy). 0 type errors, 224/224 non-events tests passing (2 pre-existing events timeouts)."
     },
     {
       "id": "P4-007",
