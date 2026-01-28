@@ -186,6 +186,18 @@
   - Updated `posthog/index.ts` with Surveys namespace export and added `surveyProvider()` to `resources()`
   - `bun tsc -b` passes with no errors
 
+### SRV-003 - Implement Survey provider integration tests
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created integration tests for Survey provider:
+  - Test file at `test/posthog/surveys/survey.provider.test.ts`
+  - Test: "create, update, delete survey" - exercises full CRUD lifecycle (create survey with type 'api', update name, destroy)
+  - Verified Survey IDs are string UUIDs (`typeof === 'string'`), not numbers
+  - `assertSurveyDeleted` helper handles both `archived: true` field, `NotFoundError`, and `PostHogError` with code "404" (covers both soft and hard delete behaviors)
+  - Added `@packages/posthog/surveys` alias to `vitest.config.ts`
+  - PostHog surveys use real HTTP DELETE (hard delete) - survey is no longer accessible after deletion
+  - `bun tsc -b` and `bun vitest run test/posthog/surveys/survey.provider.test.ts` pass
+
 ---
 
 ## Task Status Summary
@@ -196,10 +208,10 @@
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 3 | 0 | 0 |
-| Survey | 3 | 2 | 0 | 1 |
+| Survey | 3 | 3 | 0 | 0 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **14** | **0** | **15** |
+| **Total** | **29** | **15** | **0** | **14** |

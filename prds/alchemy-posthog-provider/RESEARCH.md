@@ -503,3 +503,19 @@ After archiving, experiments remain retrievable via `getExperiment()` with `arch
 | Experiments | Soft (PATCH archived: true) | `updateExperiment({ archived: true })` |
 
 **Note:** The `deleteExperiment` function in `@packages/posthog/experiments` exists but is non-functional (the PostHog API rejects DELETE requests for this resource type).
+
+---
+
+## PostHog Survey Delete Behavior (SRV-003)
+
+PostHog surveys support **real HTTP DELETE** (hard delete). After calling `deleteSurvey()`, the survey is fully removed and subsequent GET requests return a 404 error.
+
+This is confirmed by the integration test: after `destroy()`, `getSurvey()` fails with either `NotFoundError` or `PostHogError` with code "404".
+
+**Survey ID Type:** Survey IDs are **string UUIDs**, not numbers. This is the only resource in the PostHog API where the ID is a string rather than an integer. The `assertSurveyDeleted` helper must accept `string` not `number`.
+
+**Corrected Delete Strategy:**
+
+| Resource | Strategy | Implementation |
+|----------|----------|---------------|
+| Surveys | Hard (HTTP DELETE) | `deleteSurvey()` — returns void, resource fully removed |
