@@ -319,6 +319,27 @@ Effect Schema's `S.Class` strips excess properties during decoding by default. T
 
 The `properties` field in DashboardFilter is a 17-member union of filter types. Typing this completely would require defining schemas for: EventPropertyFilter, PersonPropertyFilter, ElementPropertyFilter, EventMetadataPropertyFilter, SessionPropertyFilter, CohortPropertyFilter, RecordingPropertyFilter, LogEntryPropertyFilter, GroupPropertyFilter, FeaturePropertyFilter, FlagPropertyFilter, HogQLPropertyFilter, EmptyPropertyFilter, DataWarehousePropertyFilter, DataWarehousePersonPropertyFilter, ErrorTrackingIssueFilter, LogPropertyFilter, RevenueAnalyticsPropertyFilter. This is best deferred to a dedicated task if needed.
 
+## 10. P1-003 Research: Feature Flag Schema Typing
+
+### OpenAPI vs Reality for Feature Flags
+
+- **FeatureFlag.surveys**: OpenAPI declares `type: object, additionalProperties: {}` but the live API returns `[]` (empty array). Using `S.Record(...)` causes decode failure; `S.Array(S.Unknown)` works.
+- **FeatureFlag.features**: Same issue as surveys — declared as object, returns array.
+- **FeatureFlag.experiment_set**: OpenAPI says `type: string` but it's actually an array of experiment IDs (`number[]`). Typed as `S.NullOr(S.Array(S.Number))`.
+- **FeatureFlag.rollback_conditions**: OpenAPI declares `nullable: true` with no type at all. Typed as `S.NullOr(S.Array(S.Unknown))`.
+- **FeatureFlag.filters**: Rich structure with `groups` (array of `FeatureFlagGroupType`), `multivariate` (variants for A/B tests), `payloads` (per-variant JSON), `aggregation_group_type_index`, and `super_groups`. The `FeatureFlagGroupType` has a `properties` field that's the same 17-member property filter union as dashboard filters.
+- **FeatureFlagGroupType**: Well-documented in OpenAPI with `properties`, `rollout_percentage`, `description`, `sort_key`, `users_affected`, `variant` fields.
+
+### Pattern: OpenAPI Object vs API Array
+
+PostHog's OpenAPI spec sometimes declares fields as `type: object` when the live API returns arrays. This has now been observed for:
+- `FeatureFlag.surveys`
+- `FeatureFlag.features`
+
+When typing schemas, always verify against real API responses, not just the OpenAPI spec.
+
+---
+
 ### P1
 - `src/services/*.ts` (9 files) -- Replace `S.Unknown` with proper schemas
 - `test/client/response-parser.test.ts` -- Remove 26 `as PostHogError` casts

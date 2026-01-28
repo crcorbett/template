@@ -8,11 +8,59 @@ import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
 
+// ---------------------------------------------------------------------------
+// Feature flag sub-schemas
+// ---------------------------------------------------------------------------
+
+/** A single group in the feature flag filter configuration. */
+export class FeatureFlagGroup extends S.Class<FeatureFlagGroup>(
+  "FeatureFlagGroup"
+)({
+  /** Property filter conditions for this group (complex union in OpenAPI). */
+  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  rollout_percentage: S.optional(S.NullOr(S.Number)),
+  description: S.optional(S.NullOr(S.String)),
+  sort_key: S.optional(S.NullOr(S.String)),
+  users_affected: S.optional(S.NullOr(S.Number)),
+  variant: S.optional(S.NullOr(S.String)),
+}) {}
+
+/** A single variant for multivariate feature flags. */
+export class FeatureFlagVariant extends S.Class<FeatureFlagVariant>(
+  "FeatureFlagVariant"
+)({
+  key: S.String,
+  name: S.optional(S.NullOr(S.String)),
+  rollout_percentage: S.Number,
+}) {}
+
+/** Multivariate configuration containing variants. */
+export class FeatureFlagMultivariate extends S.Class<FeatureFlagMultivariate>(
+  "FeatureFlagMultivariate"
+)({
+  variants: S.Array(FeatureFlagVariant),
+}) {}
+
+/** Top-level filters object for a feature flag. */
+export class FeatureFlagFilters extends S.Class<FeatureFlagFilters>(
+  "FeatureFlagFilters"
+)({
+  groups: S.optional(S.Array(FeatureFlagGroup)),
+  multivariate: S.optional(S.NullOr(FeatureFlagMultivariate)),
+  payloads: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  aggregation_group_type_index: S.optional(S.NullOr(S.Number)),
+  super_groups: S.optional(S.Array(FeatureFlagGroup)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Feature flag response schema
+// ---------------------------------------------------------------------------
+
 export class FeatureFlag extends S.Class<FeatureFlag>("FeatureFlag")({
   id: S.Number,
   name: S.optional(S.String),
   key: S.String,
-  filters: S.optional(S.Unknown),
+  filters: S.optional(FeatureFlagFilters),
   deleted: S.optional(S.Boolean),
   active: S.optional(S.Boolean),
   created_by: S.optional(S.NullOr(UserBasic)),
@@ -23,13 +71,16 @@ export class FeatureFlag extends S.Class<FeatureFlag>("FeatureFlag")({
   is_simple_flag: S.optional(S.Boolean),
   rollout_percentage: S.optional(S.NullOr(S.Number)),
   ensure_experience_continuity: S.optional(S.NullOr(S.Boolean)),
-  experiment_set: S.optional(S.Unknown),
-  surveys: S.optional(S.Unknown),
-  features: S.optional(S.Unknown),
-  rollback_conditions: S.optional(S.NullOr(S.Unknown)),
+  /** Array of experiment IDs associated with this flag. */
+  experiment_set: S.optional(S.NullOr(S.Array(S.Number))),
+  /** Array of survey references (OpenAPI claims object but API returns array). */
+  surveys: S.optional(S.Array(S.Unknown)),
+  /** Array of early access feature references (OpenAPI claims object but API returns array). */
+  features: S.optional(S.Array(S.Unknown)),
+  rollback_conditions: S.optional(S.NullOr(S.Array(S.Unknown))),
   performed_rollback: S.optional(S.NullOr(S.Boolean)),
   can_edit: S.optional(S.Boolean),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   usage_dashboard: S.optional(S.NullOr(S.Number)),
   analytics_dashboards: S.optional(S.Array(S.Number)),
   has_enriched_analytics: S.optional(S.NullOr(S.Boolean)),

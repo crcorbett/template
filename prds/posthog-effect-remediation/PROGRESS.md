@@ -116,3 +116,34 @@
 - `bun run test test/dashboards.test.ts` -- 5/5 tests passing
 
 ---
+
+#### P1-003: Replace S.Unknown in feature-flags.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced top-level `S.Unknown` usages in `src/services/feature-flags.ts` with properly typed schemas derived from the PostHog OpenAPI spec and actual API response analysis.
+
+**Changes:**
+- Defined `FeatureFlagGroup` schema from OpenAPI `FeatureFlagGroupType` (properties, rollout_percentage, description, sort_key, users_affected, variant)
+- Defined `FeatureFlagVariant` schema for multivariate variants (key, name, rollout_percentage)
+- Defined `FeatureFlagMultivariate` schema (variants array)
+- Defined `FeatureFlagFilters` schema (groups, multivariate, payloads, aggregation_group_type_index, super_groups)
+- Replaced `filters: S.Unknown` with `FeatureFlagFilters` on response schema
+- Changed `experiment_set` from `S.Unknown` to `S.NullOr(S.Array(S.Number))`
+- Changed `surveys` from `S.Unknown` to `S.Array(S.Unknown)` (OpenAPI says object but API returns array)
+- Changed `features` from `S.Unknown` to `S.Array(S.Unknown)` (same as surveys)
+- Changed `rollback_conditions` from `S.NullOr(S.Unknown)` to `S.NullOr(S.Array(S.Unknown))`
+- Changed `tags` from `S.Array(S.Unknown)` to `S.Array(S.String)`
+
+**Remaining:** 7 deep `S.Unknown` usages: property filter items (17-member union), payload values (dynamic), survey/feature array items (undocumented refs), rollback condition items (untyped in OpenAPI), and request-side filters (intentionally flexible `S.Record`).
+
+**Discovery:** PostHog OpenAPI spec claims `surveys` and `features` are `type: object, additionalProperties: {}` but the live API returns empty arrays `[]`. Always test against real API responses.
+
+**Files changed:**
+- `src/services/feature-flags.ts` -- Added 4 sub-schemas, replaced 6 S.Unknown fields
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/feature-flags.test.ts` -- 7/7 tests passing
+
+---

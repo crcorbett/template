@@ -268,7 +268,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/feature-flags.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced top-level S.Unknown fields with typed schemas: FeatureFlagGroup (group config with properties/rollout_percentage), FeatureFlagVariant (multivariate variant), FeatureFlagMultivariate (variants container), FeatureFlagFilters (groups/multivariate/payloads/super_groups). Changed experiment_set to S.Array(S.Number), tags to S.Array(S.String), surveys/features to S.Array(S.Unknown) (OpenAPI says object but API returns array). 7 deep S.Unknown remain (property filter union items, dynamic payloads, undocumented refs, untyped rollback_conditions). 0 type errors, 7/7 feature-flags tests passing."
     },
     {
       "id": "P1-004",
