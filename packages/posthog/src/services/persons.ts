@@ -7,7 +7,11 @@ import type { Operation } from "../client/operation.js";
 import { makeClient } from "../client/api.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 export class Person extends S.Class<Person>("Person")({
@@ -85,20 +89,20 @@ export class EmptyResponse extends S.Class<EmptyResponse>("EmptyResponse")(
 const listPersonsOperation: Operation = {
   input: ListPersonsRequest,
   output: PaginatedPersonList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getPersonOperation: Operation = {
   input: GetPersonRequest,
   output: Person,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deletePersonOperation: Operation = {
   input: DeletePersonRequest,
   output: EmptyResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all person operations. */

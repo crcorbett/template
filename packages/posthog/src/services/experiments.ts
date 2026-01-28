@@ -8,7 +8,11 @@ import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // Experiment type enum
@@ -412,32 +416,32 @@ const VoidResponse = S.Struct({});
 const listExperimentsOperation: Operation = {
   input: ListExperimentsRequest,
   output: PaginatedExperimentList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getExperimentOperation: Operation = {
   input: GetExperimentRequest,
   output: Experiment,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createExperimentOperation: Operation = {
   input: CreateExperimentRequest,
   output: Experiment,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateExperimentOperation: Operation = {
   input: UpdateExperimentRequest,
   output: Experiment,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deleteExperimentOperation: Operation = {
   input: DeleteExperimentRequest,
   output: VoidResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all experiment operations. */

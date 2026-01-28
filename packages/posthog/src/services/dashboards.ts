@@ -9,7 +9,11 @@ import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -199,26 +203,26 @@ export class DeleteDashboardRequest extends S.Class<DeleteDashboardRequest>(
 const listDashboardsOperation: Operation = {
   input: ListDashboardsRequest,
   output: PaginatedDashboardList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getDashboardOperation: Operation = {
   input: GetDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createDashboardOperation: Operation = {
   input: CreateDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateDashboardOperation: Operation = {
   input: UpdateDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all dashboard operations. */

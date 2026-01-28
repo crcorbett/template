@@ -14,7 +14,7 @@ import type { Operation } from "../client/operation.js";
 import { makeClient } from "../client/api.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import { COMMON_ERRORS, type PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // =============================================================================
@@ -69,7 +69,7 @@ export class GetMeRequest extends S.Class<GetMeRequest>("GetMeRequest")(
 export const getMeOperation: Operation = {
   input: GetMeRequest,
   output: MeResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 /**

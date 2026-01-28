@@ -8,7 +8,11 @@ import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // Annotation scope enum
@@ -161,32 +165,32 @@ const VoidResponse = S.Struct({});
 const listAnnotationsOperation: Operation = {
   input: ListAnnotationsRequest,
   output: PaginatedAnnotationList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getAnnotationOperation: Operation = {
   input: GetAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createAnnotationOperation: Operation = {
   input: CreateAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateAnnotationOperation: Operation = {
   input: UpdateAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deleteAnnotationOperation: Operation = {
   input: DeleteAnnotationRequest,
   output: VoidResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all annotation operations. */

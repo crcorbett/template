@@ -114,15 +114,22 @@ export class MissingCredentialsError extends S.TaggedError<MissingCredentialsErr
 ) {}
 
 /**
- * Common errors that can occur on any operation
+ * Common errors that can occur on any operation (excluding NotFoundError for list/create operations)
  */
 export const COMMON_ERRORS = [
   AuthenticationError,
   AuthorizationError,
-  NotFoundError,
   ValidationError,
   RateLimitError,
   ServerError,
+] as const;
+
+/**
+ * Common errors for get/update/delete operations that can return 404
+ */
+export const COMMON_ERRORS_WITH_NOT_FOUND = [
+  ...COMMON_ERRORS,
+  NotFoundError,
 ] as const;
 
 /**

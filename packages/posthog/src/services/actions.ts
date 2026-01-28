@@ -8,7 +8,11 @@ import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // URL matching type for action steps
@@ -162,26 +166,26 @@ export class DeleteActionRequest extends S.Class<DeleteActionRequest>(
 const listActionsOperation: Operation = {
   input: ListActionsRequest,
   output: PaginatedActionList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getActionOperation: Operation = {
   input: GetActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createActionOperation: Operation = {
   input: CreateActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateActionOperation: Operation = {
   input: UpdateActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all action operations. */

@@ -1019,3 +1019,44 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 225/226 tests passing (1 pre-existing annotation timeout)
 
 ---
+
+#### P4-008: Add per-operation error type arrays to all service operations
+
+**Status:** Completed
+
+**Summary:** Added typed error arrays to all 41 operation definitions across 11 service files. Created `COMMON_ERRORS` (5 types without NotFoundError for list/create) and `COMMON_ERRORS_WITH_NOT_FOUND` (6 types with NotFoundError for get/update/delete).
+
+**Changes:**
+- Updated `src/errors.ts`:
+  - Modified `COMMON_ERRORS` to exclude `NotFoundError` (used for list/create operations that don't return 404)
+  - Added `COMMON_ERRORS_WITH_NOT_FOUND` that includes `NotFoundError` (used for get/update/delete operations)
+- Updated all 11 service files to import and use the typed error arrays:
+  - List operations: `errors: [...COMMON_ERRORS]`
+  - Create operations: `errors: [...COMMON_ERRORS]`
+  - Get-by-id operations: `errors: [...COMMON_ERRORS_WITH_NOT_FOUND]`
+  - Update operations: `errors: [...COMMON_ERRORS_WITH_NOT_FOUND]`
+  - Delete operations: `errors: [...COMMON_ERRORS_WITH_NOT_FOUND]`
+- Updated `src/index.ts` to export `COMMON_ERRORS_WITH_NOT_FOUND`
+- Updated `test/errors.test.ts` to test both error arrays
+
+**Files changed:**
+- `src/errors.ts` — Split COMMON_ERRORS into two variants
+- `src/index.ts` — Added COMMON_ERRORS_WITH_NOT_FOUND export
+- `src/services/dashboards.ts` — 4 operations updated
+- `src/services/feature-flags.ts` — 4 operations updated
+- `src/services/insights.ts` — 4 operations updated
+- `src/services/cohorts.ts` — 4 operations updated
+- `src/services/actions.ts` — 4 operations updated
+- `src/services/annotations.ts` — 5 operations updated
+- `src/services/surveys.ts` — 5 operations updated
+- `src/services/experiments.ts` — 5 operations updated
+- `src/services/events.ts` — 2 operations updated
+- `src/services/persons.ts` — 3 operations updated
+- `src/services/me.ts` — 1 operation updated
+- `test/errors.test.ts` — Added tests for COMMON_ERRORS_WITH_NOT_FOUND
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 230/230 tests passing (19 error tests now including new tests)
+
+---

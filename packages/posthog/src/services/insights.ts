@@ -8,7 +8,11 @@ import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -322,26 +326,26 @@ export class DeleteInsightRequest extends S.Class<DeleteInsightRequest>(
 const listInsightsOperation: Operation = {
   input: ListInsightsRequest,
   output: PaginatedInsightList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getInsightOperation: Operation = {
   input: GetInsightRequest,
   output: Insight,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createInsightOperation: Operation = {
   input: CreateInsightRequest,
   output: Insight,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateInsightOperation: Operation = {
   input: UpdateInsightRequest,
   output: Insight,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all insight operations. */

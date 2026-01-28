@@ -8,7 +8,11 @@ import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // Survey Type enum
@@ -316,32 +320,32 @@ const VoidResponse = S.Struct({});
 const listSurveysOperation: Operation = {
   input: ListSurveysRequest,
   output: PaginatedSurveyList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getSurveyOperation: Operation = {
   input: GetSurveyRequest,
   output: Survey,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createSurveyOperation: Operation = {
   input: CreateSurveyRequest,
   output: Survey,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateSurveyOperation: Operation = {
   input: UpdateSurveyRequest,
   output: Survey,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deleteSurveyOperation: Operation = {
   input: DeleteSurveyRequest,
   output: VoidResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all survey operations. */

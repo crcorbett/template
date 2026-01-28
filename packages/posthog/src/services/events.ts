@@ -7,7 +7,11 @@ import type { Operation } from "../client/operation.js";
 import { makeClient } from "../client/api.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
-import type { PostHogErrorType } from "../errors.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // ---------------------------------------------------------------------------
@@ -123,14 +127,14 @@ export class GetEventRequest extends S.Class<GetEventRequest>(
 const listEventsOperation: Operation = {
   input: ListEventsRequest,
   output: PaginatedClickhouseEventList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
   pagination: { inputToken: "after", outputToken: "next", items: "results" },
 };
 
 const getEventOperation: Operation = {
   input: GetEventRequest,
   output: ClickhouseEvent,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 /** Dependencies required by all event operations. */

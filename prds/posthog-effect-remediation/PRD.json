@@ -1189,8 +1189,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Defined COMMON_ERRORS (5 types: AuthenticationError, AuthorizationError, ValidationError, RateLimitError, ServerError) and COMMON_ERRORS_WITH_NOT_FOUND (6 types: +NotFoundError) in errors.ts. Updated all 41 operation definitions across 11 service files: list/create operations use [...COMMON_ERRORS], get/update/delete operations use [...COMMON_ERRORS_WITH_NOT_FOUND]. Updated errors.test.ts to test both arrays. Exported COMMON_ERRORS_WITH_NOT_FOUND from index.ts. 0 type errors, 230/230 tests passing."
     },
     {
       "id": "P4-009",

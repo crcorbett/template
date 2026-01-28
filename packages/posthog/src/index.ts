@@ -17,6 +17,7 @@ export {
   AuthenticationError,
   AuthorizationError,
   COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
   MissingCredentialsError,
   NotFoundError,
   RateLimitError,
