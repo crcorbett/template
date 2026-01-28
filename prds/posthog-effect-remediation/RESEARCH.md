@@ -492,3 +492,114 @@ Remaining S.Unknown:
 - `bytecode` — internal PostHog bytecode array
 - `groups` — deprecated legacy format
 - `query` — undocumented alternative definition
+
+---
+
+## 13. P1-007 Research: Experiment Schema Typing
+
+### PostHog Experiment Metric System
+
+PostHog experiments have two distinct metric configuration systems:
+
+1. **Modern metrics** (`metrics`, `metrics_secondary` fields) — Arrays of query objects:
+   - `ExperimentTrendsQuery` with `kind: "ExperimentTrendsQuery"`, `count_query`, `exposure_query`
+   - `ExperimentFunnelsQuery` with `kind: "ExperimentFunnelsQuery"`, `funnels_query`
+
+2. **Legacy metrics** (`secondary_metrics` field) — Deprecated format with simpler structure:
+   - `name`, `type`, `query` fields
+   - Still returned by API but should not be used for new experiments
+
+### Metric Query Structure
+
+Experiment metric queries embed standard query types:
+
+```json
+{
+  "kind": "ExperimentTrendsQuery",
+  "count_query": {
+    "kind": "TrendsQuery",
+    "series": [
+      {
+        "kind": "EventsNode",
+        "event": "$pageview",
+        "math": "total"
+      }
+    ],
+    "dateRange": {
+      "date_from": "-7d",
+      "date_to": null
+    },
+    "filterTestAccounts": true
+  },
+  "exposure_query": null
+}
+```
+
+### ExperimentParameters Structure
+
+The `parameters` field contains experiment configuration:
+
+```json
+{
+  "feature_flag_variants": [
+    {"key": "control", "rollout_percentage": 50},
+    {"key": "test", "rollout_percentage": 50}
+  ],
+  "recommended_sample_size": 10000,
+  "recommended_running_time": 14,
+  "minimum_detectable_effect": 0.05,
+  "aggregation_group_type_index": null
+}
+```
+
+### Statistics Configuration
+
+The `stats_config` field controls statistical analysis:
+
+```json
+{
+  "stats_engine": "bayesian",
+  "significance_level": 0.95,
+  "minimum_sample_size": 100
+}
+```
+
+Two statistics engines are supported:
+- **bayesian** — Credible intervals, win probability
+- **frequentist** — P-values, confidence intervals
+
+### Experiment Filters
+
+The `filters` field uses similar structure to feature flags for experiment targeting:
+
+```json
+{
+  "groups": [
+    {
+      "properties": [...],
+      "rollout_percentage": 100,
+      "variant": null
+    }
+  ],
+  "multivariate": {
+    "variants": [
+      {"key": "control", "rollout_percentage": 50},
+      {"key": "test", "rollout_percentage": 50}
+    ]
+  },
+  "aggregation_group_type_index": null
+}
+```
+
+### API Documentation Sources
+
+- PostHog Experiments API: https://posthog.com/docs/api/experiments
+- PostHog Experiment Metrics: https://posthog.com/docs/experiments/metrics
+- Metric types: Funnel, Mean, Ratio, Retention
+
+### Schema Design Decisions
+
+- Used union type for `ExperimentMetric` to support both TrendsQuery and FunnelsQuery
+- Defined separate schemas for query components (EventNode, DateRange, etc.)
+- Kept `properties` arrays as `S.Array(S.Unknown)` due to 17-member property filter union
+- Kept `exposure_query` as `S.Unknown` since it's optional and rarely documented

@@ -357,7 +357,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/experiments.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Defined typed schemas from PostHog API documentation: ExperimentParameters (variants, sample_size, mde, etc.), ExperimentEventNode, ExperimentTrendsQuery, ExperimentFunnelsQuery, ExperimentMetric (union), ExperimentStatsConfig (stats_engine, significance_level), ExperimentFilterGroup, ExperimentFilters, LegacyExperimentMetric (for deprecated secondary_metrics). Remaining deep S.Unknown: property filter arrays (17-member union), exposure_query (undocumented), legacy metric query. 0 type errors, 6/6 experiments tests passing."
     },
     {
       "id": "P1-008",

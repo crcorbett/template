@@ -253,3 +253,41 @@
 - `bun run test test/surveys.test.ts` -- 7/7 tests passing
 
 ---
+
+#### P1-007: Replace S.Unknown in experiments.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced all top-level `S.Unknown` usages in `src/services/experiments.ts` with properly typed schemas derived from the PostHog API documentation and experiment metrics documentation.
+
+**Changes:**
+- Defined `ExperimentParameters` schema for experiment configuration (feature_flag_variants, recommended_sample_size, recommended_running_time, minimum_detectable_effect, aggregation_group_type_index)
+- Defined `ExperimentMetricTypeEnum` and `ExperimentMetricKindEnum` for metric type discrimination
+- Defined `ExperimentEventNode` schema for event/action nodes in metric queries (kind, event, name, properties, math fields)
+- Defined `ExperimentTrendsQuery` schema for trends-based metrics (count queries with series, dateRange, filterTestAccounts, samplingFactor)
+- Defined `ExperimentFunnelsQuery` schema for funnel-based metrics (funnel steps with window interval settings)
+- Defined `ExperimentMetric` as a union of TrendsQuery and FunnelsQuery
+- Defined `StatsEngineEnum` (bayesian, frequentist) and `ExperimentStatsConfig` schema (stats_engine, significance_level, minimum_sample_size)
+- Defined `ExperimentFilterGroup` schema for experiment targeting (properties, rollout_percentage, variant)
+- Defined `ExperimentFilters` schema for top-level targeting filters (groups, multivariate, aggregation_group_type_index, events)
+- Defined `LegacyExperimentMetric` schema for deprecated secondary_metrics field (name, type, query)
+- Updated `Experiment` class to use typed schemas for all 6 previously S.Unknown fields
+- Updated `CreateExperimentRequest` and `UpdateExperimentRequest` to use typed schemas
+
+**Remaining S.Unknown (justified):**
+- `properties` arrays in ExperimentEventNode and ExperimentFilterGroup — 17-member property filter union from OpenAPI
+- `exposure_query` in ExperimentTrendsQuery — undocumented optional override query
+- `query` in LegacyExperimentMetric — deprecated field with no schema
+
+**Discovery:** PostHog experiments use two distinct metric systems:
+1. Modern `metrics`/`metrics_secondary` — arrays of ExperimentTrendsQuery or ExperimentFunnelsQuery objects
+2. Legacy `secondary_metrics` — deprecated array format with simpler structure
+
+**Files changed:**
+- `src/services/experiments.ts` -- Added 12 sub-schemas, replaced 6 S.Unknown fields with typed schemas
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/experiments.test.ts` -- 6/6 tests passing
+
+---
