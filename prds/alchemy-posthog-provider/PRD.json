@@ -528,8 +528,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created action.provider.ts following Cohort provider pattern. Imports from @packages/posthog/actions. Maps camelCase props to snake_case API params (postToSlack -> post_to_slack, slackMessageFormat -> slack_message_format). ActionStepDef maps tagName -> tag_name, textMatching -> text_matching, hrefMatching -> href_matching, urlMatching -> url_matching. Diff always returns undefined (no replacement triggers). Delete uses soft delete (deleteAction internally patches deleted:true). Added @packages/posthog/actions alias to vitest.config.ts. Updated actions/index.ts barrel and posthog/index.ts with Actions namespace export and actionProvider() in resources(). bun tsc -b passes."
     },
     {
       "id": "ACT-003",

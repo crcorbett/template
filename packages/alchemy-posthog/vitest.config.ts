@@ -33,6 +33,10 @@ export default defineConfig({
         __dirname,
         "../posthog/src/services/cohorts.ts"
       ),
+      "@packages/posthog/actions": path.resolve(
+        __dirname,
+        "../posthog/src/services/actions.ts"
+      ),
       "@packages/posthog/errors": path.resolve(
         __dirname,
         "../posthog/src/errors.ts"
