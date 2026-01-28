@@ -644,3 +644,19 @@ Converted `hasAnnotation` and `getAnnotationUnwrap` functions from if/else chain
 - `bun run test` — 223/224 tests passing (1 pre-existing events timeout)
 
 ---
+
+### P2-005: Replace console.log with Effect.log in saas-analytics-setup.test.ts
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+Replaced 10 `console.log` calls in the Summary test block with a single `yield* Effect.logInfo("SaaS Analytics Setup Complete!")` using `Effect.annotateLogs` to attach all resource counts as structured annotations. This is idiomatic Effect logging — structured data is attached as annotations rather than interpolated into strings, making it machine-parseable while still human-readable.
+
+**Files changed:**
+- `test/saas-analytics-setup.test.ts` — Replaced 10 console.log calls with 1 Effect.logInfo + Effect.annotateLogs
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/saas-analytics-setup.test.ts` — 44/44 tests passing
+
+---

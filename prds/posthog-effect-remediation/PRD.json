@@ -696,7 +696,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/saas-analytics-setup.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced 10 console.log calls with a single yield* Effect.logInfo() using Effect.annotateLogs for structured resource count data. 0 type errors, 44/44 tests passing."
     },
     {
       "id": "P2-006",
