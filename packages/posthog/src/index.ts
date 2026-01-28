@@ -6,6 +6,7 @@
 
 // Core exports
 export { Credentials, type PostHogCredentials } from "./credentials.js";
+export { UserBasic } from "./common.js";
 export { Endpoint } from "./endpoint.js";
 
 // Error types

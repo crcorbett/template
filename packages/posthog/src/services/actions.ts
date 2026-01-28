@@ -3,6 +3,7 @@ import * as S from "effect/Schema";
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
+import { UserBasic } from "../common.js";
 import * as T from "../traits.js";
 
 // URL matching type for action steps
@@ -31,14 +32,7 @@ export class ActionStep extends S.Class<ActionStep>("ActionStep")({
   url_matching: S.optional(S.NullOr(UrlMatchingEnum)),
 }) {}
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
-}) {}
+export { UserBasic } from "../common.js";
 
 export class Action extends S.Class<Action>("Action")({
   id: S.Number,

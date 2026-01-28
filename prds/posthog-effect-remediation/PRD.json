@@ -30,7 +30,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "withResource helper was already implemented at test/test.ts:175-182. Verified: 0 type errors, 224/224 tests passing."
     },
     {
       "id": "P0-002",
@@ -51,7 +53,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/actions.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session. No let createdId or Effect.ensuring patterns remain."
     },
     {
       "id": "P0-003",
@@ -69,7 +73,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/annotations.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-004",
@@ -86,7 +92,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/cohorts.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-005",
@@ -103,7 +111,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/dashboards.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-006",
@@ -120,7 +130,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/experiments.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-007",
@@ -137,7 +149,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/feature-flags.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-008",
@@ -154,7 +168,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/insights.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P0-009",
@@ -171,7 +187,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/surveys.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Already completed in prior session."
     },
     {
       "id": "P1-001",
@@ -203,7 +221,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created src/common.ts with shared UserBasic schema. Replaced 8 duplicate definitions with imports. Re-exported UserBasic from each service file and from src/index.ts. 0 type errors, 224/224 tests passing."
     },
     {
       "id": "P1-002",

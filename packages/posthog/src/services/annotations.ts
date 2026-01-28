@@ -3,6 +3,7 @@ import * as S from "effect/Schema";
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
+import { UserBasic } from "../common.js";
 import * as T from "../traits.js";
 
 // Annotation scope enum
@@ -19,14 +20,7 @@ export type AnnotationScope = S.Schema.Type<typeof AnnotationScopeEnum>;
 export const CreationTypeEnum = S.Literal("USR", "GIT");
 export type CreationType = S.Schema.Type<typeof CreationTypeEnum>;
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
-}) {}
+export { UserBasic } from "../common.js";
 
 export class Annotation extends S.Class<Annotation>("Annotation")({
   id: S.Number,

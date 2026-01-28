@@ -64,3 +64,27 @@
 - No remaining `let createdId` or `Effect.ensuring` patterns in test files
 
 ---
+
+#### P1-001: Extract shared UserBasic schema to src/common.ts
+
+**Status:** Completed
+
+**Summary:** Deduplicated the `UserBasic` S.Class schema that was identically defined in 8 service files. Created `src/common.ts` as the single source of truth, updated all service files to import from it, and added re-exports to preserve the public API.
+
+**Files changed:**
+- `src/common.ts` -- New file with shared UserBasic schema
+- `src/index.ts` -- Added `export { UserBasic } from "./common.js"`
+- `src/services/dashboards.ts` -- Import + re-export from common.ts
+- `src/services/feature-flags.ts` -- Import + re-export from common.ts
+- `src/services/insights.ts` -- Import + re-export from common.ts
+- `src/services/cohorts.ts` -- Import + re-export from common.ts
+- `src/services/surveys.ts` -- Import + re-export from common.ts
+- `src/services/actions.ts` -- Import + re-export from common.ts
+- `src/services/annotations.ts` -- Import + re-export from common.ts
+- `src/services/experiments.ts` -- Import + re-export from common.ts
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test` -- 224/224 tests passing
+
+---
