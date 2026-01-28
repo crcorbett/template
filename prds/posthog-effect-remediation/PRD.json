@@ -1393,8 +1393,8 @@
         "npx tsc --noEmit",
         "bun run test test/experiments.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listExperiments from makeClient to makePaginated. Updated listExperimentsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Added 2 new pagination streaming tests. 0 type errors, 8/8 experiments tests passing."
     },
     {
       "id": "P5-007",
@@ -1414,8 +1414,8 @@
         "npx tsc --noEmit",
         "bun run test test/persons.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listPersons from makeClient to makePaginated. Updated listPersonsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Added 2 new pagination streaming tests. 0 type errors, 7/7 persons tests passing."
     },
     {
       "id": "P5-008",
@@ -1435,8 +1435,8 @@
         "npx tsc --noEmit",
         "bun run test test/surveys.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listSurveys from makeClient to makePaginated. Updated listSurveysOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Added 2 new pagination streaming tests. 0 type errors, 9/9 surveys tests passing."
     },
     {
       "id": "P5-009",
@@ -1457,8 +1457,8 @@
         "npx tsc --noEmit",
         "bun run test test/events.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listEvents from makeClient to makePaginated. Updated listEventsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Note: events use date-cursor pagination (inputToken: 'after') not offset-based. Added 2 new pagination streaming tests. 0 type errors, 7/7 events tests passing."
     }
   ]
 }

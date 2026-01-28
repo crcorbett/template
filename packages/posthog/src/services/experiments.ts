@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -413,7 +414,7 @@ export class DeleteExperimentRequest extends S.Class<DeleteExperimentRequest>(
 // Void response for delete
 const VoidResponse = S.Struct({});
 
-const listExperimentsOperation: Operation = {
+const listExperimentsOperation: PaginatedOperation = {
   input: ListExperimentsRequest,
   output: PaginatedExperimentList,
   errors: [...COMMON_ERRORS],
@@ -447,9 +448,16 @@ const deleteExperimentOperation: Operation = {
 /** Dependencies required by all experiment operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listExperiments: (
+export const listExperiments: ((
   input: ListExperimentsRequest
-) => Effect.Effect<PaginatedExperimentList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listExperimentsOperation);
+) => Effect.Effect<PaginatedExperimentList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListExperimentsRequest
+  ) => Stream.Stream<PaginatedExperimentList, PostHogErrorType, Deps>;
+  items: (
+    input: ListExperimentsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listExperimentsOperation);
 
 export const getExperiment: (
   input: GetExperimentRequest

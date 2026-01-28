@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
 import {
@@ -86,7 +87,7 @@ export class EmptyResponse extends S.Class<EmptyResponse>("EmptyResponse")(
   {}
 ) {}
 
-const listPersonsOperation: Operation = {
+const listPersonsOperation: PaginatedOperation = {
   input: ListPersonsRequest,
   output: PaginatedPersonList,
   errors: [...COMMON_ERRORS],
@@ -108,9 +109,16 @@ const deletePersonOperation: Operation = {
 /** Dependencies required by all person operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listPersons: (
+export const listPersons: ((
   input: ListPersonsRequest
-) => Effect.Effect<PaginatedPersonList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listPersonsOperation);
+) => Effect.Effect<PaginatedPersonList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListPersonsRequest
+  ) => Stream.Stream<PaginatedPersonList, PostHogErrorType, Deps>;
+  items: (
+    input: ListPersonsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listPersonsOperation);
 
 export const getPerson: (
   input: GetPersonRequest

@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
 import {
@@ -124,7 +125,7 @@ export class GetEventRequest extends S.Class<GetEventRequest>(
   )
 ) {}
 
-const listEventsOperation: Operation = {
+const listEventsOperation: PaginatedOperation = {
   input: ListEventsRequest,
   output: PaginatedClickhouseEventList,
   errors: [...COMMON_ERRORS],
@@ -140,9 +141,16 @@ const getEventOperation: Operation = {
 /** Dependencies required by all event operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listEvents: (
+export const listEvents: ((
   input: ListEventsRequest
-) => Effect.Effect<PaginatedClickhouseEventList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listEventsOperation);
+) => Effect.Effect<PaginatedClickhouseEventList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListEventsRequest
+  ) => Stream.Stream<PaginatedClickhouseEventList, PostHogErrorType, Deps>;
+  items: (
+    input: ListEventsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listEventsOperation);
 
 export const getEvent: (
   input: GetEventRequest

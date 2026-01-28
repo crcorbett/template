@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -317,7 +318,7 @@ export class DeleteSurveyRequest extends S.Class<DeleteSurveyRequest>(
 // Void response for delete
 const VoidResponse = S.Struct({});
 
-const listSurveysOperation: Operation = {
+const listSurveysOperation: PaginatedOperation = {
   input: ListSurveysRequest,
   output: PaginatedSurveyList,
   errors: [...COMMON_ERRORS],
@@ -351,9 +352,16 @@ const deleteSurveyOperation: Operation = {
 /** Dependencies required by all survey operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listSurveys: (
+export const listSurveys: ((
   input: ListSurveysRequest
-) => Effect.Effect<PaginatedSurveyList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listSurveysOperation);
+) => Effect.Effect<PaginatedSurveyList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListSurveysRequest
+  ) => Stream.Stream<PaginatedSurveyList, PostHogErrorType, Deps>;
+  items: (
+    input: ListSurveysRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listSurveysOperation);
 
 export const getSurvey: (
   input: GetSurveyRequest
