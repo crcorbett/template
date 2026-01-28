@@ -1,24 +1,76 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
+export { UserBasic } from "../common.js";
+
+// ---------------------------------------------------------------------------
+// Feature flag sub-schemas
+// ---------------------------------------------------------------------------
+
+/** A single group in the feature flag filter configuration. */
+export class FeatureFlagGroup extends S.Class<FeatureFlagGroup>(
+  "FeatureFlagGroup"
+)({
+  /** Property filter conditions for this group (complex union in OpenAPI). */
+  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  rollout_percentage: S.optional(S.NullOr(S.Number)),
+  description: S.optional(S.NullOr(S.String)),
+  sort_key: S.optional(S.NullOr(S.String)),
+  users_affected: S.optional(S.NullOr(S.Number)),
+  variant: S.optional(S.NullOr(S.String)),
 }) {}
+
+/** A single variant for multivariate feature flags. */
+export class FeatureFlagVariant extends S.Class<FeatureFlagVariant>(
+  "FeatureFlagVariant"
+)({
+  key: S.String,
+  name: S.optional(S.NullOr(S.String)),
+  rollout_percentage: S.Number,
+}) {}
+
+/** Multivariate configuration containing variants. */
+export class FeatureFlagMultivariate extends S.Class<FeatureFlagMultivariate>(
+  "FeatureFlagMultivariate"
+)({
+  variants: S.Array(FeatureFlagVariant),
+}) {}
+
+/** Top-level filters object for a feature flag. */
+export class FeatureFlagFilters extends S.Class<FeatureFlagFilters>(
+  "FeatureFlagFilters"
+)({
+  groups: S.optional(S.Array(FeatureFlagGroup)),
+  multivariate: S.optional(S.NullOr(FeatureFlagMultivariate)),
+  payloads: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  aggregation_group_type_index: S.optional(S.NullOr(S.Number)),
+  super_groups: S.optional(S.Array(FeatureFlagGroup)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Feature flag response schema
+// ---------------------------------------------------------------------------
 
 export class FeatureFlag extends S.Class<FeatureFlag>("FeatureFlag")({
   id: S.Number,
   name: S.optional(S.String),
   key: S.String,
-  filters: S.optional(S.Unknown),
+  filters: S.optional(FeatureFlagFilters),
   deleted: S.optional(S.Boolean),
   active: S.optional(S.Boolean),
   created_by: S.optional(S.NullOr(UserBasic)),
@@ -29,13 +81,16 @@ export class FeatureFlag extends S.Class<FeatureFlag>("FeatureFlag")({
   is_simple_flag: S.optional(S.Boolean),
   rollout_percentage: S.optional(S.NullOr(S.Number)),
   ensure_experience_continuity: S.optional(S.NullOr(S.Boolean)),
-  experiment_set: S.optional(S.Unknown),
-  surveys: S.optional(S.Unknown),
-  features: S.optional(S.Unknown),
-  rollback_conditions: S.optional(S.NullOr(S.Unknown)),
+  /** Array of experiment IDs associated with this flag. */
+  experiment_set: S.optional(S.NullOr(S.Array(S.Number))),
+  /** Array of survey references (OpenAPI claims object but API returns array). */
+  surveys: S.optional(S.Array(S.Unknown)),
+  /** Array of early access feature references (OpenAPI claims object but API returns array). */
+  features: S.optional(S.Array(S.Unknown)),
+  rollback_conditions: S.optional(S.NullOr(S.Array(S.Unknown))),
   performed_rollback: S.optional(S.NullOr(S.Boolean)),
   can_edit: S.optional(S.Boolean),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   usage_dashboard: S.optional(S.NullOr(S.Number)),
   analytics_dashboards: S.optional(S.Array(S.Number)),
   has_enriched_analytics: S.optional(S.NullOr(S.Boolean)),
@@ -89,7 +144,7 @@ export class CreateFeatureFlagRequest extends S.Class<CreateFeatureFlagRequest>(
     project_id: S.String.pipe(T.HttpLabel()),
     key: S.String,
     name: S.optional(S.String),
-    filters: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+    filters: S.optional(FeatureFlagFilters),
     active: S.optional(S.Boolean),
     ensure_experience_continuity: S.optional(S.NullOr(S.Boolean)),
     rollout_percentage: S.optional(S.NullOr(S.Number)),
@@ -111,7 +166,7 @@ export class UpdateFeatureFlagRequest extends S.Class<UpdateFeatureFlagRequest>(
     id: S.Number.pipe(T.HttpLabel()),
     key: S.optional(S.String),
     name: S.optional(S.String),
-    filters: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+    filters: S.optional(FeatureFlagFilters),
     active: S.optional(S.Boolean),
     deleted: S.optional(S.Boolean),
     ensure_experience_continuity: S.optional(S.NullOr(S.Boolean)),
@@ -133,36 +188,60 @@ export class DeleteFeatureFlagRequest extends S.Class<DeleteFeatureFlagRequest>(
   id: S.Number,
 }) {}
 
-const listFeatureFlagsOperation: Operation = {
+const listFeatureFlagsOperation: PaginatedOperation = {
   input: ListFeatureFlagsRequest,
   output: PaginatedFeatureFlagList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getFeatureFlagOperation: Operation = {
   input: GetFeatureFlagRequest,
   output: FeatureFlag,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createFeatureFlagOperation: Operation = {
   input: CreateFeatureFlagRequest,
   output: FeatureFlag,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateFeatureFlagOperation: Operation = {
   input: UpdateFeatureFlagRequest,
   output: FeatureFlag,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listFeatureFlags = makeClient(listFeatureFlagsOperation);
-export const getFeatureFlag = makeClient(getFeatureFlagOperation);
-export const createFeatureFlag = makeClient(createFeatureFlagOperation);
-export const updateFeatureFlag = makeClient(updateFeatureFlagOperation);
+/** Dependencies required by all feature flag operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteFeatureFlag = (input: DeleteFeatureFlagRequest) =>
+export const listFeatureFlags: ((
+  input: ListFeatureFlagsRequest
+) => Effect.Effect<PaginatedFeatureFlagList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListFeatureFlagsRequest
+  ) => Stream.Stream<PaginatedFeatureFlagList, PostHogErrorType, Deps>;
+  items: (
+    input: ListFeatureFlagsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listFeatureFlagsOperation);
+
+export const getFeatureFlag: (
+  input: GetFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getFeatureFlagOperation);
+
+export const createFeatureFlag: (
+  input: CreateFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createFeatureFlagOperation);
+
+export const updateFeatureFlag: (
+  input: UpdateFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateFeatureFlagOperation);
+
+export const deleteFeatureFlag: (
+  input: DeleteFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = (input) =>
   updateFeatureFlag({
     project_id: input.project_id,
     id: input.id,

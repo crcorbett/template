@@ -5,7 +5,16 @@ import * as S from "effect/Schema";
 import type { Operation } from "../../src/client/operation.js";
 
 import { makeRequestBuilder } from "../../src/client/request-builder.js";
+import { MissingHttpTraitError } from "../../src/errors.js";
 import * as T from "../../src/traits.js";
+
+/** Assert request.body is a string and return it for JSON.parse */
+function assertStringBody(
+  body: string | Uint8Array | ReadableStream<Uint8Array> | undefined
+): asserts body is string {
+  expect(body).toBeDefined();
+  expect(typeof body).toBe("string");
+}
 
 describe("makeRequestBuilder", () => {
   describe("basic GET request", () => {
@@ -23,7 +32,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should build a simple GET request", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({});
 
         expect(request.method).toBe("GET");
@@ -54,7 +63,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should substitute path parameters", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({ userId: "123" });
 
         expect(request.path).toBe("/api/users/123");
@@ -63,7 +72,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should URL encode path parameters", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({ userId: "user with spaces" });
 
         expect(request.path).toBe("/api/users/user%20with%20spaces");
@@ -90,7 +99,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should add query parameters", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({ limit: 10, offset: 20 });
 
         expect(request.query["limit"]).toBe("10");
@@ -100,7 +109,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should omit undefined query parameters", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({ limit: 10 });
 
         expect(request.query["limit"]).toBe("10");
@@ -110,7 +119,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should handle array query parameters", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({ tags: ["tag1", "tag2"] });
 
         expect(request.query["tags"]).toEqual(["tag1", "tag2"]);
@@ -136,7 +145,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should add custom headers", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({
           contentType: "application/xml",
           customHeader: "custom-value",
@@ -167,7 +176,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should serialize body as JSON", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({
           name: "John",
           email: "john@example.com",
@@ -183,13 +192,14 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should omit undefined body fields", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({
           name: "John",
           email: "john@example.com",
         });
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body).toEqual({ name: "John", email: "john@example.com" });
         expect("age" in body).toBe(false);
       })
@@ -217,7 +227,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should use payload field as entire body", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({
           key: "myfile.json",
           data: { content: "value" },
@@ -255,7 +265,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should handle all request parts together", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const request = yield* builder({
           projectId: "proj-123",
           eventType: "pageview",
@@ -271,7 +281,8 @@ describe("makeRequestBuilder", () => {
         expect(request.query["type"]).toBe("pageview");
         expect(request.headers["Authorization"]).toBe("Bearer token123");
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body.event.name).toBe("Page View");
         expect(body.event.properties).toEqual({ url: "/home" });
       })
@@ -299,7 +310,7 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should serialize Date in headers as ISO string", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const date = new Date("2024-01-15T10:30:00.000Z");
         const request = yield* builder({ createdAfter: date });
 
@@ -311,30 +322,37 @@ describe("makeRequestBuilder", () => {
 
     it.effect("should serialize Date in body as ISO string", () =>
       Effect.gen(function* () {
-        const builder = makeRequestBuilder(operation);
+        const builder = yield* makeRequestBuilder(operation);
         const date = new Date("2024-01-15T10:30:00.000Z");
         const request = yield* builder({ timestamp: date });
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body.timestamp).toBe("2024-01-15T10:30:00.000Z");
       })
     );
   });
 
   describe("error cases", () => {
-    it("should throw if no HTTP trait found", () => {
-      const NoHttpTraitRequest = S.Struct({ name: S.String });
-      const Response = S.Struct({});
+    it.effect(
+      "should fail with MissingHttpTraitError if no HTTP trait found",
+      () =>
+        Effect.gen(function* () {
+          const NoHttpTraitRequest = S.Struct({ name: S.String });
+          const Response = S.Struct({});
 
-      const operation: Operation = {
-        input: NoHttpTraitRequest,
-        output: Response,
-        errors: [],
-      };
+          const operation: Operation = {
+            input: NoHttpTraitRequest,
+            output: Response,
+            errors: [],
+          };
 
-      expect(() => makeRequestBuilder(operation)).toThrow(
-        "No HTTP trait found on input schema"
-      );
-    });
+          const error = yield* makeRequestBuilder(operation).pipe(Effect.flip);
+
+          expect(error._tag).toBe("MissingHttpTraitError");
+          expect(error).toBeInstanceOf(MissingHttpTraitError);
+          expect(error.message).toBe("No HTTP trait found on input schema");
+        })
+    );
   });
 });

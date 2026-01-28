@@ -105,6 +105,20 @@ interface SecurityScheme {
 type SecurityRequirement = Record<string, string[]>;
 
 // =============================================================================
+// Type Guards
+// =============================================================================
+
+function isOpenAPISpec(
+  value: unknown
+): value is OpenAPISpec {
+  if (typeof value !== "object" || value === null) return false;
+  if (!("openapi" in value) || !("paths" in value)) return false;
+  // After `in` narrowing, access via index signature
+  const v = value as Record<string, unknown>;
+  return typeof v["openapi"] === "string" && typeof v["paths"] === "object" && v["paths"] !== null;
+}
+
+// =============================================================================
 // Code Generation Helpers
 // =============================================================================
 
@@ -168,7 +182,7 @@ function typeToSchema(
     return required ? name : `S.optional(${name})`;
   }
 
-  const obj = schema as SchemaObject;
+  const obj = schema;
 
   // Handle nullable
   const nullable = obj.nullable === true;
@@ -297,12 +311,15 @@ function groupOperationsByTag(spec: OpenAPISpec): Map<
       if (!groups.has(tag)) {
         groups.set(tag, []);
       }
-      groups.get(tag)!.push({
-        operationId,
-        method: method.toUpperCase(),
-        path: pathStr,
-        operation,
-      });
+      const group = groups.get(tag);
+      if (group) {
+        group.push({
+          operationId,
+          method: method.toUpperCase(),
+          path: pathStr,
+          operation,
+        });
+      }
     }
   }
 
@@ -500,7 +517,7 @@ function collectSchemaRefs(
     return;
   }
 
-  const obj = schema as SchemaObject;
+  const obj = schema;
 
   if (obj.allOf) {
     for (const item of obj.allOf) {
@@ -548,7 +565,11 @@ async function main() {
   schemaContent = schemaContent.replace(/`/g, "'");
 
   // Use js-yaml to parse
-  const spec = YAML.load(schemaContent) as OpenAPISpec;
+  const parsed = YAML.load(schemaContent);
+  if (!isOpenAPISpec(parsed)) {
+    throw new Error("Invalid OpenAPI spec: missing required 'openapi' or 'paths' fields");
+  }
+  const spec = parsed;
 
   console.log(`Loaded OpenAPI spec: ${spec.info.title} v${spec.info.version}`);
   console.log(`Found ${Object.keys(spec.paths).length} paths`);

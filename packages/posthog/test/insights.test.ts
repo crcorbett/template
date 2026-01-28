@@ -1,5 +1,5 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 
 import {
   createInsight,
@@ -231,6 +231,30 @@ describe("PostHog Insights Service", () => {
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages with listInsights.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const pages = yield* listInsights
+          .pages({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        expect(pages.length).toBeGreaterThanOrEqual(1);
+        for (const page of pages) {
+          expect(page.results).toBeDefined();
+          expect(Array.isArray(page.results)).toBe(true);
+        }
+      }));
+
+    test("should stream items with listInsights.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const items = yield* listInsights
+          .items({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(10), Stream.runCollect);
+
+        expect(items.length).toBeGreaterThanOrEqual(0);
       }));
   });
 });

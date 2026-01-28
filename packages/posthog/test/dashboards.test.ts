@@ -1,5 +1,5 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Chunk, Effect, Stream } from "effect";
 
 import {
   createDashboard,
@@ -132,6 +132,37 @@ describe("PostHog Dashboards Service", () => {
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages via listDashboards.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const pages = yield* listDashboards
+          .pages({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        const pageArray = Chunk.toReadonlyArray(pages);
+        expect(pageArray.length).toBeGreaterThanOrEqual(1);
+        expect(pageArray[0].results).toBeDefined();
+        expect(Array.isArray(pageArray[0].results)).toBe(true);
+      }));
+
+    test("should stream items via listDashboards.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const items = yield* listDashboards
+          .items({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(3), Stream.runCollect);
+
+        const itemArray = Chunk.toReadonlyArray(items);
+        expect(itemArray.length).toBeGreaterThanOrEqual(1);
+        expect(itemArray.length).toBeLessThanOrEqual(3);
       }));
   });
 });

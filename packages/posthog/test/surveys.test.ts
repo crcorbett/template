@@ -1,11 +1,12 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Chunk, Effect, Stream } from "effect";
 
 import {
   createSurvey,
   deleteSurvey,
   getSurvey,
   listSurveys,
+  type Survey,
   updateSurvey,
 } from "../src/services/surveys.js";
 import { test, TEST_PROJECT_ID, withResource } from "./test.js";
@@ -217,6 +218,44 @@ describe("PostHog Surveys Service", () => {
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages via listSurveys.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const pages = yield* listSurveys
+          .pages({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        const pageArray = Chunk.toReadonlyArray(pages);
+        expect(pageArray.length).toBeGreaterThanOrEqual(1);
+        expect(pageArray[0].results).toBeDefined();
+        expect(Array.isArray(pageArray[0].results)).toBe(true);
+      }));
+
+    test("should stream items via listSurveys.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const items = yield* listSurveys
+          .items({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(3), Stream.runCollect);
+
+        const itemArray = Chunk.toReadonlyArray(items);
+        expect(itemArray.length).toBeGreaterThanOrEqual(0);
+        expect(itemArray.length).toBeLessThanOrEqual(3);
+        // Verify items are Survey objects
+        if (itemArray.length > 0) {
+          const firstItem = itemArray[0] as Survey;
+          expect(firstItem.id).toBeDefined();
+        }
       }));
   });
 });

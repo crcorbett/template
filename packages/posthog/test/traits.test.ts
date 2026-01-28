@@ -5,6 +5,31 @@ import * as S from "effect/Schema";
 
 import * as T from "../src/traits.js";
 
+/**
+ * Get property signatures from a Struct schema, asserting the AST is a TypeLiteral.
+ * Uses _tag discriminant narrowing instead of type casting.
+ */
+const getProps = (schema: S.Schema.Any): readonly AST.PropertySignature[] => {
+  const ast = schema.ast;
+  if (ast._tag !== "TypeLiteral") {
+    throw new Error(`Expected TypeLiteral, got ${ast._tag}`);
+  }
+  return ast.propertySignatures;
+};
+
+/**
+ * Get the first property signature from a Struct schema.
+ * Throws if the schema has no properties.
+ */
+const firstProp = (schema: S.Schema.Any): AST.PropertySignature => {
+  const props = getProps(schema);
+  const prop = props[0];
+  if (prop === undefined) {
+    throw new Error("Expected at least one property signature");
+  }
+  return prop;
+};
+
 describe("Traits", () => {
   describe("makeAnnotation + symbol access", () => {
     it("HttpHeader creates annotation with symbol", () => {
@@ -42,20 +67,20 @@ describe("Traits", () => {
       const schema = S.Struct({}).pipe(
         T.Http({ method: "POST", uri: "/users" })
       );
-      const trait = schema.ast.annotations?.[T.httpSymbol] as T.HttpTrait;
-      expect(trait.method).toBe("POST");
-      expect(trait.uri).toBe("/users");
+      const trait = T.getHttpTrait(schema.ast);
+      expect(trait).toBeDefined();
+      expect(trait?.method).toBe("POST");
+      expect(trait?.uri).toBe("/users");
     });
 
     it("PostHogService stores service metadata", () => {
       const schema = S.Struct({}).pipe(
         T.PostHogService({ name: "users", version: "v1" })
       );
-      const trait = schema.ast.annotations?.[
-        T.posthogServiceSymbol
-      ] as T.PostHogServiceTrait;
-      expect(trait.name).toBe("users");
-      expect(trait.version).toBe("v1");
+      const trait = T.getPostHogService(schema.ast);
+      expect(trait).toBeDefined();
+      expect(trait?.name).toBe("users");
+      expect(trait?.version).toBe("v1");
     });
 
     it("RestJsonProtocol creates boolean annotation", () => {
@@ -113,27 +138,34 @@ describe("Traits", () => {
     });
 
     it("falls back to annotation for non-schema types", () => {
-      const notSchema = {
-        annotations: (a: Record<symbol, unknown>) => ({
-          annotated: true,
-          ...a,
-        }),
+      // Create a mock that structurally satisfies Annotatable (has annotations method
+      // returning itself) without using type casts. Object.assign copies symbol keys.
+      const notSchema: {
+        annotations(a: unknown): typeof notSchema;
+      } & Record<symbol, unknown> = {
+        annotations(a) {
+          if (typeof a === "object" && a !== null) {
+            Object.assign(notSchema, a);
+          }
+          return notSchema;
+        },
       };
-      const result = T.JsonName("test")(notSchema as unknown as S.Schema.Any);
-      expect(
-        (result as unknown as Record<symbol, unknown>)[T.jsonNameSymbol]
-      ).toBe("test");
+      const result = T.JsonName("test")(notSchema);
+      expect(result[T.jsonNameSymbol]).toBe("test");
     });
   });
 
   describe("TimestampFormat", () => {
     it("epoch-seconds transforms number to Date", () => {
       const schema = S.Number.pipe(T.TimestampFormat("epoch-seconds"));
-      const decoded = S.decodeUnknownSync(schema)(
-        1700000000
-      ) as unknown as Date;
+      // TimestampFormat erases the Date output type (returns A), so the
+      // compile-time type is number while the runtime value is Date.
+      // Widen to unknown to allow instanceof narrowing.
+      const decoded: unknown = S.decodeUnknownSync(schema)(1700000000);
       expect(decoded).toBeInstanceOf(Date);
-      expect(decoded.getTime()).toBe(1700000000 * 1000);
+      if (decoded instanceof Date) {
+        expect(decoded.getTime()).toBe(1700000000 * 1000);
+      }
     });
 
     it("epoch-seconds encodes Date to number", () => {
@@ -176,8 +208,8 @@ describe("Traits", () => {
     it("finds annotation in Union (non-nullish type)", () => {
       const schema = S.optional(S.String.pipe(T.HttpQuery("q")));
       const struct = S.Struct({ query: schema });
-      const props = (struct.ast as AST.TypeLiteral).propertySignatures;
-      expect(T.hasPropAnnotation(props[0]!, T.httpQuerySymbol)).toBe(true);
+      const prop = firstProp(struct);
+      expect(T.hasPropAnnotation(prop, T.httpQuerySymbol)).toBe(true);
     });
 
     it("finds annotation in Transformation", () => {
@@ -234,8 +266,8 @@ describe("Traits", () => {
       const schema = S.Struct({
         header: S.String.pipe(T.HttpHeader("Authorization")),
       });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      const value = T.getPropAnnotation<string>(props[0]!, T.httpHeaderSymbol);
+      const prop = firstProp(schema);
+      const value = T.getPropAnnotation<string>(prop, T.httpHeaderSymbol);
       expect(value).toBe("Authorization");
     });
 
@@ -243,8 +275,8 @@ describe("Traits", () => {
       const schema = S.Struct({
         query: S.optional(S.String.pipe(T.HttpQuery("filter"))),
       });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      const value = T.getPropAnnotation<string>(props[0]!, T.httpQuerySymbol);
+      const prop = firstProp(schema);
+      const value = T.getPropAnnotation<string>(prop, T.httpQuerySymbol);
       expect(value).toBe("filter");
     });
   });
@@ -254,26 +286,26 @@ describe("Traits", () => {
       const schema = S.Struct({
         auth: S.String.pipe(T.HttpHeader("Authorization")),
       });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      expect(T.getHttpHeader(props[0]!)).toBe("Authorization");
+      const prop = firstProp(schema);
+      expect(T.getHttpHeader(prop)).toBe("Authorization");
     });
 
     it("hasHttpLabel detects label annotation", () => {
       const schema = S.Struct({ id: S.String.pipe(T.HttpLabel()) });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      expect(T.hasHttpLabel(props[0]!)).toBe(true);
+      const prop = firstProp(schema);
+      expect(T.hasHttpLabel(prop)).toBe(true);
     });
 
     it("getHttpQuery returns query param name", () => {
       const schema = S.Struct({ page: S.Number.pipe(T.HttpQuery("page")) });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      expect(T.getHttpQuery(props[0]!)).toBe("page");
+      const prop = firstProp(schema);
+      expect(T.getHttpQuery(prop)).toBe("page");
     });
 
     it("hasHttpPayload detects payload annotation", () => {
       const schema = S.Struct({ body: S.Unknown.pipe(T.HttpPayload()) });
-      const props = (schema.ast as AST.TypeLiteral).propertySignatures;
-      expect(T.hasHttpPayload(props[0]!)).toBe(true);
+      const prop = firstProp(schema);
+      expect(T.hasHttpPayload(prop)).toBe(true);
     });
 
     it("getHttpTrait returns HTTP trait from schema", () => {

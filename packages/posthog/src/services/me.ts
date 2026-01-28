@@ -5,11 +5,16 @@
  * This is a hand-written example service for testing.
  */
 
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import { COMMON_ERRORS, type PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // =============================================================================
@@ -64,7 +69,7 @@ export class GetMeRequest extends S.Class<GetMeRequest>("GetMeRequest")(
 export const getMeOperation: Operation = {
   input: GetMeRequest,
   output: MeResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 /**
@@ -87,4 +92,9 @@ export const getMeOperation: Operation = {
  * );
  * ```
  */
-export const getMe = makeClient(getMeOperation);
+/** Dependencies required by the me operation. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const getMe: (
+  input: GetMeRequest
+) => Effect.Effect<MeResponse, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getMeOperation);

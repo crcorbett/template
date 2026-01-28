@@ -1,9 +1,10 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Chunk, Effect, Stream } from "effect";
 
 import {
   createExperiment,
   deleteExperiment,
+  type Experiment,
   getExperiment,
   listExperiments,
   updateExperiment,
@@ -237,6 +238,44 @@ describe("PostHog Experiments Service", () => {
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages via listExperiments.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const pages = yield* listExperiments
+          .pages({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        const pageArray = Chunk.toReadonlyArray(pages);
+        expect(pageArray.length).toBeGreaterThanOrEqual(1);
+        expect(pageArray[0].results).toBeDefined();
+        expect(Array.isArray(pageArray[0].results)).toBe(true);
+      }));
+
+    test("should stream items via listExperiments.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const items = yield* listExperiments
+          .items({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(3), Stream.runCollect);
+
+        const itemArray = Chunk.toReadonlyArray(items);
+        expect(itemArray.length).toBeGreaterThanOrEqual(0);
+        expect(itemArray.length).toBeLessThanOrEqual(3);
+        // Verify items are Experiment objects
+        if (itemArray.length > 0) {
+          const firstItem = itemArray[0] as Experiment;
+          expect(firstItem.id).toBeDefined();
+        }
       }));
   });
 });

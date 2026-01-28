@@ -1,26 +1,105 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
+export { UserBasic } from "../common.js";
+
+// ---------------------------------------------------------------------------
+// Cohort filter sub-schemas
+// ---------------------------------------------------------------------------
+
+/**
+ * A single property filter condition within a cohort.
+ * Supports person properties, behavioral events, and nested cohort membership.
+ */
+export class CohortPropertyValue extends S.Class<CohortPropertyValue>(
+  "CohortPropertyValue"
+)({
+  /** Property key to filter on (e.g., "$browser", "email"). */
+  key: S.String,
+  /** Filter type: person property, behavioral event, or cohort membership. */
+  type: S.String,
+  /** Values to match against (varies by filter type). */
+  value: S.Unknown,
+  /** Comparison operator (e.g., "exact", "icontains", "is_set"). */
+  operator: S.optional(S.String),
+  /** Whether to negate the condition. */
+  negation: S.optional(S.Boolean),
+  /** Event type for behavioral filters (e.g., "events", "actions"). */
+  event_type: S.optional(S.String),
+  /** Time value for behavioral filters (API may return string or number). */
+  time_value: S.optional(S.Union(S.String, S.Number)),
+  /** Time interval unit for behavioral filters (e.g., "day", "week"). */
+  time_interval: S.optional(S.String),
+  /** Compiled bytecode for the filter (internal PostHog usage). */
+  bytecode: S.optional(S.Array(S.Unknown)),
+  /** Hash of the filter condition (internal PostHog usage). */
+  conditionHash: S.optional(S.String),
+  /** Total periods for behavioral frequency filters (e.g., "at least N times in M days"). */
+  total_periods: S.optional(S.Number),
 }) {}
+
+/**
+ * A group of property conditions combined with AND/OR logic.
+ */
+export class CohortFilterGroup extends S.Class<CohortFilterGroup>(
+  "CohortFilterGroup"
+)({
+  /** Logical operator for combining values: "AND" or "OR". */
+  type: S.String,
+  /** Array of property conditions within this group. */
+  values: S.Array(CohortPropertyValue),
+}) {}
+
+/**
+ * Top-level filter properties containing groups of conditions.
+ */
+export class CohortFilterProperties extends S.Class<CohortFilterProperties>(
+  "CohortFilterProperties"
+)({
+  /** Logical operator for combining groups: "AND" or "OR". */
+  type: S.String,
+  /** Array of filter groups. */
+  values: S.Array(CohortFilterGroup),
+}) {}
+
+/**
+ * The complete filters object for a cohort.
+ * Contains the properties field with nested AND/OR logic.
+ */
+export class CohortFilters extends S.Class<CohortFilters>("CohortFilters")({
+  /** Nested filter properties with AND/OR group logic. */
+  properties: CohortFilterProperties,
+}) {}
+
+// ---------------------------------------------------------------------------
+// Cohort response schema
+// ---------------------------------------------------------------------------
 
 export class Cohort extends S.Class<Cohort>("Cohort")({
   id: S.Number,
   name: S.optional(S.NullOr(S.String)),
   description: S.optional(S.String),
-  groups: S.optional(S.Unknown),
+  /** @deprecated Legacy groups format; use filters instead. */
+  groups: S.optional(S.Array(S.Unknown)),
   deleted: S.optional(S.Boolean),
-  filters: S.optional(S.NullOr(S.Unknown)),
+  /** Cohort filter configuration with nested AND/OR logic. */
+  filters: S.optional(S.NullOr(CohortFilters)),
+  /** Alternative query-based cohort definition (unstructured). */
   query: S.optional(S.NullOr(S.Unknown)),
   is_calculating: S.optional(S.Boolean),
   created_by: S.optional(S.NullOr(UserBasic)),
@@ -77,8 +156,10 @@ export class CreateCohortRequest extends S.Class<CreateCohortRequest>(
     project_id: S.String.pipe(T.HttpLabel()),
     name: S.NullOr(S.String),
     description: S.optional(S.String),
-    groups: S.optional(S.Unknown),
-    filters: S.optional(S.Unknown),
+    /** @deprecated Legacy groups format; use filters instead. */
+    groups: S.optional(S.Array(S.Unknown)),
+    /** Cohort filter configuration with nested AND/OR logic. */
+    filters: S.optional(CohortFilters),
     is_static: S.optional(S.Boolean),
   },
   T.all(
@@ -95,8 +176,10 @@ export class UpdateCohortRequest extends S.Class<UpdateCohortRequest>(
     id: S.Number.pipe(T.HttpLabel()),
     name: S.optional(S.NullOr(S.String)),
     description: S.optional(S.String),
-    groups: S.optional(S.Unknown),
-    filters: S.optional(S.Unknown),
+    /** @deprecated Legacy groups format; use filters instead. */
+    groups: S.optional(S.Array(S.Unknown)),
+    /** Cohort filter configuration with nested AND/OR logic. */
+    filters: S.optional(CohortFilters),
     deleted: S.optional(S.Boolean),
   },
   T.all(
@@ -115,36 +198,60 @@ export class DeleteCohortRequest extends S.Class<DeleteCohortRequest>(
   id: S.Number,
 }) {}
 
-const listCohortsOperation: Operation = {
+const listCohortsOperation: PaginatedOperation = {
   input: ListCohortsRequest,
   output: PaginatedCohortList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getCohortOperation: Operation = {
   input: GetCohortRequest,
   output: Cohort,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createCohortOperation: Operation = {
   input: CreateCohortRequest,
   output: Cohort,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateCohortOperation: Operation = {
   input: UpdateCohortRequest,
   output: Cohort,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listCohorts = makeClient(listCohortsOperation);
-export const getCohort = makeClient(getCohortOperation);
-export const createCohort = makeClient(createCohortOperation);
-export const updateCohort = makeClient(updateCohortOperation);
+/** Dependencies required by all cohort operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteCohort = (input: DeleteCohortRequest) =>
+export const listCohorts: ((
+  input: ListCohortsRequest
+) => Effect.Effect<PaginatedCohortList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListCohortsRequest
+  ) => Stream.Stream<PaginatedCohortList, PostHogErrorType, Deps>;
+  items: (
+    input: ListCohortsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listCohortsOperation);
+
+export const getCohort: (
+  input: GetCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getCohortOperation);
+
+export const createCohort: (
+  input: CreateCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createCohortOperation);
+
+export const updateCohort: (
+  input: UpdateCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateCohortOperation);
+
+export const deleteCohort: (
+  input: DeleteCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = (input) =>
   updateCohort({
     project_id: input.project_id,
     id: input.id,

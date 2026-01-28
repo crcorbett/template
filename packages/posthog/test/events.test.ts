@@ -1,7 +1,7 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Chunk, Effect, Stream } from "effect";
 
-import { listEvents } from "../src/services/events.js";
+import { type ClickhouseEvent, listEvents } from "../src/services/events.js";
 import { test, TEST_PROJECT_ID } from "./test.js";
 
 describe("PostHog Events Service", () => {
@@ -87,6 +87,44 @@ describe("PostHog Events Service", () => {
 
         if (firstPage.next) {
           expect(typeof firstPage.next).toBe("string");
+        }
+      }));
+
+    test("should stream pages via listEvents.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const pages = yield* listEvents
+          .pages({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        const pageArray = Chunk.toReadonlyArray(pages);
+        expect(pageArray.length).toBeGreaterThanOrEqual(1);
+        expect(pageArray[0].results).toBeDefined();
+        expect(Array.isArray(pageArray[0].results)).toBe(true);
+      }));
+
+    test("should stream items via listEvents.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+
+        const items = yield* listEvents
+          .items({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(3), Stream.runCollect);
+
+        const itemArray = Chunk.toReadonlyArray(items);
+        expect(itemArray.length).toBeGreaterThanOrEqual(0);
+        expect(itemArray.length).toBeLessThanOrEqual(3);
+        // Verify items are ClickhouseEvent objects
+        if (itemArray.length > 0) {
+          const firstItem = itemArray[0] as ClickhouseEvent;
+          expect(firstItem.id).toBeDefined();
         }
       }));
   });

@@ -26,6 +26,14 @@ export interface Operation {
 }
 
 /**
+ * An operation with required pagination configuration.
+ * Used as a constraint for makePaginated to ensure type safety.
+ */
+export interface PaginatedOperation extends Operation {
+  pagination: NonNullable<Operation["pagination"]>;
+}
+
+/**
  * Type-level helpers for extracting types from operations
  */
 export namespace Operation {

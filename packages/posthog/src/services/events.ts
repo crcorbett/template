@@ -1,20 +1,85 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
+
+// ---------------------------------------------------------------------------
+// Event sub-schemas
+// ---------------------------------------------------------------------------
+
+/**
+ * Person reference within an event.
+ * Contains the basic person information associated with the event.
+ */
+export class EventPerson extends S.Class<EventPerson>("EventPerson")({
+  /** Unique identifier for the person. */
+  id: S.optional(S.String),
+  /** Primary distinct ID for the person. */
+  distinct_id: S.optional(S.String),
+  /** Additional distinct IDs linked to this person. */
+  distinct_ids: S.optional(S.Array(S.String)),
+  /** Person properties (key-value pairs). */
+  properties: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  /** Person creation timestamp. */
+  created_at: S.optional(S.String),
+  /** UUID of the person. */
+  uuid: S.optional(S.String),
+  /** Whether the person has been identified. */
+  is_identified: S.optional(S.Boolean),
+}) {}
+
+/**
+ * DOM element captured during autocapture events.
+ * Represents an element in the DOM hierarchy that triggered or was involved in the event.
+ */
+export class EventElement extends S.Class<EventElement>("EventElement")({
+  /** Element tag name (e.g., "button", "a", "div"). */
+  tag_name: S.optional(S.String),
+  /** CSS classes on the element. */
+  $el_text: S.optional(S.String),
+  /** Text content of the element. */
+  text: S.optional(S.String),
+  /** href attribute for links. */
+  href: S.optional(S.String),
+  /** Element attributes as key-value pairs. */
+  attr__class: S.optional(S.String),
+  attr__id: S.optional(S.String),
+  /** Position in the element hierarchy (0 = target element). */
+  nth_child: S.optional(S.Number),
+  nth_of_type: S.optional(S.Number),
+  /** Additional attributes captured. */
+  attributes: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Event response schema
+// ---------------------------------------------------------------------------
 
 export class ClickhouseEvent extends S.Class<ClickhouseEvent>(
   "ClickhouseEvent"
 )({
   id: S.String,
   distinct_id: S.String,
-  properties: S.optional(S.Unknown),
+  /** Event properties as key-value pairs (e.g., $browser, $os, custom properties). */
+  properties: S.optional(S.Record({ key: S.String, value: S.Unknown })),
   event: S.String,
   timestamp: S.String,
-  person: S.optional(S.Unknown),
-  elements: S.optional(S.Unknown),
+  /** Person associated with the event. */
+  person: S.optional(EventPerson),
+  /** DOM elements captured (for autocapture events). */
+  elements: S.optional(S.Array(EventElement)),
   elements_chain: S.optional(S.String),
 }) {}
 
@@ -60,17 +125,33 @@ export class GetEventRequest extends S.Class<GetEventRequest>(
   )
 ) {}
 
-const listEventsOperation: Operation = {
+const listEventsOperation: PaginatedOperation = {
   input: ListEventsRequest,
   output: PaginatedClickhouseEventList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "after", outputToken: "next", items: "results" },
 };
 
 const getEventOperation: Operation = {
   input: GetEventRequest,
   output: ClickhouseEvent,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listEvents = makeClient(listEventsOperation);
-export const getEvent = makeClient(getEventOperation);
+/** Dependencies required by all event operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listEvents: ((
+  input: ListEventsRequest
+) => Effect.Effect<PaginatedClickhouseEventList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListEventsRequest
+  ) => Stream.Stream<PaginatedClickhouseEventList, PostHogErrorType, Deps>;
+  items: (
+    input: ListEventsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listEventsOperation);
+
+export const getEvent: (
+  input: GetEventRequest
+) => Effect.Effect<ClickhouseEvent, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getEventOperation);

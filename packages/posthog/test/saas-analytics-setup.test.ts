@@ -42,15 +42,26 @@ import { test, afterAll, TEST_PROJECT_ID } from "./test.js";
 const TEST_PREFIX = `acme-${Date.now()}`;
 
 // Track created resources for cleanup
-const created = {
-  cohorts: [] as number[],
-  featureFlags: [] as number[],
-  insights: [] as number[],
-  dashboards: [] as number[],
-  surveys: [] as string[],
-  actions: [] as number[],
-  annotations: [] as number[],
-  experiments: [] as number[],
+interface ResourceTracker {
+  cohorts: number[];
+  featureFlags: number[];
+  insights: number[];
+  dashboards: number[];
+  surveys: string[];
+  actions: number[];
+  annotations: number[];
+  experiments: number[];
+}
+
+const created: ResourceTracker = {
+  cohorts: [],
+  featureFlags: [],
+  insights: [],
+  dashboards: [],
+  surveys: [],
+  actions: [],
+  annotations: [],
+  experiments: [],
 };
 
 // Cleanup function to remove all created resources
@@ -1283,16 +1294,19 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
           created.annotations.length +
           created.experiments.length;
 
-        console.log(`\nSaaS Analytics Setup Complete!`);
-        console.log(`   - Cohorts: ${created.cohorts.length}`);
-        console.log(`   - Feature Flags: ${created.featureFlags.length}`);
-        console.log(`   - Insights: ${created.insights.length}`);
-        console.log(`   - Dashboards: ${created.dashboards.length}`);
-        console.log(`   - Surveys: ${created.surveys.length}`);
-        console.log(`   - Actions: ${created.actions.length}`);
-        console.log(`   - Annotations: ${created.annotations.length}`);
-        console.log(`   - Experiments: ${created.experiments.length}`);
-        console.log(`   - Total Resources: ${total}`);
+        yield* Effect.logInfo("SaaS Analytics Setup Complete!").pipe(
+          Effect.annotateLogs({
+            cohorts: created.cohorts.length,
+            featureFlags: created.featureFlags.length,
+            insights: created.insights.length,
+            dashboards: created.dashboards.length,
+            surveys: created.surveys.length,
+            actions: created.actions.length,
+            annotations: created.annotations.length,
+            experiments: created.experiments.length,
+            totalResources: total,
+          }),
+        );
       }));
   });
 });

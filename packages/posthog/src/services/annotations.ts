@@ -1,8 +1,19 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // Annotation scope enum
@@ -19,14 +30,7 @@ export type AnnotationScope = S.Schema.Type<typeof AnnotationScopeEnum>;
 export const CreationTypeEnum = S.Literal("USR", "GIT");
 export type CreationType = S.Schema.Type<typeof CreationTypeEnum>;
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
-}) {}
+export { UserBasic } from "../common.js";
 
 export class Annotation extends S.Class<Annotation>("Annotation")({
   id: S.Number,
@@ -159,38 +163,63 @@ export class DeleteAnnotationRequest extends S.Class<DeleteAnnotationRequest>(
 // Void response for delete
 const VoidResponse = S.Struct({});
 
-const listAnnotationsOperation: Operation = {
+const listAnnotationsOperation: PaginatedOperation = {
   input: ListAnnotationsRequest,
   output: PaginatedAnnotationList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getAnnotationOperation: Operation = {
   input: GetAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createAnnotationOperation: Operation = {
   input: CreateAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateAnnotationOperation: Operation = {
   input: UpdateAnnotationRequest,
   output: Annotation,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deleteAnnotationOperation: Operation = {
   input: DeleteAnnotationRequest,
   output: VoidResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listAnnotations = makeClient(listAnnotationsOperation);
-export const getAnnotation = makeClient(getAnnotationOperation);
-export const createAnnotation = makeClient(createAnnotationOperation);
-export const updateAnnotation = makeClient(updateAnnotationOperation);
-export const deleteAnnotation = makeClient(deleteAnnotationOperation);
+/** Dependencies required by all annotation operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listAnnotations: ((
+  input: ListAnnotationsRequest
+) => Effect.Effect<PaginatedAnnotationList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListAnnotationsRequest
+  ) => Stream.Stream<PaginatedAnnotationList, PostHogErrorType, Deps>;
+  items: (
+    input: ListAnnotationsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listAnnotationsOperation);
+
+export const getAnnotation: (
+  input: GetAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getAnnotationOperation);
+
+export const createAnnotation: (
+  input: CreateAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createAnnotationOperation);
+
+export const updateAnnotation: (
+  input: UpdateAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateAnnotationOperation);
+
+export const deleteAnnotation: (
+  input: DeleteAnnotationRequest
+) => Effect.Effect<{}, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteAnnotationOperation);
