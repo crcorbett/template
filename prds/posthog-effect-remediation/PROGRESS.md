@@ -587,3 +587,42 @@
 - Zero `instanceof` checks remain in retry.ts
 
 ---
+
+#### P2-003: Add error category system matching distilled-aws
+
+**Status:** Completed
+
+**Summary:** Added a symbol-based error classification system matching the distilled-aws `Category` module. Error classes are decorated with categories via `.pipe(withX)`, enabling predicate-based retry policies and error catching without `instanceof` or `_tag` checks.
+
+**Changes:**
+- Created `src/category.ts` with the full category system:
+  - `categoriesKey` string key (`@posthog/error/categories`) for prototype stamping
+  - `withCategory` generic decorator supporting multiple categories per error class
+  - 5 category constants: `ThrottlingError`, `ServerError`, `AuthError`, `ValidationError`, `NotFoundError`
+  - 5 individual `withX` decorators for `.pipe()` usage
+  - `hasCategory(error, category)` base predicate
+  - 5 individual `isX` predicates + `isTransientError` composite (throttling || server)
+  - `catchErrors` multi-category catcher + 5 individual `catchX` helpers
+- Updated `src/errors.ts`:
+  - `AuthenticationError` + `AuthorizationError` → `.pipe(withAuthError)`
+  - `NotFoundError` → `.pipe(withNotFoundError)`
+  - `ValidationError` → `.pipe(withValidationError)`
+  - `RateLimitError` → `.pipe(withThrottlingError)`
+  - `ServerError` → `.pipe(withServerError)`
+- Updated `src/retry.ts`:
+  - Replaced `_tag`-based `hasTag` helper with category-based predicates from `category.ts`
+  - Re-exports `isThrottlingError` and `isTransientError` for backwards compatibility
+- Updated `src/index.ts`:
+  - Added `export * as Category from "./category.js"`
+
+**Files changed:**
+- `src/category.ts` — New file: complete error category module
+- `src/errors.ts` — Decorated 6 error classes with category decorators
+- `src/retry.ts` — Replaced _tag checks with category predicates
+- `src/index.ts` — Added Category export
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 224/224 tests passing
+
+---

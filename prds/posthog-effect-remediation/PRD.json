@@ -650,7 +650,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created src/category.ts with full error category system matching distilled-aws: categoriesKey, withCategory decorator, 5 category constants (ThrottlingError, ServerError, AuthError, ValidationError, NotFoundError), individual withX decorators, hasCategory predicate, 5 isX predicates, isTransientError composite predicate, catchErrors and individual catchX helpers. Decorated 6 error classes in errors.ts with .pipe(withX): AuthenticationError+AuthorizationError→withAuthError, NotFoundError→withNotFoundError, ValidationError→withValidationError, RateLimitError→withThrottlingError, ServerError→withServerError. Updated retry.ts to import from category.ts and re-export predicates. Exported Category module from index.ts. 0 type errors, 224/224 tests passing."
     },
     {
       "id": "P2-004",

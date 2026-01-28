@@ -5,7 +5,10 @@ import { pipe } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Schedule from "effect/Schedule";
 
-import type { RateLimitError, ServerError } from "./errors.js";
+import {
+  isThrottlingError,
+  isTransientError,
+} from "./category.js";
 
 export interface Options {
   readonly while?: (error: unknown) => boolean;
@@ -14,22 +17,7 @@ export interface Options {
 
 export class Retry extends Context.Tag("@posthog/Retry")<Retry, Options>() {}
 
-const hasTag =
-  <T extends { readonly _tag: string }>(tag: T["_tag"]) =>
-  (error: unknown): error is T =>
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === tag;
-
-export const isRateLimitError: (error: unknown) => error is RateLimitError =
-  hasTag<RateLimitError>("RateLimitError");
-
-export const isServerError: (error: unknown) => error is ServerError =
-  hasTag<ServerError>("ServerError");
-
-export const isTransientError = (error: unknown): boolean =>
-  isRateLimitError(error) || isServerError(error);
+export { isThrottlingError, isTransientError };
 
 export const policy: {
   (
@@ -61,7 +49,7 @@ export const transient: <A, E, R>(
 ) => Effect.Effect<A, E, Exclude<R, Retry>> = policy(transientOptions);
 
 export const throttlingOptions: Options = {
-  while: isRateLimitError,
+  while: isThrottlingError,
   schedule: pipe(
     Schedule.exponential(1000, 2),
     Schedule.modifyDelay((duration) =>

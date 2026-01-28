@@ -22,6 +22,9 @@ export {
   ValidationError,
 } from "./errors.js";
 
+// Error categories
+export * as Category from "./category.js";
+
 // Retry policies
 export * as Retry from "./retry.js";
 
