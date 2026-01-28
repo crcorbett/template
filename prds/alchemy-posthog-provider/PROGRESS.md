@@ -60,3 +60,10 @@
 - Updated `insights/index.ts` barrel and `posthog/index.ts` with Insights namespace + `insightProvider()` in `resources()`
 - Added `@packages/posthog/insights` alias to `vitest.config.ts`
 - `bun tsc -b` passes with no type errors
+
+## INS-003: Implement Insight provider integration tests
+- Created `test/posthog/insights/insight.provider.test.ts` with create/update/delete lifecycle test
+- Test creates insight with `name` and `saved: true`, verifies via API, updates description, destroys (soft delete), verifies deletion
+- `assertInsightDeleted` helper checks for `deleted: true`, `NotFoundError`, or `PostHogError` 404 with retry/backoff
+- `bun tsc -b` passes
+- `bun vitest run test/posthog/insights/insight.provider.test.ts` passes (1 test, ~3.1s)
