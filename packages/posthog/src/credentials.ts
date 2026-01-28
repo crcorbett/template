@@ -10,6 +10,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 
+import { MissingCredentialsError } from "./errors.js";
+
 /**
  * PostHog API credentials containing the API key.
  */
@@ -28,13 +30,16 @@ export class Credentials extends Context.Tag("@posthog/Credentials")<
    * Create credentials from environment variable.
    * Reads POSTHOG_API_KEY from the environment.
    */
-  static fromEnv(): Layer.Layer<Credentials, Error> {
+  static fromEnv(): Layer.Layer<Credentials, MissingCredentialsError> {
     return Layer.effect(
       Credentials,
       Effect.gen(function* () {
         const apiKey = yield* Config.redacted("POSTHOG_API_KEY").pipe(
           Effect.mapError(
-            () => new Error("POSTHOG_API_KEY environment variable is not set")
+            () =>
+              new MissingCredentialsError({
+                message: "POSTHOG_API_KEY environment variable is not set",
+              })
           )
         );
         return { apiKey };

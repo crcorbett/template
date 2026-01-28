@@ -601,7 +601,9 @@
         "npx tsc --noEmit",
         "bun run test test/credentials.test.ts",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created MissingCredentialsError TaggedError in errors.ts. Updated credentials.ts fromEnv() to use MissingCredentialsError instead of plain Error, changing return type from Layer.Layer<Credentials, Error> to Layer.Layer<Credentials, MissingCredentialsError>. Updated credentials.test.ts to assert _tag === 'MissingCredentialsError'. Exported MissingCredentialsError from index.ts. 0 type errors, 8/8 credentials tests passing, 219/219 non-events tests passing (events tests have pre-existing timeout issue)."
     },
     {
       "id": "P2-002",

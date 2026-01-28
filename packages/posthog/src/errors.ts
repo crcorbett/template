@@ -96,6 +96,16 @@ export class MissingHttpTraitError extends S.TaggedError<MissingHttpTraitError>(
 ) {}
 
 /**
+ * Missing credentials error - Required environment variable is not set
+ */
+export class MissingCredentialsError extends S.TaggedError<MissingCredentialsError>()(
+  "MissingCredentialsError",
+  {
+    message: S.String,
+  }
+) {}
+
+/**
  * Common errors that can occur on any operation
  */
 export const COMMON_ERRORS = [
@@ -131,4 +141,5 @@ export type PostHogErrorType =
   | ValidationError
   | RateLimitError
   | ServerError
-  | MissingHttpTraitError;
+  | MissingHttpTraitError
+  | MissingCredentialsError;

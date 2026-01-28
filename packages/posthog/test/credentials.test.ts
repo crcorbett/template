@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 
 import { Credentials } from "../src/credentials.js";
+import { MissingCredentialsError } from "../src/errors.js";
 
 const withClearedEnv = <A, E, R>(
   effect: Effect.Effect<A, E, R>
@@ -56,7 +57,8 @@ describe("Credentials", () => {
             }).pipe(Effect.provide(Credentials.fromEnv()))
           );
 
-          expect(error).toBeInstanceOf(Error);
+          expect(error._tag).toBe("MissingCredentialsError");
+          expect(error).toBeInstanceOf(MissingCredentialsError);
           expect(error.message).toContain("POSTHOG_API_KEY");
         })
       )

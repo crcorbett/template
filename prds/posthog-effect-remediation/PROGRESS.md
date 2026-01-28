@@ -538,3 +538,30 @@
 - Zero avoidable `as` casts (only `as Record<string, unknown>` inside type guard and `as const`)
 
 ---
+
+#### P2-001: Replace plain Error with TaggedError in credentials.ts
+
+**Status:** Completed
+
+**Summary:** Replaced `new Error(...)` in `Credentials.fromEnv()` with a proper `MissingCredentialsError` TaggedError, aligning with the Effect TS error handling pattern used throughout the codebase.
+
+**Changes:**
+- Added `MissingCredentialsError` TaggedError class to `src/errors.ts` with `message: S.String` field
+- Added `MissingCredentialsError` to the `PostHogErrorType` union type
+- Updated `Credentials.fromEnv()` return type from `Layer.Layer<Credentials, Error>` to `Layer.Layer<Credentials, MissingCredentialsError>`
+- Replaced `new Error("POSTHOG_API_KEY environment variable is not set")` with `new MissingCredentialsError({ message: "..." })`
+- Updated `test/credentials.test.ts` to assert `error._tag === "MissingCredentialsError"` and `toBeInstanceOf(MissingCredentialsError)`
+- Exported `MissingCredentialsError` from `src/index.ts`
+
+**Files changed:**
+- `src/errors.ts` — Added MissingCredentialsError TaggedError class, updated PostHogErrorType union
+- `src/credentials.ts` — Changed fromEnv() error type and construction
+- `src/index.ts` — Added MissingCredentialsError to exports
+- `test/credentials.test.ts` — Updated error assertion to use _tag discriminant
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/credentials.test.ts` — 8/8 tests passing
+- Events tests timeout is pre-existing (confirmed on stashed code)
+
+---
