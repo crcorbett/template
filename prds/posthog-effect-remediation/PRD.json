@@ -291,7 +291,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/insights.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Removed legacy InsightFilter class and filters field (not in OpenAPI). Removed deprecated dashboards from requests. Defined proper schemas from OpenAPI spec: DateRange, EventsNode, ActionsNode, RetentionEntity, RetentionFilter, InsightQuery with recursive source via S.suspend. Changed tags to S.Array(S.String), hasMore to S.NullOr(S.Boolean), columns to S.NullOr(S.Array(S.String)). Remaining S.Unknown: result (polymorphic per query type), is_cached (spec says string, API returns boolean), properties arrays (17-member filter union). 0 type errors, 8/8 tests passing."
     },
     {
       "id": "P1-005",

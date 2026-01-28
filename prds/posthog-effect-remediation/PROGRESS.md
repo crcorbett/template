@@ -147,3 +147,40 @@
 - `bun run test test/feature-flags.test.ts` -- 7/7 tests passing
 
 ---
+
+#### P1-004: Replace S.Unknown in insights.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Rewrote `src/services/insights.ts` based on the PostHog OpenAPI spec (`schema.yaml`). Removed legacy/deprecated code and defined proper typed schemas for insight queries.
+
+**Changes:**
+- Removed `InsightFilter` class entirely (not in OpenAPI Insight schema — legacy field)
+- Removed `filters` from Insight response, CreateInsightRequest, UpdateInsightRequest
+- Removed `filters_hash` from Insight (not in spec)
+- Removed `dashboards` from request schemas (explicitly deprecated per OpenAPI)
+- Defined `DateRange` schema from OpenAPI DateRange
+- Defined `EventsNode` schema from OpenAPI EventsNode (kind, event, name, math, properties, etc.)
+- Defined `ActionsNode` schema from OpenAPI ActionsNode (kind, id, name, math, properties, etc.)
+- Defined `RetentionEntity` schema from OpenAPI RetentionEntity (id, type, kind, name, properties, etc.)
+- Defined `RetentionFilter` schema from OpenAPI RetentionFilter (targetEntity, returningEntity, period, totalIntervals, etc.)
+- Defined `InsightQuery` with common fields across all query types plus recursive `source` via `S.suspend` for InsightVizNode wrapper
+- Changed `tags` from `S.Array(S.Unknown)` to `S.Array(S.String)`
+- Changed `hasMore` from `S.Unknown` to `S.NullOr(S.Boolean)` (per TrendsQueryResponse)
+- Changed `columns` from `S.Unknown` to `S.NullOr(S.Array(S.String))`
+- Changed `is_cached` to `S.Unknown` (OpenAPI says string, API returns boolean)
+
+**Remaining S.Unknown (justified):**
+- `result` — polymorphic per query type, impractical to fully type every variant
+- `is_cached` — OpenAPI spec and API behavior diverge
+- `properties` in InsightQuery — can be array OR PropertyGroupFilter object
+- `properties`/`fixedProperties` in EventsNode, ActionsNode, RetentionEntity — 17-member property filter union from OpenAPI
+
+**Files changed:**
+- `src/services/insights.ts` -- Complete rewrite with proper OpenAPI-based schemas
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/insights.test.ts` -- 8/8 tests passing
+
+---

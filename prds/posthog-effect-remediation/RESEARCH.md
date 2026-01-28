@@ -340,6 +340,71 @@ When typing schemas, always verify against real API responses, not just the Open
 
 ---
 
+## 11. P1-004 Research: Insight Schema Typing
+
+### OpenAPI Insight Schema Analysis
+
+The `Insight` schema at line 49383 of `schema.yaml` defines:
+- `query`: `type: object, nullable: true` — the actual value is a discriminated union of query types
+- `result`: `type: string, readOnly: true` — actually a polymorphic JSON value
+- `hasMore`: `type: string, readOnly: true` — actually a boolean (see TrendsQueryResponse)
+- `columns`: `type: string, readOnly: true` — actually an array of strings
+- `tags`: `type: array, items: {}` — untyped in spec, but confirmed as string array
+- `is_cached`: `type: string, readOnly: true` — API actually returns boolean (`false`)
+
+Notable absent fields (not in OpenAPI spec but in our prior implementation):
+- `filters` — legacy field, not in Insight or PatchedInsight schemas
+- `filters_hash` — not in spec
+- `saved` — not in response spec (only used as request body field)
+
+### Query Type Structure
+
+The `Insight.query` field accepts a discriminated union of query types:
+- `TrendsQuery` — requires `series`, has `interval`, `trendsFilter`, `breakdownFilter`, etc.
+- `FunnelsQuery` — requires `series`, has `funnelsFilter`, etc.
+- `RetentionQuery` — requires `retentionFilter` with `targetEntity`/`returningEntity`
+- `PathsQuery`, `StickinessQuery`, `LifecycleQuery` — similar structure
+- `InsightVizNode` — wrapper with `source` field containing another query
+
+All query types share common fields:
+- `kind` (string, required discriminant)
+- `dateRange` (DateRange, nullable)
+- `filterTestAccounts` (boolean, nullable)
+- `properties` (array OR PropertyGroupFilter object)
+- `samplingFactor`, `aggregation_group_type_index`, `version` (nullable numbers)
+
+### InsightVizNode Wrapper
+
+The API often wraps queries in `InsightVizNode`:
+```json
+{
+  "kind": "InsightVizNode",
+  "source": {
+    "kind": "TrendsQuery",
+    "series": [...]
+  }
+}
+```
+
+The `source` field is recursive — it contains another query object. Modelled using `S.suspend` for lazy evaluation.
+
+### PropertyGroupFilter vs Array
+
+The `properties` field can be either:
+1. An array of property filter items: `[{key, type, value, operator}, ...]`
+2. A PropertyGroupFilter object: `{type: "AND"|"OR", values: [...]}`
+
+This requires `S.Unknown` since these are fundamentally different shapes.
+
+### Deprecated Fields
+
+Per OpenAPI spec comments:
+- `dashboards` on Insight: "DEPRECATED. Will be removed in a future release. Use dashboard_tiles instead."
+
+Removed from request schemas; kept in response schema (API still returns it).
+
+---
+
 ### P1
 - `src/services/*.ts` (9 files) -- Replace `S.Unknown` with proper schemas
 - `test/client/response-parser.test.ts` -- Remove 26 `as PostHogError` casts

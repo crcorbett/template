@@ -8,6 +8,160 @@ import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
 
+// ---------------------------------------------------------------------------
+// Shared query sub-schemas (from OpenAPI spec)
+// ---------------------------------------------------------------------------
+
+/** Date range for queries. OpenAPI: DateRange. */
+export class DateRange extends S.Class<DateRange>("DateRange")({
+  date_from: S.optional(S.NullOr(S.String)),
+  date_to: S.optional(S.NullOr(S.String)),
+  explicitDate: S.optional(S.NullOr(S.Boolean)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Series node schemas (from OpenAPI: EventsNode, ActionsNode)
+// ---------------------------------------------------------------------------
+
+/**
+ * An event series node. OpenAPI: EventsNode.
+ *
+ * Fields sourced from EventsNode schema (additionalProperties: false).
+ * Excess properties are stripped during decode by S.Class.
+ */
+export class EventsNode extends S.Class<EventsNode>("EventsNode")({
+  kind: S.Literal("EventsNode"),
+  event: S.optional(S.NullOr(S.String)),
+  name: S.optional(S.NullOr(S.String)),
+  custom_name: S.optional(S.NullOr(S.String)),
+  math: S.optional(S.NullOr(S.String)),
+  math_property: S.optional(S.NullOr(S.String)),
+  math_hogql: S.optional(S.NullOr(S.String)),
+  math_group_type_index: S.optional(S.NullOr(S.Number)),
+  /** Property filters (17-member union in OpenAPI). */
+  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  /** Fixed properties, not editable in UI. */
+  fixedProperties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  limit: S.optional(S.NullOr(S.Number)),
+  orderBy: S.optional(S.NullOr(S.Array(S.String))),
+  version: S.optional(S.NullOr(S.Number)),
+}) {}
+
+/**
+ * An action series node. OpenAPI: ActionsNode.
+ *
+ * Similar to EventsNode but references an action by id instead of event name.
+ */
+export class ActionsNode extends S.Class<ActionsNode>("ActionsNode")({
+  kind: S.Literal("ActionsNode"),
+  id: S.Number,
+  name: S.optional(S.NullOr(S.String)),
+  custom_name: S.optional(S.NullOr(S.String)),
+  math: S.optional(S.NullOr(S.String)),
+  math_property: S.optional(S.NullOr(S.String)),
+  math_hogql: S.optional(S.NullOr(S.String)),
+  math_group_type_index: S.optional(S.NullOr(S.Number)),
+  /** Property filters (17-member union in OpenAPI). */
+  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  fixedProperties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  version: S.optional(S.NullOr(S.Number)),
+}) {}
+
+/** Union of series node types used in query series arrays. */
+const SeriesNode = S.Union(EventsNode, ActionsNode);
+
+// ---------------------------------------------------------------------------
+// Retention sub-schemas (from OpenAPI: RetentionEntity, RetentionFilter)
+// ---------------------------------------------------------------------------
+
+/**
+ * Entity reference in retention queries. OpenAPI: RetentionEntity.
+ *
+ * id is string | number per spec (event name or action id).
+ */
+export class RetentionEntity extends S.Class<RetentionEntity>(
+  "RetentionEntity"
+)({
+  id: S.optional(S.NullOr(S.Union(S.String, S.Number))),
+  type: S.optional(S.NullOr(S.String)),
+  kind: S.optional(S.NullOr(S.String)),
+  name: S.optional(S.NullOr(S.String)),
+  custom_name: S.optional(S.NullOr(S.String)),
+  order: S.optional(S.NullOr(S.Number)),
+  uuid: S.optional(S.NullOr(S.String)),
+  /** Property filters (17-member union in OpenAPI). */
+  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+}) {}
+
+/**
+ * Retention-specific filter configuration. OpenAPI: RetentionFilter.
+ *
+ * All fields are optional with null defaults per spec.
+ */
+export class RetentionFilter extends S.Class<RetentionFilter>(
+  "RetentionFilter"
+)({
+  targetEntity: S.optional(S.NullOr(RetentionEntity)),
+  returningEntity: S.optional(S.NullOr(RetentionEntity)),
+  period: S.optional(S.NullOr(S.String)),
+  totalIntervals: S.optional(S.NullOr(S.Number)),
+  retentionType: S.optional(S.NullOr(S.String)),
+  retentionReference: S.optional(S.NullOr(S.String)),
+  cumulative: S.optional(S.NullOr(S.Boolean)),
+  display: S.optional(S.NullOr(S.String)),
+  minimumOccurrences: S.optional(S.NullOr(S.Number)),
+  selectedInterval: S.optional(S.NullOr(S.Number)),
+  showTrendLines: S.optional(S.NullOr(S.Boolean)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Insight query schema
+// ---------------------------------------------------------------------------
+
+/**
+ * Top-level insight query object, discriminated by `kind`.
+ *
+ * OpenAPI defines separate schemas per query type (TrendsQuery, FunnelsQuery,
+ * RetentionQuery, PathsQuery, StickinessQuery, LifecycleQuery) plus the
+ * InsightVizNode wrapper. All share common fields; type-specific fields are
+ * optional here. S.Class strips excess properties on decode, so unknown
+ * type-specific fields (e.g. trendsFilter, funnelsFilter) are safely ignored.
+ *
+ * InsightVizNode has a `source` field that is itself a query — modelled as a
+ * recursive reference via S.suspend.
+ */
+export class InsightQuery extends S.Class<InsightQuery>("InsightQuery")({
+  kind: S.String,
+
+  // -- Common fields across all query types --
+  dateRange: S.optional(S.NullOr(DateRange)),
+  filterTestAccounts: S.optional(S.NullOr(S.Boolean)),
+  /**
+   * Property filters. Can be either an array of property filter items, or a
+   * PropertyGroupFilter object (`{type: "AND"|"OR", values: [...]}`).
+   * Kept as S.Unknown since these are fundamentally different shapes.
+   */
+  properties: S.optional(S.Unknown),
+  samplingFactor: S.optional(S.NullOr(S.Number)),
+  aggregation_group_type_index: S.optional(S.NullOr(S.Number)),
+  version: S.optional(S.NullOr(S.Number)),
+
+  // -- Series-based queries (Trends, Funnels, Stickiness, Lifecycle) --
+  series: S.optional(S.Array(SeriesNode)),
+  interval: S.optional(S.NullOr(S.String)),
+
+  // -- Retention --
+  retentionFilter: S.optional(S.NullOr(RetentionFilter)),
+
+  // -- InsightVizNode wrapper --
+  /** Nested source query (InsightVizNode only). Recursive via S.suspend. */
+  source: S.optional(S.suspend((): S.Schema<InsightQuery> => InsightQuery)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Core insight schemas (from OpenAPI: Insight, DashboardTileBasic)
+// ---------------------------------------------------------------------------
+
 export class DashboardTileBasic extends S.Class<DashboardTileBasic>(
   "DashboardTileBasic"
 )({
@@ -15,22 +169,39 @@ export class DashboardTileBasic extends S.Class<DashboardTileBasic>(
   dashboard_id: S.Number,
 }) {}
 
+/**
+ * Insight response schema. OpenAPI: Insight.
+ *
+ * Fields match the OpenAPI Insight schema. The deprecated `dashboards` field
+ * is included (readOnly, still returned by the API) but `filters` is omitted
+ * as it does not appear in the OpenAPI spec (legacy field).
+ */
 export class Insight extends S.Class<Insight>("Insight")({
   id: S.Number,
   short_id: S.optional(S.String),
   name: S.optional(S.NullOr(S.String)),
   derived_name: S.optional(S.NullOr(S.String)),
-  query: S.optional(S.NullOr(S.Unknown)),
+  query: S.optional(S.NullOr(InsightQuery)),
   order: S.optional(S.NullOr(S.Number)),
   deleted: S.optional(S.Boolean),
+  /** @deprecated Use dashboard_tiles instead. Still returned by the API. */
   dashboards: S.optional(S.Array(S.Number)),
   dashboard_tiles: S.optional(S.Array(DashboardTileBasic)),
   last_refresh: S.optional(S.NullOr(S.String)),
   cache_target_age: S.optional(S.NullOr(S.String)),
   next_allowed_client_refresh: S.optional(S.NullOr(S.String)),
+  /**
+   * Computed query result data. Shape varies by insight type (arrays of data
+   * points for trends, funnel steps for funnels, etc.). The OpenAPI spec types
+   * this as `string` (readOnly) — it is actually a polymorphic JSON value
+   * whose shape depends on the query kind. Kept as S.Unknown since fully
+   * typing every result variant is not practical.
+   */
   result: S.optional(S.Unknown),
-  hasMore: S.optional(S.Unknown),
-  columns: S.optional(S.Unknown),
+  /** Whether more result rows exist. OpenAPI: string (actually boolean). */
+  hasMore: S.optional(S.NullOr(S.Boolean)),
+  /** Column names for tabular result data. OpenAPI: string (actually string[]). */
+  columns: S.optional(S.NullOr(S.Array(S.String))),
   created_at: S.optional(S.NullOr(S.String)),
   created_by: S.optional(S.NullOr(UserBasic)),
   description: S.optional(S.NullOr(S.String)),
@@ -38,14 +209,13 @@ export class Insight extends S.Class<Insight>("Insight")({
   last_modified_at: S.optional(S.NullOr(S.String)),
   last_modified_by: S.optional(S.NullOr(UserBasic)),
   favorited: S.optional(S.Boolean),
-  saved: S.optional(S.Boolean),
-  tags: S.optional(S.Array(S.Unknown)),
-  is_cached: S.optional(S.Boolean),
-  filters: S.optional(S.Unknown),
-  filters_hash: S.optional(S.NullOr(S.String)),
-  timezone: S.optional(S.NullOr(S.String)),
+  tags: S.optional(S.Array(S.String)),
+  is_sample: S.optional(S.Boolean),
   effective_restriction_level: S.optional(S.Number),
   effective_privilege_level: S.optional(S.Number),
+  timezone: S.optional(S.NullOr(S.String)),
+  /** OpenAPI: string. Actual API returns boolean. */
+  is_cached: S.optional(S.Unknown),
 }) {}
 
 export class PaginatedInsightList extends S.Class<PaginatedInsightList>(
@@ -56,6 +226,10 @@ export class PaginatedInsightList extends S.Class<PaginatedInsightList>(
   previous: S.optional(S.NullOr(S.String)),
   results: S.Array(Insight),
 }) {}
+
+// ---------------------------------------------------------------------------
+// Request schemas
+// ---------------------------------------------------------------------------
 
 export class ListInsightsRequest extends S.Class<ListInsightsRequest>(
   "ListInsightsRequest"
@@ -96,9 +270,7 @@ export class CreateInsightRequest extends S.Class<CreateInsightRequest>(
     project_id: S.String.pipe(T.HttpLabel()),
     name: S.optional(S.NullOr(S.String)),
     description: S.optional(S.NullOr(S.String)),
-    query: S.optional(S.Unknown),
-    filters: S.optional(S.Unknown),
-    dashboards: S.optional(S.Array(S.Number)),
+    query: S.optional(InsightQuery),
     saved: S.optional(S.Boolean),
   },
   T.all(
@@ -115,9 +287,7 @@ export class UpdateInsightRequest extends S.Class<UpdateInsightRequest>(
     id: S.Number.pipe(T.HttpLabel()),
     name: S.optional(S.NullOr(S.String)),
     description: S.optional(S.NullOr(S.String)),
-    query: S.optional(S.Unknown),
-    filters: S.optional(S.Unknown),
-    dashboards: S.optional(S.Array(S.Number)),
+    query: S.optional(InsightQuery),
     deleted: S.optional(S.Boolean),
     saved: S.optional(S.Boolean),
   },
@@ -136,6 +306,10 @@ export class DeleteInsightRequest extends S.Class<DeleteInsightRequest>(
   project_id: S.String,
   id: S.Number,
 }) {}
+
+// ---------------------------------------------------------------------------
+// Operations
+// ---------------------------------------------------------------------------
 
 const listInsightsOperation: Operation = {
   input: ListInsightsRequest,
