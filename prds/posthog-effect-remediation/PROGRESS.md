@@ -660,3 +660,31 @@ Replaced 10 `console.log` calls in the Summary test block with a single `yield* 
 - `bun run test test/saas-analytics-setup.test.ts` — 44/44 tests passing
 
 ---
+
+### P2-006: Replace console.log with Effect.log in provision-analytics.ts
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+Replaced all 40 `console.log` calls with `yield* Effect.logInfo(...)` throughout the provisioning script. Replaced `console.error` + `process.exit(1)` error handling with `Effect.tapErrorCause` + `Effect.logError` + `Cause.pretty` (Effect.runPromise rejects naturally on failure). Removed all 25 non-null assertions (`.name!`, `.content!`) by using `?? PREFIX` fallback. Replaced 7 `as { id: number; ... }[]` type assertion casts with a `CreatedResources` interface and typed empty arrays. `Date.now()` accepted as non-effectful per task spec.
+
+**Changes:**
+- Added `Cause` import from `effect`
+- Defined `CreatedResources` interface with typed arrays for all 8 resource categories
+- Replaced startup console.log block with `Effect.logInfo` + `Effect.annotateLogs({ projectId, prefix })`
+- Replaced 8 phase header console.logs with `yield* Effect.logInfo("Phase N: ...")`
+- Replaced ~30 per-resource console.logs with `yield* Effect.logInfo("Created X: ...")`
+- Replaced summary console.log block with `Effect.logInfo("SaaS Analytics Setup Complete")` + `Effect.annotateLogs` for structured counts
+- Replaced `.catch((e) => { console.error(...); process.exit(1) })` with `Effect.tapErrorCause((cause) => Effect.logError("Provisioning failed", Cause.pretty(cause)))`
+- Replaced 25 `.name!` / `.content!` non-null assertions with `?? PREFIX` fallback
+- Replaced 7 `[] as { id: number; name: string }[]` casts with interface-typed `[]`
+
+**Files changed:**
+- `scripts/provision-analytics.ts` — 40 console.log → Effect.logInfo, 25 non-null assertions removed, 7 type casts removed, error handling converted to Effect
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 224/224 tests passing
+- Zero `console.log`, `console.error`, `process.exit`, `as {`, `.name!`, `.content!` remaining in file
+
+---

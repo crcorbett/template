@@ -718,7 +718,9 @@
       ],
       "verify": [
         "npx tsc --noEmit"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced all 40 console.log calls with yield* Effect.logInfo, using Effect.annotateLogs for structured data (startup info, summary counts). Replaced console.error + process.exit(1) with Effect.tapErrorCause + Effect.logError + Cause.pretty (Effect.runPromise rejects naturally on failure). Removed all 25 non-null assertions (.name!, .content!) by using ?? PREFIX fallback. Replaced 7 `as { id: number; ... }[]` type assertion casts with CreatedResources interface and typed empty arrays. Date.now() accepted as non-effectful. 0 type errors, 224/224 tests passing."
     },
     {
       "id": "P2-007",
