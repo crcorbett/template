@@ -335,7 +335,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/surveys.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced all top-level S.Unknown usages with typed schemas from PostHog JS SDK. Defined: SurveyPositionEnum (10 positions), SurveyTabPositionEnum (4 positions), SurveyWidgetTypeEnum (3 types), SurveyBranching (4-variant union for question flow), SurveyAppearance (30+ styling fields), updated SurveyQuestion with id/isNpsQuestion/branching fields. One deep S.Unknown remains in SurveyBranchingResponseBased.responseValues (polymorphic values). 0 type errors, 7/7 survey tests passing."
     },
     {
       "id": "P1-007",

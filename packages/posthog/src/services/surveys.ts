@@ -24,25 +24,137 @@ export const QuestionTypeEnum = S.Literal(
   "multiple_choice"
 );
 
-// Survey question (simplified - the full schema is complex)
+// Survey question description content type
+export const SurveyQuestionDescriptionContentType = S.Literal("html", "text");
+
+// Survey position enum (from PostHog JS SDK)
+export const SurveyPositionEnum = S.Literal(
+  "top_left",
+  "top_right",
+  "top_center",
+  "middle_left",
+  "middle_right",
+  "middle_center",
+  "left",
+  "center",
+  "right",
+  "next_to_trigger"
+);
+export type SurveyPosition = S.Schema.Type<typeof SurveyPositionEnum>;
+
+// Survey tab position enum
+export const SurveyTabPositionEnum = S.Literal(
+  "top",
+  "left",
+  "right",
+  "bottom"
+);
+export type SurveyTabPosition = S.Schema.Type<typeof SurveyTabPositionEnum>;
+
+// Survey widget type enum
+export const SurveyWidgetTypeEnum = S.Literal("button", "tab", "selector");
+export type SurveyWidgetType = S.Schema.Type<typeof SurveyWidgetTypeEnum>;
+
+// Branching logic types (from OpenAPI description)
+// - next_question: Proceeds to the next question
+// - end: Ends the survey
+// - response_based: Branches based on response values
+// - specific_question: Proceeds to a specific question by index
+export const SurveyBranchingNextQuestion = S.Struct({
+  type: S.Literal("next_question"),
+});
+
+export const SurveyBranchingEnd = S.Struct({
+  type: S.Literal("end"),
+});
+
+export const SurveyBranchingResponseBased = S.Struct({
+  type: S.Literal("response_based"),
+  responseValues: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+});
+
+export const SurveyBranchingSpecificQuestion = S.Struct({
+  type: S.Literal("specific_question"),
+  index: S.Number,
+});
+
+export const SurveyBranching = S.Union(
+  SurveyBranchingNextQuestion,
+  SurveyBranchingEnd,
+  SurveyBranchingResponseBased,
+  SurveyBranchingSpecificQuestion
+);
+export type SurveyBranching = S.Schema.Type<typeof SurveyBranching>;
+
+// Survey question - complete schema from OpenAPI description
 export class SurveyQuestion extends S.Class<SurveyQuestion>("SurveyQuestion")({
+  // Common fields for all question types
+  id: S.optional(S.String), // UUID, optional for create requests
   type: QuestionTypeEnum,
   question: S.String,
   description: S.optional(S.NullOr(S.String)),
-  descriptionContentType: S.optional(S.Literal("html", "text")),
+  descriptionContentType: S.optional(SurveyQuestionDescriptionContentType),
   optional: S.optional(S.Boolean),
   buttonText: S.optional(S.String),
+  branching: S.optional(SurveyBranching),
   // Rating-specific fields
   display: S.optional(S.Literal("number", "emoji")),
   scale: S.optional(S.Number),
   lowerBoundLabel: S.optional(S.String),
   upperBoundLabel: S.optional(S.String),
+  isNpsQuestion: S.optional(S.Boolean), // Whether it's an NPS rating
   // Choice-specific fields
   choices: S.optional(S.Array(S.String)),
   shuffleOptions: S.optional(S.Boolean),
   hasOpenChoice: S.optional(S.Boolean),
   // Link-specific fields
   link: S.optional(S.String),
+}) {}
+
+// Survey appearance - from PostHog JS SDK types
+export class SurveyAppearance extends S.Class<SurveyAppearance>(
+  "SurveyAppearance"
+)({
+  // Color settings
+  backgroundColor: S.optional(S.String),
+  submitButtonColor: S.optional(S.String),
+  submitButtonTextColor: S.optional(S.String),
+  descriptionTextColor: S.optional(S.String),
+  ratingButtonColor: S.optional(S.String),
+  ratingButtonActiveColor: S.optional(S.String),
+  ratingButtonHoverColor: S.optional(S.String),
+  borderColor: S.optional(S.String),
+  widgetColor: S.optional(S.String),
+  // Deprecated fields (still supported)
+  textColor: S.optional(S.String), // deprecated
+  submitButtonText: S.optional(S.String), // deprecated
+  // Boolean settings
+  whiteLabel: S.optional(S.Boolean),
+  autoDisappear: S.optional(S.Boolean),
+  displayThankYouMessage: S.optional(S.Boolean),
+  shuffleQuestions: S.optional(S.Boolean),
+  // Thank you message settings
+  thankYouMessageHeader: S.optional(S.String),
+  thankYouMessageDescription: S.optional(S.String),
+  thankYouMessageDescriptionContentType: S.optional(
+    SurveyQuestionDescriptionContentType
+  ),
+  thankYouMessageCloseButtonText: S.optional(S.String),
+  // Position and layout
+  position: S.optional(SurveyPositionEnum),
+  tabPosition: S.optional(SurveyTabPositionEnum),
+  placeholder: S.optional(S.String),
+  surveyPopupDelaySeconds: S.optional(S.Number),
+  // Widget settings
+  widgetType: S.optional(SurveyWidgetTypeEnum),
+  widgetSelector: S.optional(S.String),
+  widgetLabel: S.optional(S.String),
+  // Styling
+  fontFamily: S.optional(S.String),
+  maxWidth: S.optional(S.String),
+  zIndex: S.optional(S.String),
+  disabledButtonOpacity: S.optional(S.String),
+  boxPadding: S.optional(S.String),
 }) {}
 
 export { UserBasic } from "../common.js";
@@ -60,8 +172,8 @@ export class Survey extends S.Class<Survey>("Survey")({
   name: S.String,
   description: S.optional(S.String),
   type: SurveyTypeEnum,
-  questions: S.optional(S.NullOr(S.Array(S.Unknown))),
-  appearance: S.optional(S.NullOr(S.Unknown)),
+  questions: S.optional(S.NullOr(S.Array(SurveyQuestion))),
+  appearance: S.optional(S.NullOr(SurveyAppearance)),
   start_date: S.optional(S.NullOr(S.String)),
   end_date: S.optional(S.NullOr(S.String)),
   archived: S.optional(S.Boolean),
@@ -136,8 +248,8 @@ export class CreateSurveyRequest extends S.Class<CreateSurveyRequest>(
     name: S.String,
     description: S.optional(S.String),
     type: SurveyTypeEnum,
-    questions: S.optional(S.Array(S.Unknown)),
-    appearance: S.optional(S.Unknown),
+    questions: S.optional(S.Array(SurveyQuestion)),
+    appearance: S.optional(SurveyAppearance),
     start_date: S.optional(S.NullOr(S.String)),
     end_date: S.optional(S.NullOr(S.String)),
     responses_limit: S.optional(S.NullOr(S.Number)),
@@ -161,8 +273,8 @@ export class UpdateSurveyRequest extends S.Class<UpdateSurveyRequest>(
     name: S.optional(S.String),
     description: S.optional(S.String),
     type: S.optional(SurveyTypeEnum),
-    questions: S.optional(S.Array(S.Unknown)),
-    appearance: S.optional(S.Unknown),
+    questions: S.optional(S.Array(SurveyQuestion)),
+    appearance: S.optional(SurveyAppearance),
     start_date: S.optional(S.NullOr(S.String)),
     end_date: S.optional(S.NullOr(S.String)),
     archived: S.optional(S.Boolean),

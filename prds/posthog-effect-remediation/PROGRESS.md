@@ -218,3 +218,38 @@
 - `bun run test` -- 224/224 tests passing
 
 ---
+
+#### P1-006: Replace S.Unknown in surveys.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced all top-level `S.Unknown` usages in `src/services/surveys.ts` with properly typed schemas sourced from the PostHog JS SDK type definitions.
+
+**Changes:**
+- Defined `SurveyPositionEnum` (10 positions: top_left, top_right, top_center, middle_left, middle_right, middle_center, left, center, right, next_to_trigger)
+- Defined `SurveyTabPositionEnum` (4 positions: top, left, right, bottom)
+- Defined `SurveyWidgetTypeEnum` (3 types: button, tab, selector)
+- Defined `SurveyQuestionDescriptionContentType` enum (html, text)
+- Defined `SurveyBranching` as a 4-variant union schema for question flow logic:
+  - `SurveyBranchingNextQuestion` - proceeds to next question
+  - `SurveyBranchingEnd` - ends the survey
+  - `SurveyBranchingResponseBased` - branches based on response values
+  - `SurveyBranchingSpecificQuestion` - jumps to specific question by index
+- Defined `SurveyAppearance` class with 30+ styling fields from PostHog JS SDK (backgroundColor, submitButtonColor, textColor, position, whiteLabel, thankYouMessage fields, widget settings, font styling, etc.)
+- Updated `SurveyQuestion` class to include: id (UUID), isNpsQuestion (boolean), branching (SurveyBranching)
+- Replaced `questions: S.Array(S.Unknown)` with `S.Array(SurveyQuestion)` in Survey, CreateSurveyRequest, UpdateSurveyRequest
+- Replaced `appearance: S.Unknown` with `SurveyAppearance` in Survey, CreateSurveyRequest, UpdateSurveyRequest
+
+**Remaining S.Unknown (justified):**
+- `responseValues` in SurveyBranchingResponseBased — polymorphic values (can be strings, numbers, etc. based on question type)
+
+**Discovery:** PostHog OpenAPI spec does not define SurveyAppearance type (just `nullable: true`), but the PostHog JS SDK (`posthog-js`) has complete TypeScript type definitions in `packages/browser/src/posthog-surveys-types.ts`.
+
+**Files changed:**
+- `src/services/surveys.ts` -- Added 8 sub-schemas, replaced questions/appearance with typed schemas
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/surveys.test.ts` -- 7/7 tests passing
+
+---
