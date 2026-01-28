@@ -161,6 +161,26 @@ export const afterAll = (
   timeout?: number
 ) => _afterAll(() => run(effect), timeout ?? 30_000);
 
+/**
+ * Test helper that guarantees resource cleanup via Effect.acquireUseRelease.
+ *
+ * Replaces the broken `let createdId` + `Effect.ensuring` pattern where the
+ * ternary was eagerly evaluated at Effect construction time (before the
+ * resource was created), so cleanup never ran on test failure.
+ *
+ * @param acquire - Effect that creates the resource (e.g. createAction)
+ * @param use - Test body that receives the created resource
+ * @param release - Cleanup function called with the resource (always runs)
+ */
+export const withResource = <A, E, R>(options: {
+  readonly acquire: Effect.Effect<A, E, R>;
+  readonly use: (resource: A) => Effect.Effect<void, E, R>;
+  readonly release: (resource: A) => Effect.Effect<void, unknown, R>;
+}): Effect.Effect<void, E, R> =>
+  Effect.acquireUseRelease(options.acquire, options.use, (resource) =>
+    options.release(resource).pipe(Effect.catchAll(() => Effect.void))
+  );
+
 export const expectSnapshot = (
   ctx: TestContext,
   value: unknown,

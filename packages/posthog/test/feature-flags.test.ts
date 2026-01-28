@@ -8,12 +8,7 @@ import {
   listFeatureFlags,
   updateFeatureFlag,
 } from "../src/services/feature-flags.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
-
-const cleanup = (project_id: string, id: number) =>
-  deleteFeatureFlag({ project_id, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Feature Flags Service", () => {
   describe("integration tests", () => {
@@ -49,10 +44,9 @@ describe("PostHog Feature Flags Service", () => {
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
         const flagKey = `test-flag-${Date.now()}`;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createFeatureFlag({
+        yield* withResource({
+          acquire: createFeatureFlag({
             project_id: projectId,
             key: flagKey,
             name: "Integration test flag",
@@ -65,56 +59,53 @@ describe("PostHog Feature Flags Service", () => {
                 },
               ],
             },
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.key).toBe(flagKey);
+              expect(created.name).toBe("Integration test flag");
+              expect(created.active).toBe(false);
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.key).toBe(flagKey);
-          expect(created.name).toBe("Integration test flag");
-          expect(created.active).toBe(false);
+              const fetched = yield* getFeatureFlag({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const fetched = yield* getFeatureFlag({
-            project_id: projectId,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.key).toBe(flagKey);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.key).toBe(flagKey);
+              const updated = yield* updateFeatureFlag({
+                project_id: projectId,
+                id: created.id,
+                name: "Updated flag name",
+                active: true,
+              });
 
-          const updated = yield* updateFeatureFlag({
-            project_id: projectId,
-            id: created.id,
-            name: "Updated flag name",
-            active: true,
-          });
+              expect(updated.name).toBe("Updated flag name");
+              expect(updated.active).toBe(true);
 
-          expect(updated.name).toBe("Updated flag name");
-          expect(updated.active).toBe(true);
+              const deleted = yield* deleteFeatureFlag({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const deleted = yield* deleteFeatureFlag({
-            project_id: projectId,
-            id: created.id,
-          });
-
-          expect(deleted.deleted).toBe(true);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(deleted.deleted).toBe(true);
+            }),
+          release: (created) =>
+            deleteFeatureFlag({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create flag with rollout percentage", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createFeatureFlag({
+        yield* withResource({
+          acquire: createFeatureFlag({
             project_id: projectId,
             key: `test-rollout-${Date.now()}`,
             name: "Rollout test flag",
@@ -127,29 +118,24 @@ describe("PostHog Feature Flags Service", () => {
                 },
               ],
             },
-          });
-          createdId = created.id;
-
-          expect(created.filters).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.filters).toBeDefined();
+            }),
+          release: (created) =>
+            deleteFeatureFlag({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create flag with property filters", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createFeatureFlag({
+        yield* withResource({
+          acquire: createFeatureFlag({
             project_id: projectId,
             key: `test-filtered-${Date.now()}`,
             name: "Filtered flag",
@@ -169,61 +155,52 @@ describe("PostHog Feature Flags Service", () => {
                 },
               ],
             },
-          });
-          createdId = created.id;
-
-          expect(created.filters).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.filters).toBeDefined();
+            }),
+          release: (created) =>
+            deleteFeatureFlag({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should toggle flag active state", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createFeatureFlag({
+        yield* withResource({
+          acquire: createFeatureFlag({
             project_id: projectId,
             key: `test-toggle-${Date.now()}`,
             name: "Toggle test",
             active: false,
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created.active).toBe(false);
 
-          expect(created.active).toBe(false);
+              const activated = yield* updateFeatureFlag({
+                project_id: projectId,
+                id: created.id,
+                active: true,
+              });
+              expect(activated.active).toBe(true);
 
-          const activated = yield* updateFeatureFlag({
-            project_id: projectId,
-            id: created.id,
-            active: true,
-          });
-          expect(activated.active).toBe(true);
-
-          const deactivated = yield* updateFeatureFlag({
-            project_id: projectId,
-            id: created.id,
-            active: false,
-          });
-          expect(deactivated.active).toBe(false);
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              const deactivated = yield* updateFeatureFlag({
+                project_id: projectId,
+                id: created.id,
+                active: false,
+              });
+              expect(deactivated.active).toBe(false);
+            }),
+          release: (created) =>
+            deleteFeatureFlag({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle flag not found", () =>

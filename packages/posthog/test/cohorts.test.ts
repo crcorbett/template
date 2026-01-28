@@ -8,10 +8,7 @@ import {
   listCohorts,
   updateCohort,
 } from "../src/services/cohorts.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
-
-const cleanup = (project_id: string, id: number) =>
-  deleteCohort({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Cohorts Service", () => {
   describe("integration tests", () => {
@@ -53,10 +50,9 @@ describe("PostHog Cohorts Service", () => {
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
         const cohortName = `test-cohort-${Date.now()}`;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createCohort({
+        yield* withResource({
+          acquire: createCohort({
             project_id: projectId,
             name: cohortName,
             description: "Integration test cohort",
@@ -79,56 +75,53 @@ describe("PostHog Cohorts Service", () => {
                 ],
               },
             },
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.name).toBe(cohortName);
+              expect(created.description).toBe("Integration test cohort");
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.name).toBe(cohortName);
-          expect(created.description).toBe("Integration test cohort");
+              const fetched = yield* getCohort({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const fetched = yield* getCohort({
-            project_id: projectId,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.name).toBe(cohortName);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.name).toBe(cohortName);
+              const updatedName = `${cohortName}-updated`;
+              const updated = yield* updateCohort({
+                project_id: projectId,
+                id: created.id,
+                name: updatedName,
+                description: "Updated description",
+              });
 
-          const updatedName = `${cohortName}-updated`;
-          const updated = yield* updateCohort({
-            project_id: projectId,
-            id: created.id,
-            name: updatedName,
-            description: "Updated description",
-          });
+              expect(updated.name).toBe(updatedName);
+              expect(updated.description).toBe("Updated description");
 
-          expect(updated.name).toBe(updatedName);
-          expect(updated.description).toBe("Updated description");
+              const deleted = yield* deleteCohort({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const deleted = yield* deleteCohort({
-            project_id: projectId,
-            id: created.id,
-          });
-
-          expect(deleted.deleted).toBe(true);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(deleted.deleted).toBe(true);
+            }),
+          release: (created) =>
+            deleteCohort({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create cohort with person property filter", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createCohort({
+        yield* withResource({
+          acquire: createCohort({
             project_id: projectId,
             name: `test-person-filter-${Date.now()}`,
             description: "Cohort with person property filter",
@@ -151,29 +144,24 @@ describe("PostHog Cohorts Service", () => {
                 ],
               },
             },
-          });
-          createdId = created.id;
-
-          expect(created.filters).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.filters).toBeDefined();
+            }),
+          release: (created) =>
+            deleteCohort({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create cohort with multiple conditions (OR)", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createCohort({
+        yield* withResource({
+          acquire: createCohort({
             project_id: projectId,
             name: `test-or-conditions-${Date.now()}`,
             description: "Cohort with OR conditions",
@@ -207,29 +195,24 @@ describe("PostHog Cohorts Service", () => {
                 ],
               },
             },
-          });
-          createdId = created.id;
-
-          expect(created.filters).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.filters).toBeDefined();
+            }),
+          release: (created) =>
+            deleteCohort({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create cohort with multiple conditions (AND)", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createCohort({
+        yield* withResource({
+          acquire: createCohort({
             project_id: projectId,
             name: `test-and-conditions-${Date.now()}`,
             description: "Cohort with AND conditions",
@@ -258,20 +241,16 @@ describe("PostHog Cohorts Service", () => {
                 ],
               },
             },
-          });
-          createdId = created.id;
-
-          expect(created.filters).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.filters).toBeDefined();
+            }),
+          release: (created) =>
+            deleteCohort({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle cohort not found", () =>

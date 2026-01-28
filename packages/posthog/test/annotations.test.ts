@@ -8,10 +8,7 @@ import {
   listAnnotations,
   updateAnnotation,
 } from "../src/services/annotations.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
-
-const cleanup = (project_id: string, id: number) =>
-  deleteAnnotation({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Annotations Service", () => {
   describe("integration tests", () => {
@@ -53,173 +50,144 @@ describe("PostHog Annotations Service", () => {
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
         const now = new Date().toISOString();
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          // Create
-          const created = yield* createAnnotation({
+        yield* withResource({
+          acquire: createAnnotation({
             project_id: projectId,
             content: `test-annotation-${Date.now()}`,
             date_marker: now,
             scope: "project",
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.content).toContain("test-annotation");
+              expect(created.scope).toBe("project");
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.content).toContain("test-annotation");
-          expect(created.scope).toBe("project");
+              // Read
+              const fetched = yield* getAnnotation({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          // Read
-          const fetched = yield* getAnnotation({
-            project_id: projectId,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.content).toContain("test-annotation");
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.content).toContain("test-annotation");
+              // Update
+              const updatedContent = `updated-annotation-${Date.now()}`;
+              const updated = yield* updateAnnotation({
+                project_id: projectId,
+                id: created.id,
+                content: updatedContent,
+              });
 
-          // Update
-          const updatedContent = `updated-annotation-${Date.now()}`;
-          const updated = yield* updateAnnotation({
-            project_id: projectId,
-            id: created.id,
-            content: updatedContent,
-          });
-
-          expect(updated.content).toBe(updatedContent);
-
-          // Delete (cleanup handles failure)
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(updated.content).toBe(updatedContent);
+            }),
+          release: (created) =>
+            deleteAnnotation({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create annotation for deployment", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAnnotation({
+        yield* withResource({
+          acquire: createAnnotation({
             project_id: projectId,
             content: `v2.0.0 deployed - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "project",
             creation_type: "USR",
-          });
-          createdId = created.id;
-
-          expect(created.content).toContain("v2.0.0 deployed");
-          expect(created.scope).toBe("project");
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.content).toContain("v2.0.0 deployed");
+              expect(created.scope).toBe("project");
+            }),
+          release: (created) =>
+            deleteAnnotation({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create annotation for marketing campaign", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAnnotation({
+        yield* withResource({
+          acquire: createAnnotation({
             project_id: projectId,
             content: `Q1 Marketing Campaign Start - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "project",
-          });
-          createdId = created.id;
-
-          expect(created.content).toContain("Marketing Campaign");
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.content).toContain("Marketing Campaign");
+            }),
+          release: (created) =>
+            deleteAnnotation({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create organization-scoped annotation", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAnnotation({
+        yield* withResource({
+          acquire: createAnnotation({
             project_id: projectId,
             content: `Organization-wide notice - ${Date.now()}`,
             date_marker: new Date().toISOString(),
             scope: "organization",
-          });
-          createdId = created.id;
-
-          expect(created.scope).toBe("organization");
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.scope).toBe("organization");
+            }),
+          release: (created) =>
+            deleteAnnotation({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should search annotations by content", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
         const uniqueMarker = `searchable-${Date.now()}`;
 
-        yield* Effect.gen(function* () {
-          // Create an annotation with unique content
-          const created = yield* createAnnotation({
+        yield* withResource({
+          acquire: createAnnotation({
             project_id: projectId,
             content: uniqueMarker,
             date_marker: new Date().toISOString(),
             scope: "project",
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              const searchResults = yield* listAnnotations({
+                project_id: projectId,
+                search: uniqueMarker,
+              });
 
-          // Search for it
-          const searchResults = yield* listAnnotations({
-            project_id: projectId,
-            search: uniqueMarker,
-          });
-
-          expect(searchResults.results.length).toBeGreaterThanOrEqual(1);
-          expect(
-            searchResults.results.some((a) => a.content === uniqueMarker)
-          ).toBe(true);
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(searchResults.results.length).toBeGreaterThanOrEqual(1);
+              expect(
+                searchResults.results.some((a) => a.content === uniqueMarker)
+              ).toBe(true);
+            }),
+          release: (created) =>
+            deleteAnnotation({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle annotation not found", () =>

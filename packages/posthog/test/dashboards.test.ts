@@ -8,10 +8,7 @@ import {
   listDashboards,
   updateDashboard,
 } from "../src/services/dashboards.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
-
-const cleanup = (project_id: string, id: number) =>
-  deleteDashboard({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Dashboards Service", () => {
   describe("integration tests", () => {
@@ -53,85 +50,77 @@ describe("PostHog Dashboards Service", () => {
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
         const dashboardName = `test-dashboard-${Date.now()}`;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createDashboard({
+        yield* withResource({
+          acquire: createDashboard({
             project_id: projectId,
             name: dashboardName,
             description: "Integration test dashboard",
             pinned: false,
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.name).toBe(dashboardName);
+              expect(created.description).toBe("Integration test dashboard");
+              expect(created.pinned).toBe(false);
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.name).toBe(dashboardName);
-          expect(created.description).toBe("Integration test dashboard");
-          expect(created.pinned).toBe(false);
+              const fetched = yield* getDashboard({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const fetched = yield* getDashboard({
-            project_id: projectId,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.name).toBe(dashboardName);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.name).toBe(dashboardName);
+              const updatedName = `${dashboardName}-updated`;
+              const updated = yield* updateDashboard({
+                project_id: projectId,
+                id: created.id,
+                name: updatedName,
+                description: "Updated description",
+                pinned: true,
+              });
 
-          const updatedName = `${dashboardName}-updated`;
-          const updated = yield* updateDashboard({
-            project_id: projectId,
-            id: created.id,
-            name: updatedName,
-            description: "Updated description",
-            pinned: true,
-          });
+              expect(updated.name).toBe(updatedName);
+              expect(updated.description).toBe("Updated description");
+              expect(updated.pinned).toBe(true);
 
-          expect(updated.name).toBe(updatedName);
-          expect(updated.description).toBe("Updated description");
-          expect(updated.pinned).toBe(true);
+              const deleted = yield* deleteDashboard({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const deleted = yield* deleteDashboard({
-            project_id: projectId,
-            id: created.id,
-          });
-
-          expect(deleted.deleted).toBe(true);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(deleted.deleted).toBe(true);
+            }),
+          release: (created) =>
+            deleteDashboard({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create dashboard with tags", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createDashboard({
+        yield* withResource({
+          acquire: createDashboard({
             project_id: projectId,
             name: `test-dashboard-tags-${Date.now()}`,
             description: "Dashboard with tags",
             tags: ["test", "integration"],
-          });
-          createdId = created.id;
-
-          expect(created.tags).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.tags).toBeDefined();
+            }),
+          release: (created) =>
+            deleteDashboard({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle dashboard not found", () =>

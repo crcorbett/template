@@ -8,10 +8,7 @@ import {
   listSurveys,
   updateSurvey,
 } from "../src/services/surveys.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
-
-const cleanup = (project_id: string, id: string) =>
-  deleteSurvey({ project_id, id }).pipe(Effect.catchAll(() => Effect.void));
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Surveys Service", () => {
   describe("integration tests", () => {
@@ -53,11 +50,9 @@ describe("PostHog Surveys Service", () => {
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
         const surveyName = `test-survey-${Date.now()}`;
-        let createdId: string | undefined;
 
-        yield* Effect.gen(function* () {
-          // Create
-          const created = yield* createSurvey({
+        yield* withResource({
+          acquire: createSurvey({
             project_id: projectId,
             name: surveyName,
             description: "Integration test survey",
@@ -71,66 +66,63 @@ describe("PostHog Surveys Service", () => {
                 buttonText: "Submit",
               },
             ],
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.name).toBe(surveyName);
+              expect(created.description).toBe("Integration test survey");
+              expect(created.type).toBe("popover");
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.name).toBe(surveyName);
-          expect(created.description).toBe("Integration test survey");
-          expect(created.type).toBe("popover");
+              // Read
+              const fetched = yield* getSurvey({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          // Read
-          const fetched = yield* getSurvey({
-            project_id: projectId,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.name).toBe(surveyName);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.name).toBe(surveyName);
+              // Update
+              const updatedName = `${surveyName}-updated`;
+              const updated = yield* updateSurvey({
+                project_id: projectId,
+                id: created.id,
+                name: updatedName,
+                description: "Updated description",
+              });
 
-          // Update
-          const updatedName = `${surveyName}-updated`;
-          const updated = yield* updateSurvey({
-            project_id: projectId,
-            id: created.id,
-            name: updatedName,
-            description: "Updated description",
-          });
+              expect(updated.name).toBe(updatedName);
+              expect(updated.description).toBe("Updated description");
 
-          expect(updated.name).toBe(updatedName);
-          expect(updated.description).toBe("Updated description");
+              // Delete
+              yield* deleteSurvey({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          // Delete
-          yield* deleteSurvey({
-            project_id: projectId,
-            id: created.id,
-          });
-          createdId = undefined;
+              // Verify deleted (should error)
+              const getResult = yield* getSurvey({
+                project_id: projectId,
+                id: created.id,
+              }).pipe(Effect.either);
 
-          // Verify deleted (should error)
-          const getResult = yield* getSurvey({
-            project_id: projectId,
-            id: created.id,
-          }).pipe(Effect.either);
-
-          expect(getResult._tag).toBe("Left");
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+              expect(getResult._tag).toBe("Left");
+            }),
+          release: (created) =>
+            deleteSurvey({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create NPS survey with rating question", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: string | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createSurvey({
+        yield* withResource({
+          acquire: createSurvey({
             project_id: projectId,
             name: `test-nps-survey-${Date.now()}`,
             description: "NPS Survey",
@@ -146,30 +138,25 @@ describe("PostHog Surveys Service", () => {
                 upperBoundLabel: "Extremely likely",
               },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.type).toBe("popover");
-          expect(created.questions).toBeDefined();
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.type).toBe("popover");
+              expect(created.questions).toBeDefined();
+            }),
+          release: (created) =>
+            deleteSurvey({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create survey with multiple choice question", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: string | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createSurvey({
+        yield* withResource({
+          acquire: createSurvey({
             project_id: projectId,
             name: `test-multichoice-survey-${Date.now()}`,
             description: "Multiple Choice Survey",
@@ -181,29 +168,24 @@ describe("PostHog Surveys Service", () => {
                 choices: ["Dashboard", "Reports", "Settings", "API"],
               },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.type).toBe("popover");
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.type).toBe("popover");
+            }),
+          release: (created) =>
+            deleteSurvey({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create API survey type", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        let createdId: string | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createSurvey({
+        yield* withResource({
+          acquire: createSurvey({
             project_id: projectId,
             name: `test-api-survey-${Date.now()}`,
             description: "API Survey for programmatic access",
@@ -214,20 +196,16 @@ describe("PostHog Surveys Service", () => {
                 question: "Feedback via API",
               },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.type).toBe("api");
-
-          yield* cleanup(projectId, created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined
-              ? cleanup(projectId, createdId)
-              : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.type).toBe("api");
+            }),
+          release: (created) =>
+            deleteSurvey({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle survey not found", () =>
