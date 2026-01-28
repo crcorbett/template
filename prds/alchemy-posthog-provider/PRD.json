@@ -487,8 +487,8 @@
         "bun tsc -b passes with no type errors",
         "bun vitest run test/posthog/cohorts/cohort.provider.test.ts passes"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created cohort.provider.test.ts with create/update/delete lifecycle test. Cohort uses soft delete (PATCH deleted:true via updateCohort). assertCohortDeleted checks for deleted:true field, NotFoundError, or PostHogError 404 with retry/backoff. Test passes against real PostHog API."
     },
     {
       "id": "ACT-001",
