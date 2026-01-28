@@ -626,3 +626,21 @@
 - `bun run test` — 224/224 tests passing
 
 ---
+
+### P2-004: Convert if/else chains to Match in traits.ts
+**Status:** Complete
+**Commit:** (pending)
+
+Converted `hasAnnotation` and `getAnnotationUnwrap` functions from if/else chains on `ast._tag` to `Match.value(ast).pipe(Match.when({_tag: ...}), Match.orElse(...))` pattern. Added `import * as Match from "effect/Match"` to traits.ts.
+
+`JsonName` was intentionally left unchanged — its branching uses runtime predicates (`propertySignatureSymbol in schema`, `S.isSchema()`) rather than `_tag` discrimination, which doesn't map cleanly to `Match` patterns with the generic `Annotatable` constraint. Match.when requires type predicates that conflict with the open generic.
+
+**Files changed:**
+- `src/traits.ts` — Added Match import, converted hasAnnotation and getAnnotationUnwrap to Match patterns
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/traits.test.ts` — 41/41 tests passing
+- `bun run test` — 223/224 tests passing (1 pre-existing events timeout)
+
+---

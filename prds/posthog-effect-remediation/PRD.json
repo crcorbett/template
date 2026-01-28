@@ -674,7 +674,9 @@
         "npx tsc --noEmit",
         "bun run test test/traits.test.ts",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Converted hasAnnotation and getAnnotationUnwrap if/else chains on ast._tag to Match.value(ast).pipe(Match.when({_tag: ...}), Match.orElse(...)). JsonName was left as-is because its branching uses runtime predicates (propertySignatureSymbol in schema, S.isSchema) rather than _tag discrimination, which doesn't map cleanly to Match patterns with the generic Annotatable constraint. 0 type errors, 41/41 traits tests passing, 223/224 total tests passing (1 pre-existing events timeout)."
     },
     {
       "id": "P2-005",
