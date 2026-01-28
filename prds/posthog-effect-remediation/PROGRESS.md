@@ -949,3 +949,23 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test test/feature-flags.test.ts` — 7/7 tests passing
 
 ---
+
+### P4-005: Add isHttpClientTransportError to isTransientError predicate ✅
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+**Summary:** Added `isHttpClientTransportError` predicate to `category.ts` that detects `@effect/platform` `RequestError` with `reason: 'Transport'` — covering connection timeouts, DNS failures, socket errors, TLS failures, and connection refused. Updated `isTransientError` composite predicate to include transport errors alongside throttling and server errors.
+
+**Changes:**
+- Added `isHttpClientTransportError` predicate using `Predicate.isObject` + `_tag`/`reason` discriminant checks
+- Updated `isTransientError` to: `isThrottlingError || isServerError || isHttpClientTransportError`
+
+**Files changed:**
+- `src/category.ts` — added predicate and updated composite
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 226/226 tests passing
+
+---

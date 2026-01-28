@@ -1045,8 +1045,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added isHttpClientTransportError predicate to category.ts that detects @effect/platform RequestError with reason: 'Transport' (connection timeouts, DNS failures, socket errors, TLS failures, connection refused). Updated isTransientError composite predicate to include transport errors: isThrottlingError || isServerError || isHttpClientTransportError. Exported isHttpClientTransportError from category.ts. 0 type errors, 226/226 tests passing."
     },
     {
       "id": "P4-006",

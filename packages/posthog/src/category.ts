@@ -94,11 +94,25 @@ export const isNotFoundError = (error: unknown): boolean =>
   hasCategory(error, NotFoundError);
 
 /**
+ * Check if an error is an @effect/platform HTTP client transport error.
+ * These are network-level failures: connection timeouts, DNS failures,
+ * socket errors, TLS failures, connection refused.
+ *
+ * Detects `RequestError` with `reason: 'Transport'` from @effect/platform's HttpClient.
+ */
+export const isHttpClientTransportError = (error: unknown): boolean =>
+  Predicate.isObject(error) &&
+  "_tag" in error &&
+  error._tag === "RequestError" &&
+  "reason" in error &&
+  error.reason === "Transport";
+
+/**
  * Check if an error is transient and should be automatically retried.
- * Transient errors include throttling and server errors.
+ * Transient errors include throttling, server, and HTTP transport errors.
  */
 export const isTransientError = (error: unknown): boolean =>
-  isThrottlingError(error) || isServerError(error);
+  isThrottlingError(error) || isServerError(error) || isHttpClientTransportError(error);
 
 // ============================================================================
 // Category catchers (for use with .pipe(Category.catchAuthError(...)))
