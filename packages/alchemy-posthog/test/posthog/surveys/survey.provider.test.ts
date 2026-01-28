@@ -50,7 +50,7 @@ describe("PostHog Survey Provider", () => {
         const projectId = yield* TEST_PROJECT_ID;
 
         class TestSurvey extends Survey("TestSurvey", {
-          name: `Test Survey ${Date.now()}`,
+          name: "Test Survey",
           type: "api",
         }) {}
 
@@ -71,7 +71,7 @@ describe("PostHog Survey Provider", () => {
 
         // Update: change name
         class UpdatedSurvey extends Survey("TestSurvey", {
-          name: `Updated Survey ${Date.now()}`,
+          name: "Updated Survey",
           type: "api",
         }) {}
 

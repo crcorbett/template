@@ -61,7 +61,7 @@ describe("PostHog Cohort Provider", () => {
 
         // Create a cohort
         class TestCohort extends Cohort("TestCohort", {
-          name: `Test Cohort ${Date.now()}`,
+          name: "Test Cohort",
           description: "A test cohort for integration testing",
         }) {}
 

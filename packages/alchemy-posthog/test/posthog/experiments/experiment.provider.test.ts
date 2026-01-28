@@ -55,12 +55,10 @@ describe("PostHog Experiment Provider", () => {
         yield* destroy();
 
         const projectId = yield* TEST_PROJECT_ID;
-        const timestamp = Date.now();
-
         // Create an experiment
         class TestExperiment extends Experiment("TestExperiment", {
-          name: `Test Experiment ${timestamp}`,
-          featureFlagKey: `test-exp-flag-${timestamp}`,
+          name: "Test Experiment",
+          featureFlagKey: "test-exp-flag",
           description: "A test experiment for integration testing",
         }) {}
 
@@ -69,26 +67,24 @@ describe("PostHog Experiment Provider", () => {
         // Verify the created experiment
         expect(stack.TestExperiment.id).toBeDefined();
         expect(typeof stack.TestExperiment.id).toBe("number");
-        expect(stack.TestExperiment.name).toBe(`Test Experiment ${timestamp}`);
-        expect(stack.TestExperiment.featureFlagKey).toBe(
-          `test-exp-flag-${timestamp}`
-        );
+        expect(stack.TestExperiment.name).toBe("Test Experiment");
+        expect(stack.TestExperiment.featureFlagKey).toBe("test-exp-flag");
 
         // Verify via direct API call
         const fetched = yield* ExperimentsAPI.getExperiment({
           project_id: projectId,
           id: stack.TestExperiment.id,
         });
-        expect(fetched.name).toBe(`Test Experiment ${timestamp}`);
-        expect(fetched.feature_flag_key).toBe(`test-exp-flag-${timestamp}`);
+        expect(fetched.name).toBe("Test Experiment");
+        expect(fetched.feature_flag_key).toBe("test-exp-flag");
         expect(fetched.description).toBe(
           "A test experiment for integration testing"
         );
 
         // Update the experiment
         class UpdatedExperiment extends Experiment("TestExperiment", {
-          name: `Test Experiment ${timestamp}`,
-          featureFlagKey: `test-exp-flag-${timestamp}`,
+          name: "Test Experiment",
+          featureFlagKey: "test-exp-flag",
           description: "Updated experiment description",
         }) {}
 
@@ -124,42 +120,36 @@ describe("PostHog Experiment Provider", () => {
         yield* destroy();
 
         const projectId = yield* TEST_PROJECT_ID;
-        const timestamp = Date.now();
-
         // Create initial experiment
         class ExpV1 extends Experiment("ReplaceExperiment", {
-          name: `Replace Experiment ${timestamp}`,
-          featureFlagKey: `exp-flag-v1-${timestamp}`,
+          name: "Replace Experiment",
+          featureFlagKey: "exp-flag-v1",
         }) {}
 
         const stackV1 = yield* apply(ExpV1);
         const originalId = stackV1.ReplaceExperiment.id;
 
         expect(originalId).toBeDefined();
-        expect(stackV1.ReplaceExperiment.featureFlagKey).toBe(
-          `exp-flag-v1-${timestamp}`
-        );
+        expect(stackV1.ReplaceExperiment.featureFlagKey).toBe("exp-flag-v1");
 
         // Change the feature flag key - this should trigger a replacement
         class ExpV2 extends Experiment("ReplaceExperiment", {
-          name: `Replace Experiment ${timestamp}`,
-          featureFlagKey: `exp-flag-v2-${timestamp}`,
+          name: "Replace Experiment",
+          featureFlagKey: "exp-flag-v2",
         }) {}
 
         const stackV2 = yield* apply(ExpV2);
 
         // Verify replacement - new ID should be different
         expect(stackV2.ReplaceExperiment.id).not.toBe(originalId);
-        expect(stackV2.ReplaceExperiment.featureFlagKey).toBe(
-          `exp-flag-v2-${timestamp}`
-        );
+        expect(stackV2.ReplaceExperiment.featureFlagKey).toBe("exp-flag-v2");
 
         // Verify new experiment exists via API
         const newExp = yield* ExperimentsAPI.getExperiment({
           project_id: projectId,
           id: stackV2.ReplaceExperiment.id,
         });
-        expect(newExp.feature_flag_key).toBe(`exp-flag-v2-${timestamp}`);
+        expect(newExp.feature_flag_key).toBe("exp-flag-v2");
 
         // Verify old experiment was deleted
         yield* assertExperimentDeleted(originalId);

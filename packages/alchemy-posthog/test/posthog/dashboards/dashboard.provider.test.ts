@@ -64,7 +64,7 @@ describe("PostHog Dashboard Provider", () => {
 
         // Create a dashboard
         class TestDashboard extends Dashboard("TestDashboard", {
-          name: `Test Dashboard ${Date.now()}`,
+          name: "Test Dashboard",
           description: "A test dashboard for integration testing",
           pinned: false,
         }) {}

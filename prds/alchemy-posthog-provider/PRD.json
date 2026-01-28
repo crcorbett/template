@@ -748,8 +748,8 @@
         "bun vitest run test/posthog/ -- all tests pass",
         "grep -r 'Date.now()' test/posthog/ returns no results"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Replaced all Date.now() usages with deterministic fixed strings across 8 test files (11 occurrences total). Removed 3 'const timestamp = Date.now()' declarations (feature-flags replace test, experiments CRUD and replace tests). All resource names are now stable across test runs, enabling idempotent test recovery via initial destroy(). bun tsc -b passes. All 10 tests across 8 files pass."
     },
      {
       "id": "FINAL-002",

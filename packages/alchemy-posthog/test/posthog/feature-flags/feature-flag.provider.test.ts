@@ -57,7 +57,7 @@ describe("PostHog FeatureFlag Provider", () => {
 
         // Create a feature flag
         class TestFlag extends FeatureFlag("TestFlag", {
-          key: `test-flag-crud-${Date.now()}`,
+          key: "test-flag-crud",
           name: "Test Flag",
           active: true,
         }) {}
@@ -117,11 +117,9 @@ describe("PostHog FeatureFlag Provider", () => {
         yield* destroy();
 
         const projectId = yield* TEST_PROJECT_ID;
-        const timestamp = Date.now();
-
         // Create initial flag
         class FlagV1 extends FeatureFlag("ReplaceFlag", {
-          key: `test-flag-v1-${timestamp}`,
+          key: "test-flag-v1",
           name: "Version 1",
           active: true,
         }) {}
@@ -130,11 +128,11 @@ describe("PostHog FeatureFlag Provider", () => {
         const originalId = stackV1.ReplaceFlag.id;
 
         expect(originalId).toBeDefined();
-        expect(stackV1.ReplaceFlag.key).toBe(`test-flag-v1-${timestamp}`);
+        expect(stackV1.ReplaceFlag.key).toBe("test-flag-v1");
 
         // Change the key - this should trigger a replacement
         class FlagV2 extends FeatureFlag("ReplaceFlag", {
-          key: `test-flag-v2-${timestamp}`,
+          key: "test-flag-v2",
           name: "Version 2",
           active: true,
         }) {}
@@ -143,7 +141,7 @@ describe("PostHog FeatureFlag Provider", () => {
 
         // Verify replacement - new ID should be different
         expect(stackV2.ReplaceFlag.id).not.toBe(originalId);
-        expect(stackV2.ReplaceFlag.key).toBe(`test-flag-v2-${timestamp}`);
+        expect(stackV2.ReplaceFlag.key).toBe("test-flag-v2");
         expect(stackV2.ReplaceFlag.name).toBe("Version 2");
 
         // Verify new flag exists via API
@@ -151,7 +149,7 @@ describe("PostHog FeatureFlag Provider", () => {
           project_id: projectId,
           id: stackV2.ReplaceFlag.id,
         });
-        expect(newFlag.key).toBe(`test-flag-v2-${timestamp}`);
+        expect(newFlag.key).toBe("test-flag-v2");
 
         // Verify old flag was deleted
         yield* assertFeatureFlagDeleted(originalId);

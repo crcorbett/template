@@ -61,7 +61,7 @@ describe("PostHog Annotation Provider", () => {
 
         // Create an annotation
         class TestAnnotation extends Annotation("TestAnnotation", {
-          content: `Test annotation ${Date.now()}`,
+          content: "Test annotation",
           dateMarker: new Date().toISOString(),
           scope: "project" as const,
         }) {}

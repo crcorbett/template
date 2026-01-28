@@ -61,7 +61,7 @@ describe("PostHog Action Provider", () => {
 
         // Create an action
         class TestAction extends Action("TestAction", {
-          name: `Test Action ${Date.now()}`,
+          name: "Test Action",
           description: "A test action for integration testing",
         }) {}
 

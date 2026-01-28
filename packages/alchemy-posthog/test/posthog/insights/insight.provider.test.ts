@@ -61,7 +61,7 @@ describe("PostHog Insight Provider", () => {
 
         // Create an insight
         class TestInsight extends Insight("TestInsight", {
-          name: `Test Insight ${Date.now()}`,
+          name: "Test Insight",
           saved: true,
         }) {}
 
