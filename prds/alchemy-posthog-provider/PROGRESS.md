@@ -29,13 +29,24 @@
   - `endpoint.ts` — Bridge to `@packages/posthog` Endpoint from stage config or default `https://us.posthog.com`
   - `bun tsc -b` passes with no errors
 
+### SETUP-003 - Create PostHog cloud-level index.ts with empty resources() and providers() composition
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/index.ts` with:
+  - `resources()` returning `Layer.empty` (will be populated with `Layer.mergeAll()` as providers are added)
+  - `providers()` composing resources with Project, Credentials, Endpoint, and FetchHttpClient layers
+  - Side-effect import of `./config.js` for module augmentation
+  - Re-export of `Project` from `./project.js`
+  - Created 8 empty placeholder barrel files for all service subpaths
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
 
 | Category | Total | Completed | In Progress | Pending |
 |----------|-------|-----------|-------------|---------|
-| Setup | 3 | 2 | 0 | 1 |
+| Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 0 | 0 | 3 |
 | Dashboard | 3 | 0 | 0 | 3 |
 | Experiment | 3 | 0 | 0 | 3 |
@@ -45,4 +56,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **2** | **0** | **27** |
+| **Total** | **29** | **3** | **0** | **26** |

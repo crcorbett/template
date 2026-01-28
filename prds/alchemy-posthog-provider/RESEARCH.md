@@ -387,3 +387,13 @@ export const providers = () =>
 ```
 
 **Reference:** `.context/alchemy-effect/alchemy-effect/src/cloudflare/live.ts`
+
+---
+
+## Layer.empty vs Layer.mergeAll() (SETUP-003)
+
+`Layer.mergeAll()` requires at least 1 argument in the Effect type system. Since the initial `resources()` has no providers yet, we use `Layer.empty` as the starting point. As providers are added in subsequent tasks, this will be replaced with `Layer.mergeAll(provider1(), provider2(), ...)`.
+
+### Import Extension Convention
+
+This repo uses `moduleResolution: "Bundler"` without `allowImportingTsExtensions`, so relative imports must use `.js` extensions (not `.ts`). This matches the convention used in `@packages/posthog`.

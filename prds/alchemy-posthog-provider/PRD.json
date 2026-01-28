@@ -103,8 +103,8 @@
         "src/posthog/index.ts exports resources() and providers() functions",
         "All 8 service index.ts files exist"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/posthog/index.ts with resources() returning Layer.empty and providers() composing Project, Credentials, Endpoint, and FetchHttpClient layers. Used .js extensions for relative imports per repo convention (moduleResolution: Bundler without allowImportingTsExtensions). Created 8 placeholder barrel files for feature-flags, dashboards, experiments, surveys, cohorts, actions, annotations, insights."
     },
     {
       "id": "FF-001",
