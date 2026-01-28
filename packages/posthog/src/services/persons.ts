@@ -9,7 +9,8 @@ export class Person extends S.Class<Person>("Person")({
   id: S.Number,
   name: S.optional(S.String),
   distinct_ids: S.Array(S.String),
-  properties: S.optional(S.Unknown),
+  /** Person properties as key-value pairs (e.g., email, name, custom properties). */
+  properties: S.optional(S.Record({ key: S.String, value: S.Unknown })),
   created_at: S.optional(S.String),
   uuid: S.String,
 }) {}

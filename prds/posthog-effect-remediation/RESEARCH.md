@@ -603,3 +603,69 @@ The `filters` field uses similar structure to feature flags for experiment targe
 - Defined separate schemas for query components (EventNode, DateRange, etc.)
 - Kept `properties` arrays as `S.Array(S.Unknown)` due to 17-member property filter union
 - Kept `exposure_query` as `S.Unknown` since it's optional and rarely documented
+
+---
+
+## 14. P1-008 Research: Actions, Events, Persons Schema Typing
+
+### OpenAPI ClickhouseEvent Schema (line 37826)
+
+The OpenAPI spec declares all event fields as `type: string`:
+- `properties`: `type: string` (actually JSON-encoded object)
+- `person`: `type: string` (actually JSON-encoded object or parsed object)
+- `elements`: `type: string` (actually JSON-encoded array or parsed array)
+
+In practice, the PostHog API returns these as parsed JSON objects, not strings. The SDK's response parser decodes the JSON response body, so our schemas should reflect the parsed structure.
+
+### Event Properties Structure
+
+Event properties are key-value pairs storing event metadata:
+- Standard properties: `$browser`, `$device`, `$os`, `$current_url`, `$timestamp`, etc.
+- Custom properties: Application-specific data sent with events
+
+Best modeled as `S.Record({ key: S.String, value: S.Unknown })` since values can be strings, numbers, booleans, arrays, or nested objects.
+
+### Event Person Structure
+
+The person reference in events contains:
+- `id`: UUID string identifier
+- `distinct_id`: Primary distinct ID
+- `distinct_ids`: Array of all linked distinct IDs
+- `properties`: Person properties (another dynamic record)
+- `created_at`: ISO timestamp
+- `uuid`: Same as id
+- `is_identified`: Boolean indicating if person was identified via $identify call
+
+### Event Elements Structure (Autocapture)
+
+For `$autocapture` events, the `elements` array contains DOM element information:
+- `tag_name`: HTML tag (button, a, div, etc.)
+- `$el_text`: Text content (PostHog-specific key)
+- `text`: Alternative text field
+- `href`: Link target for anchor elements
+- `attr__class`, `attr__id`: CSS class and ID attributes
+- `nth_child`, `nth_of_type`: DOM position for disambiguation
+- `attributes`: Additional captured attributes as record
+
+### ActionStep Properties
+
+The `ActionStepJSON` schema (line 35482) defines:
+- `properties`: `type: array, items: { type: object, additionalProperties: {} }`
+
+This is an array of property filter objects. We already have `ActionStepProperty` S.Class that models individual filter conditions with key, value, operator, and type. Reusing this is appropriate.
+
+### Person Properties
+
+The `Person` schema (line 58554) defines:
+- `properties: {}` (empty schema, any object)
+- `PersonType` (line 58622) defines: `properties: { type: object, additionalProperties: true }`
+
+Person properties are completely dynamic — they can contain any user-defined attributes. Best modeled as `S.Record({ key: S.String, value: S.Unknown })`.
+
+### Schema Design Decisions
+
+- **EventPerson**: Created new schema with all documented person fields plus common undocumented ones
+- **EventElement**: Created new schema covering autocapture element data
+- **Actions tags**: Changed from `S.Array(S.Unknown)` to `S.Array(S.String)` (confirmed from other services)
+- **ActionStep.properties**: Changed to `S.Array(ActionStepProperty)` to reuse existing typed schema
+- **Record values**: Kept as `S.Unknown` for all dynamic key-value stores (event properties, person properties, element attributes) since values are truly polymorphic

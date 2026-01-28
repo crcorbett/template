@@ -21,7 +21,7 @@ export class ActionStepProperty extends S.Class<ActionStepProperty>(
 
 export class ActionStep extends S.Class<ActionStep>("ActionStep")({
   event: S.optional(S.NullOr(S.String)),
-  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  properties: S.optional(S.NullOr(S.Array(ActionStepProperty))),
   selector: S.optional(S.NullOr(S.String)),
   tag_name: S.optional(S.NullOr(S.String)),
   text: S.optional(S.NullOr(S.String)),
@@ -38,7 +38,7 @@ export class Action extends S.Class<Action>("Action")({
   id: S.Number,
   name: S.NullOr(S.String),
   description: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   post_to_slack: S.optional(S.Boolean),
   slack_message_format: S.optional(S.String),
   steps: S.optional(S.Array(ActionStep)),
@@ -56,7 +56,7 @@ export class ActionBasic extends S.Class<ActionBasic>("ActionBasic")({
   id: S.Number,
   name: S.NullOr(S.String),
   description: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   deleted: S.optional(S.Boolean),
   created_at: S.optional(S.String),
 }) {}

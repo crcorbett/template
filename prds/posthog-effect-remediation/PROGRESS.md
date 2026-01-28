@@ -291,3 +291,41 @@
 - `bun run test test/experiments.test.ts` -- 6/6 tests passing
 
 ---
+
+#### P1-008: Replace S.Unknown in actions.ts, events.ts, persons.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced `S.Unknown` usages in the three remaining service files with properly typed schemas.
+
+**Changes in actions.ts:**
+- Changed `tags` from `S.Array(S.Unknown)` to `S.Array(S.String)` in both `Action` and `ActionBasic` classes
+- Changed `ActionStep.properties` from `S.Array(S.Unknown)` to `S.Array(ActionStepProperty)` (reusing existing schema)
+- Retained `ActionStepProperty.value` as `S.Unknown` (polymorphic per OpenAPI PropertyOperator value spec)
+
+**Changes in events.ts:**
+- Defined `EventPerson` schema for person reference within events (id, distinct_id, distinct_ids, properties, created_at, uuid, is_identified)
+- Defined `EventElement` schema for DOM elements captured during autocapture (tag_name, $el_text, text, href, attr__class, attr__id, nth_child, nth_of_type, attributes)
+- Changed `ClickhouseEvent.properties` from `S.Unknown` to `S.Record({ key: S.String, value: S.Unknown })`
+- Changed `ClickhouseEvent.person` from `S.Unknown` to `EventPerson`
+- Changed `ClickhouseEvent.elements` from `S.Unknown` to `S.Array(EventElement)`
+
+**Changes in persons.ts:**
+- Changed `Person.properties` from `S.Unknown` to `S.Record({ key: S.String, value: S.Unknown })`
+
+**Remaining S.Unknown (justified):**
+- `ActionStepProperty.value` — polymorphic (string, number, boolean, array per PropertyOperator spec)
+- `EventPerson.properties`, `EventElement.attributes`, `Person.properties` values — dynamic key-value stores with arbitrary value types
+
+**Files changed:**
+- `src/services/actions.ts` -- Tags typed as string arrays, properties typed as ActionStepProperty array
+- `src/services/events.ts` -- Added EventPerson, EventElement schemas; properties/person/elements typed
+- `src/services/persons.ts` -- Properties typed as Record
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/actions.test.ts` -- 8/8 tests passing
+- `bun run test test/events.test.ts` -- 5/5 tests passing
+- `bun run test test/persons.test.ts` -- 5/5 tests passing
+
+---

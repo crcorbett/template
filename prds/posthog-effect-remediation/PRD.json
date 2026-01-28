@@ -385,7 +385,9 @@
         "bun run test test/actions.test.ts",
         "bun run test test/events.test.ts",
         "bun run test test/persons.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced S.Unknown usages: actions.ts - changed tags to S.Array(S.String) in Action and ActionBasic, changed ActionStep.properties to S.Array(ActionStepProperty). events.ts - defined EventPerson and EventElement schemas, changed properties to S.Record, person to EventPerson, elements to S.Array(EventElement). persons.ts - changed properties to S.Record({ key: S.String, value: S.Unknown }). Remaining deep S.Unknown: ActionStepProperty.value (polymorphic), EventPerson.properties, EventElement.attributes, Person.properties values (all are dynamic key-value stores). 0 type errors, 18/18 tests passing."
     },
     {
       "id": "P1-009",
