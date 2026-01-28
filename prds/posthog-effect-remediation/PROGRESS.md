@@ -770,3 +770,29 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 226/226 tests passing
 
 ---
+
+### P3-002: Convert raw interfaces to Schema for client types
+
+**Status:** PASSED (no changes needed)
+**Date:** 2026-01-28
+
+**Analysis:** Investigated whether Request, Response, Operation, HttpTrait, PostHogServiceTrait, and PaginatedTrait interfaces should be converted from plain TypeScript interfaces to Effect Schema (`S.Class` / `S.Struct`) definitions.
+
+**Decision: No conversion.** After examining the distilled-aws reference architecture (`.context/distilled-aws/`), confirmed that the reference uses identical plain TypeScript interfaces for all these types. These are internal structural types that:
+
+1. Are constructed programmatically within the SDK (never deserialized from external input)
+2. Contain non-serializable types (`ReadableStream<Uint8Array>`, `S.Schema.AnyNoContext`) that cannot be represented as Effect Schemas
+3. Would gain runtime schema validation overhead with zero type safety benefit
+4. Would diverge from the reference architecture rather than align with it
+
+**Files reviewed (no changes):**
+- `src/client/request.ts` — interface Request (method, path, query, headers, body)
+- `src/client/response.ts` — interface Response (status, statusText, headers, body)
+- `src/client/operation.ts` — interface Operation (input, output, errors, pagination)
+- `src/traits.ts` — interfaces HttpTrait, PostHogServiceTrait, PaginatedTrait
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 225/226 tests passing (1 pre-existing cohorts CRUD race condition)
+
+---
