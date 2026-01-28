@@ -773,8 +773,8 @@
         "bun vitest run test/posthog/posthog.smoke.test.ts passes",
         "bun vitest run test/posthog/ -- all tests pass including smoke test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created posthog.smoke.test.ts with a single test that creates 3 related resources (FeatureFlag, Dashboard, Annotation) in a single apply() call, verifies all exist via direct API calls, destroys all, and verifies cleanup. All 11 tests across 9 test files pass (including smoke test). bun tsc -b passes."
     }
   ]
 }
