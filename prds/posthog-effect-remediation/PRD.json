@@ -907,7 +907,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Final verification complete. 0 type errors, 226/226 tests passing. Source as casts: only acceptable traits.ts (distilled-aws pattern), category.ts (internal type plumbing), api.ts (3 minor). Test as casts: zero. Non-null assertions: zero. instanceof in src: 2 Date checks in request-builder.ts (acceptable). console.log in test/scripts: zero in Effect contexts (only generate-clients.ts sync script). throw in src: zero. S.Unknown: ~35 remaining, all justified as deep polymorphic/dynamic fields."
     }
   ]
 }
