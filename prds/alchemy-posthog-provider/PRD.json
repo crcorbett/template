@@ -307,8 +307,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created experiment.ts with ExperimentProps (name, description, featureFlagKey, startDate, endDate, parameters, filters, holdoutId, type, metrics, metricsSecondary) and ExperimentAttrs (id, name, featureFlagKey, startDate, endDate, archived, createdAt). Imports Resource from 'alchemy-effect' npm package. Updated experiments/index.ts to export all from experiment.js. bun tsc -b passes."
     },
     {
       "id": "EXP-002",

@@ -118,6 +118,17 @@
   - Updated RESEARCH.md with Dashboard soft delete behavior documentation
   - `bun tsc -b` and `bun vitest run test/posthog/dashboards/dashboard.provider.test.ts` pass
 
+### EXP-001 - Implement Experiment resource contract
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/experiments/experiment.ts` with:
+  - `ExperimentProps` interface with JSDoc: name (required), featureFlagKey (required, replaces), description, startDate, endDate, parameters, filters, holdoutId, type, metrics, metricsSecondary
+  - `ExperimentAttrs` interface: id (number, stable), name, featureFlagKey (stable), startDate, endDate, archived, createdAt
+  - `Experiment` interface extending `Resource<"PostHog.Experiments.Experiment", ...>`
+  - `Experiment` const exported via `Resource<CtorSignature>()` factory
+  - Updated `experiments/index.ts` barrel to export all from `experiment.js`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -127,11 +138,11 @@
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
-| Experiment | 3 | 0 | 0 | 3 |
+| Experiment | 3 | 1 | 0 | 2 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **9** | **0** | **20** |
+| **Total** | **29** | **10** | **0** | **19** |
