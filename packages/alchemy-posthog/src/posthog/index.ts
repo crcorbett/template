@@ -9,13 +9,15 @@ import * as Dashboards from "./dashboards/index.js";
 import * as Experiments from "./experiments/index.js";
 import * as FeatureFlags from "./feature-flags/index.js";
 import * as Project from "./project.js";
-export { Dashboards, Experiments, FeatureFlags };
+import * as Surveys from "./surveys/index.js";
+export { Dashboards, Experiments, FeatureFlags, Surveys };
 
 export const resources = () =>
   Layer.mergeAll(
     FeatureFlags.featureFlagProvider(),
     Dashboards.dashboardProvider(),
-    Experiments.experimentProvider()
+    Experiments.experimentProvider(),
+    Surveys.surveyProvider()
   );
 
 export const providers = () =>

@@ -405,8 +405,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created survey.provider.ts following existing provider patterns. Imports from @packages/posthog/surveys. Maps camelCase props to snake_case API params (startDate -> start_date, endDate -> end_date, responsesLimit -> responses_limit, linkedFlagId -> linked_flag_id). Diff uses Effect.sync for type change detection triggering replace. Delete uses real HTTP DELETE (deleteSurvey). Note: Survey IDs are string UUIDs, not numbers. Updated surveys/index.ts barrel and posthog/index.ts with Surveys namespace export and surveyProvider() in resources(). bun tsc -b passes."
     },
     {
       "id": "SRV-003",

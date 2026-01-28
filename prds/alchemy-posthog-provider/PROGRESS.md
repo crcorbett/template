@@ -170,6 +170,22 @@
   - Updated `surveys/index.ts` barrel to export all from `survey.js`
   - `bun tsc -b` passes with no errors
 
+### SRV-002 - Implement Survey provider with CRUD lifecycle
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/surveys/survey.provider.ts` with:
+  - `surveyProvider()` function using `Survey.provider.effect(Effect.gen(...))`
+  - `stables: ['id', 'type']` — id and type are stable properties
+  - `diff` using `Effect.sync()` to detect type changes -> replace action
+  - `read` with output.id check and NotFoundError handling (id is string UUID)
+  - `create` mapping camelCase props to snake_case API params (startDate -> start_date, endDate -> end_date, responsesLimit -> responses_limit, linkedFlagId -> linked_flag_id)
+  - `update` with session.note() for progress reporting
+  - `delete` using hard HTTP DELETE via `deleteSurvey()` with NotFoundError handling
+  - Helper `mapResponseToAttrs()` for API response mapping
+  - Updated `surveys/index.ts` to export provider
+  - Updated `posthog/index.ts` with Surveys namespace export and added `surveyProvider()` to `resources()`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -180,10 +196,10 @@
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
 | Experiment | 3 | 3 | 0 | 0 |
-| Survey | 3 | 1 | 0 | 2 |
+| Survey | 3 | 2 | 0 | 1 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **13** | **0** | **16** |
+| **Total** | **29** | **14** | **0** | **15** |
