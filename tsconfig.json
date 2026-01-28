@@ -13,6 +13,7 @@
     { "path": "./packages/api" },
     { "path": "./packages/ui" },
     { "path": "./packages/types" },
-    { "path": "./packages/database" }
+    { "path": "./packages/database" },
+    { "path": "./packages/alchemy-posthog" }
   ]
 }

@@ -5,6 +5,23 @@ accumulated while designing the alchemy-effect PostHog provider.
 
 ---
 
+## Package Location Decision (SETUP-001)
+
+**Decision:** Created a new `@packages/alchemy-posthog` package in `packages/alchemy-posthog/` rather than modifying the alchemy-effect submodule.
+
+**Rationale:**
+- alchemy-effect is an external open-source package at `.context/alchemy-effect/` (submodule, read-only context)
+- `alchemy-effect@0.6.0` is published on npm and can be used as a dependency
+- `@packages/posthog` is the local equivalent of "distilled-posthog" referenced in the PRD
+- New package depends on both, focusing only on the PostHog provider code
+
+**Export Convention Difference:**
+- alchemy-effect uses: `{ types, bun, import }` conditions
+- This repo uses: `{ import: { "@packages/source", types, default } }` conditions
+- New package follows this repo's convention for consistency
+
+---
+
 ## Provider Architecture Pattern
 
 ### How distilled-* Libraries Become alchemy-effect Providers

@@ -35,8 +35,8 @@
         "Verify package.json has distilled-posthog in dependencies",
         "Verify all 9 PostHog export entries are present in package.json"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created new @packages/alchemy-posthog package instead of modifying alchemy-effect directly. Uses @packages/posthog (workspace:*) as the distilled-posthog equivalent, plus alchemy-effect@0.6.0 from npm. Follows repo's @packages/source export condition pattern. 10 exports total (root + ./posthog + 8 service subpaths)."
     },
     {
       "id": "SETUP-002",
