@@ -1,11 +1,14 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Chunk, Effect, Stream } from "effect";
 
+import { makePaginated } from "../src/client/api.js";
 import {
   createCohort,
   deleteCohort,
   getCohort,
+  ListCohortsRequest,
   listCohorts,
+  PaginatedCohortList,
   updateCohort,
 } from "../src/services/cohorts.js";
 import { test, TEST_PROJECT_ID, withResource } from "./test.js";
@@ -251,6 +254,51 @@ describe("PostHog Cohorts Service", () => {
               Effect.catchAll(() => Effect.void)
             ),
         });
+      }));
+
+    test("should stream pages via makePaginated (generic pagination)", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const listCohortsPaginated = makePaginated({
+          input: ListCohortsRequest,
+          output: PaginatedCohortList,
+          errors: [],
+          pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
+        });
+
+        const pages = yield* listCohortsPaginated
+          .pages({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        const pageArray = Chunk.toReadonlyArray(pages);
+        expect(pageArray.length).toBeGreaterThanOrEqual(1);
+        expect(pageArray[0].results).toBeDefined();
+        expect(Array.isArray(pageArray[0].results)).toBe(true);
+      }));
+
+    test("should stream items via makePaginated (generic pagination)", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const listCohortsPaginated = makePaginated({
+          input: ListCohortsRequest,
+          output: PaginatedCohortList,
+          errors: [],
+          pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
+        });
+
+        const items = yield* listCohortsPaginated
+          .items({
+            project_id: projectId,
+            limit: 2,
+          })
+          .pipe(Stream.take(3), Stream.runCollect);
+
+        const itemArray = Chunk.toReadonlyArray(items);
+        expect(itemArray.length).toBeGreaterThanOrEqual(1);
+        expect(itemArray.length).toBeLessThanOrEqual(3);
       }));
 
     test("should handle cohort not found", () =>

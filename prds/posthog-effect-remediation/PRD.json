@@ -1268,6 +1268,197 @@
       ],
       "passes": false,
       "notes": ""
+    },
+    {
+      "id": "P5-001",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up cohorts listCohorts to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/cohorts.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/cohorts.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listCohorts export: change from makeClient(listCohortsOperation) to makePaginated(listCohortsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods (match dashboards.ts pattern)",
+        "Verify existing list/pagination tests still pass",
+        "Remove the inline makePaginated smoke tests from test/cohorts.test.ts (replace with proper .pages()/.items() tests using the exported function)"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/cohorts.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-002",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up feature-flags listFeatureFlags to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/feature-flags.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/feature-flags.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listFeatureFlags export: change from makeClient(listFeatureFlagsOperation) to makePaginated(listFeatureFlagsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/feature-flags.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/feature-flags.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-003",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up insights listInsights to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/insights.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/insights.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listInsights export: change from makeClient(listInsightsOperation) to makePaginated(listInsightsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/insights.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/insights.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-004",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up actions listActions to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/actions.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/actions.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listActions export: change from makeClient(listActionsOperation) to makePaginated(listActionsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/actions.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/actions.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-005",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up annotations listAnnotations to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/annotations.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/annotations.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listAnnotations export: change from makeClient(listAnnotationsOperation) to makePaginated(listAnnotationsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/annotations.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/annotations.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-006",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up experiments listExperiments to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/experiments.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/experiments.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listExperiments export: change from makeClient(listExperimentsOperation) to makePaginated(listExperimentsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/experiments.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/experiments.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-007",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up persons listPersons to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/persons.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/persons.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listPersons export: change from makeClient(listPersonsOperation) to makePaginated(listPersonsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/persons.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/persons.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-008",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up surveys listSurveys to use makePaginated for .pages()/.items() streaming",
+      "package": "@packages/posthog",
+      "files": ["src/services/surveys.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/surveys.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listSurveys export: change from makeClient(listSurveysOperation) to makePaginated(listSurveysOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Add .pages() and .items() streaming tests to test/surveys.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/surveys.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P5-009",
+      "category": "pagination",
+      "priority": "P3",
+      "description": "Wire up events listEvents to use makePaginated for .pages()/.items() streaming (cursor-based)",
+      "package": "@packages/posthog",
+      "files": ["src/services/events.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/events.ts",
+        "Import makePaginated from '../client/api.js' and Stream from 'effect/Stream'",
+        "Replace the listEvents export: change from makeClient(listEventsOperation) to makePaginated(listEventsOperation)",
+        "Update the explicit type signature to include .pages() and .items() methods",
+        "Note: events use date-cursor pagination (inputToken: 'after') not offset-based — verify the next URL parsing extracts the 'after' param correctly",
+        "Add .pages() and .items() streaming tests to test/events.test.ts"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/events.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
     }
   ]
 }
