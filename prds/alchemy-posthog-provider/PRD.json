@@ -567,8 +567,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created annotation.ts with AnnotationProps (content, dateMarker, creationType, dashboardItem, scope) and AnnotationAttrs (id, content, dateMarker, scope, createdAt). Follows Action contract pattern with Resource from alchemy-effect npm package. Updated annotations/index.ts to export all from annotation.js. bun tsc -b passes."
     },
     {
       "id": "ANN-002",

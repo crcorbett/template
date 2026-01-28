@@ -1,1 +1,1 @@
-// Annotations barrel - providers will be added incrementally
+export * from "./annotation.js";

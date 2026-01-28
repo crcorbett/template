@@ -19,3 +19,10 @@
 - `assertActionDeleted` checks for `deleted: true` field, `NotFoundError`, or `PostHogError` 404 with retry/backoff
 - `bun tsc -b` passes
 - `bun vitest run test/posthog/actions/action.provider.test.ts` passes (1 test, ~3.4s)
+
+## ANN-001: Implement Annotation resource contract
+- Created `src/posthog/annotations/annotation.ts` with `AnnotationProps`, `AnnotationAttrs` interfaces and `Annotation` resource
+- AnnotationProps: content, dateMarker, creationType ('USR' | 'GIT'), dashboardItem, scope
+- AnnotationAttrs: id (number, stable), content, dateMarker, scope, createdAt
+- Updated `src/posthog/annotations/index.ts` barrel export
+- `bun tsc -b` passes with no type errors
