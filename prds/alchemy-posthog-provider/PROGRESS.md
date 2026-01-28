@@ -51,6 +51,22 @@
   - Updated `feature-flags/index.ts` barrel to export all from `feature-flag.js`
   - `bun tsc -b` passes with no errors
 
+### FF-002 - Implement FeatureFlag provider with CRUD lifecycle
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/feature-flags/feature-flag.provider.ts` with:
+  - `featureFlagProvider()` function using `FeatureFlag.provider.effect(Effect.gen(...))`
+  - `stables: ['id', 'key']` for stable properties
+  - `diff` using `Effect.sync()` to detect key changes -> replace action
+  - `read` with NotFoundError handling returning undefined
+  - `create` mapping camelCase props to snake_case API params
+  - `update` with session.note() for progress reporting
+  - `delete` with soft delete via deleteFeatureFlag and NotFoundError handling
+  - Helper `mapResponseToAttrs()` for API response mapping
+  - Updated `feature-flags/index.ts` to export provider
+  - Updated `posthog/index.ts` with FeatureFlags namespace export and `resources()` using `Layer.mergeAll()`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -58,7 +74,7 @@
 | Category | Total | Completed | In Progress | Pending |
 |----------|-------|-----------|-------------|---------|
 | Setup | 3 | 3 | 0 | 0 |
-| FeatureFlag | 3 | 1 | 0 | 2 |
+| FeatureFlag | 3 | 2 | 0 | 1 |
 | Dashboard | 3 | 0 | 0 | 3 |
 | Experiment | 3 | 0 | 0 | 3 |
 | Survey | 3 | 0 | 0 | 3 |
@@ -67,4 +83,4 @@
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **4** | **0** | **25** |
+| **Total** | **29** | **5** | **0** | **24** |

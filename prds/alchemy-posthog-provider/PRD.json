@@ -166,8 +166,8 @@
         "featureFlagProvider is exported from feature-flags/index.ts",
         "posthog/index.ts resources() includes featureFlagProvider()"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created feature-flag.provider.ts with full CRUD lifecycle: stables=['id', 'key'], diff using Effect.sync for key-change replacement detection, read/create/update/delete using Effect.gen with Project context. Imports from @packages/posthog/feature-flags. Maps camelCase props to snake_case API params (rolloutPercentage -> rollout_percentage, ensureExperienceContinuity -> ensure_experience_continuity). Uses session.note() for progress reporting. Updated feature-flags/index.ts and posthog/index.ts exports. bun tsc -b passes."
     },
     {
       "id": "FF-003",

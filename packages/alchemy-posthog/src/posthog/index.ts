@@ -5,9 +5,12 @@ import "./config.js";
 import * as Credentials from "./credentials.js";
 import * as Endpoint from "./endpoint.js";
 export { Project } from "./project.js";
+import * as FeatureFlags from "./feature-flags/index.js";
 import * as Project from "./project.js";
+export { FeatureFlags };
 
-export const resources = () => Layer.empty;
+export const resources = () =>
+  Layer.mergeAll(FeatureFlags.featureFlagProvider());
 
 export const providers = () =>
   resources().pipe(
