@@ -61,7 +61,7 @@ const parseJsonBody = (
 
     // Parse JSON - if parsing fails, return the raw text wrapped in an object
     return yield* Effect.try({
-      try: () => JSON.parse(text) as unknown,
+      try: (): unknown => JSON.parse(text),
       catch: () =>
         new PostHogError({
           code: "JSON_PARSE_ERROR",
@@ -162,6 +162,13 @@ export const makeResponseParser = (
 };
 
 /**
+ * Type guard for record-like objects
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
  * Extract error message from various error body formats
  */
 function getErrorMessage(errorBody: unknown): string {
@@ -173,20 +180,18 @@ function getErrorMessage(errorBody: unknown): string {
     return errorBody;
   }
 
-  if (typeof errorBody === "object") {
-    const obj = errorBody as Record<string, unknown>;
-
+  if (isRecord(errorBody)) {
     // Try common error message field names
-    if (typeof obj["message"] === "string") return obj["message"];
-    if (typeof obj["error"] === "string") return obj["error"];
-    if (typeof obj["detail"] === "string") return obj["detail"];
-    if (typeof obj["details"] === "string") return obj["details"];
-    if (typeof obj["error_description"] === "string")
-      return obj["error_description"];
+    if (typeof errorBody["message"] === "string") return errorBody["message"];
+    if (typeof errorBody["error"] === "string") return errorBody["error"];
+    if (typeof errorBody["detail"] === "string") return errorBody["detail"];
+    if (typeof errorBody["details"] === "string") return errorBody["details"];
+    if (typeof errorBody["error_description"] === "string")
+      return errorBody["error_description"];
 
     // Try nested error object
-    if (typeof obj["error"] === "object" && obj["error"] !== null) {
-      const nested = obj["error"] as Record<string, unknown>;
+    if (isRecord(errorBody["error"])) {
+      const nested = errorBody["error"];
       if (typeof nested["message"] === "string") return nested["message"];
     }
   }

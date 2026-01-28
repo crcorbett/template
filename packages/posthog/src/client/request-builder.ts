@@ -25,7 +25,9 @@ import {
 /**
  * Get property signatures from an AST TypeLiteral or Struct
  */
-function getPropertySignatures(ast: AST.AST): AST.PropertySignature[] {
+function getPropertySignatures(
+  ast: AST.AST
+): ReadonlyArray<AST.PropertySignature> {
   // Handle Transformation (decode side)
   if (ast._tag === "Transformation") {
     return getPropertySignatures(ast.from);
@@ -33,7 +35,7 @@ function getPropertySignatures(ast: AST.AST): AST.PropertySignature[] {
 
   // Handle TypeLiteral (struct)
   if (ast._tag === "TypeLiteral") {
-    return ast.propertySignatures as AST.PropertySignature[];
+    return ast.propertySignatures;
   }
 
   // Handle Suspend
@@ -121,7 +123,7 @@ export const makeRequestBuilder = (
   operation: Operation,
   _options?: RequestBuilderOptions
 ): Effect.Effect<
-  (input: unknown) => Effect.Effect<Request>,
+  (input: Record<string, unknown>) => Effect.Effect<Request>,
   MissingHttpTraitError
 > => {
   const inputSchema = operation.input;
@@ -178,11 +180,12 @@ export const makeRequestBuilder = (
   }
 
   // Return a function that builds requests synchronously wrapped in Effect.succeed
-  const requestBuilder = (input: unknown): Effect.Effect<Request> => {
-    const inputObj = input as Record<string, unknown>;
+  const requestBuilder = (
+    input: Record<string, unknown>
+  ): Effect.Effect<Request> => {
 
     // Build the path with label substitutions
-    const basePath = buildPath(httpTrait.uri, inputObj, labelProps);
+    const basePath = buildPath(httpTrait.uri, input, labelProps);
 
     // Strip query string from URI template (query params come from annotations)
     const path = basePath.split("?")[0] ?? basePath;
@@ -190,7 +193,7 @@ export const makeRequestBuilder = (
     // Build query parameters
     const query: Record<string, string | string[] | undefined> = {};
     for (const [propName, { queryName }] of queryProps) {
-      const value = inputObj[propName];
+      const value = input[propName];
       if (value !== undefined) {
         if (Array.isArray(value)) {
           query[queryName] = value.map(String);
@@ -205,7 +208,7 @@ export const makeRequestBuilder = (
       "Content-Type": "application/json",
     };
     for (const [propName, { headerName }] of headerProps) {
-      const value = inputObj[propName];
+      const value = input[propName];
       if (value !== undefined) {
         if (value instanceof Date) {
           headers[headerName] = value.toISOString();
@@ -220,7 +223,7 @@ export const makeRequestBuilder = (
 
     if (payloadProp) {
       // Single field becomes the entire body
-      const payloadValue = inputObj[payloadProp.propName];
+      const payloadValue = input[payloadProp.propName];
       if (payloadValue !== undefined) {
         body = JSON.stringify(encodeJsonValue(payloadValue));
       }
@@ -228,7 +231,7 @@ export const makeRequestBuilder = (
       // Collect all body properties into a JSON object
       const bodyObj: Record<string, unknown> = {};
       for (const { propName } of bodyProps) {
-        const value = inputObj[propName];
+        const value = input[propName];
         if (value !== undefined) {
           bodyObj[propName] = encodeJsonValue(value);
         }

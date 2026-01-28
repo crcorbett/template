@@ -468,3 +468,32 @@
 - Zero `as` casts in either file (verified with grep)
 
 ---
+
+#### P1-014: Remove type assertions from client source files (response-parser.ts, api.ts, request-builder.ts)
+
+**Status:** Completed
+
+**Summary:** Removed all 6 type assertions (`as` casts) from the three client source files using type guards, return type annotations, object spread, and parameter type widening.
+
+**Changes in response-parser.ts:**
+- Replaced `JSON.parse(text) as unknown` with `(): unknown => JSON.parse(text)` return type annotation
+- Added `isRecord()` type guard function to replace 2 `as Record<string, unknown>` casts in `getErrorMessage`
+
+**Changes in api.ts:**
+- Replaced `platformResponse.headers as Record<string, string>` with object spread `{ ...platformResponse.headers }`
+
+**Changes in request-builder.ts:**
+- Changed `getPropertySignatures` return type to `ReadonlyArray<AST.PropertySignature>` (matching TypeLiteral), removing the `as` cast
+- Changed `requestBuilder` parameter from `unknown` to `Record<string, unknown>`, eliminating the `input as Record` cast
+
+**Files changed:**
+- `src/client/response-parser.ts` — 3 type assertions removed
+- `src/client/api.ts` — 1 type assertion removed
+- `src/client/request-builder.ts` — 2 type assertions removed
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 224/224 tests passing
+- Zero `as` casts in any of the three files
+
+---

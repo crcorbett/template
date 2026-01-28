@@ -76,8 +76,10 @@ export const execute = <Op extends Operation>(
       )
     );
 
-    // Convert headers to Record - @effect/platform headers is a Record<string, string>
-    const responseHeaders = platformResponse.headers as Record<string, string>;
+    // Spread to convert Headers brand type to plain Record<string, string>
+    const responseHeaders: Record<string, string> = {
+      ...platformResponse.headers,
+    };
 
     // Check if response has body (HEAD requests, 204 responses, etc. may not)
     const contentLength = responseHeaders["content-length"];

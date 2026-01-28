@@ -536,7 +536,9 @@
         "bun run test test/client/response-parser.test.ts",
         "bun run test test/client/request-builder.test.ts",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Removed 6 type assertions across 3 files. response-parser.ts: replaced `JSON.parse(text) as unknown` with `: unknown` return annotation, replaced 2 `as Record<string, unknown>` with isRecord() type guard. api.ts: replaced `headers as Record<string, string>` with object spread to strip Headers brand type. request-builder.ts: removed `as AST.PropertySignature[]` by changing return type to ReadonlyArray, changed requestBuilder parameter from `unknown` to `Record<string, unknown>` eliminating the `input as Record` cast. 0 type errors, 224/224 tests passing, zero as casts in src/client/ (excluding import statements)."
     },
     {
       "id": "P1-015",
