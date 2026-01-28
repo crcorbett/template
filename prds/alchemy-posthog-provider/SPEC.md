@@ -563,8 +563,13 @@ Each resource has a provider test file that exercises the full create → update
 ```typescript
 test("create, update, delete {resource}",
   Effect.gen(function* () {
-    // Create
-    class TestRes extends Resource("TestRes", { ...props }) {}
+    // Clean up any previous state (idempotent recovery)
+    yield* destroy();
+
+    // Create - use deterministic names, never Date.now()
+    class TestRes extends Resource("TestRes", {
+      name: "test-resource",  // Fixed, same across runs
+    }) {}
     const stack = yield* apply(TestRes);
     expect(stack.TestRes.id).toBeDefined();
 
@@ -582,6 +587,11 @@ test("create, update, delete {resource}",
   }).pipe(Effect.provide(PostHog.providers())),
 );
 ```
+
+**Critical rules (from alchemy-effect conventions):**
+
+1. **Initial `destroy()` call** — Every test must start with `yield* destroy()` before creating resources. This cleans up leftover state from previously failed test runs and ensures idempotent recovery.
+2. **Deterministic resource names** — Never use `Date.now()` or other non-deterministic values in resource property names. Use fixed strings like `"test-flag-crud"` that are identical across test runs. This is required for the initial `destroy()` to find and clean up resources from previous runs.
 
 ### 6.2 Test Environment
 
