@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // Survey Type enum
@@ -338,8 +343,25 @@ const deleteSurveyOperation: Operation = {
   errors: [],
 };
 
-export const listSurveys = /*@__PURE__*/ /*#__PURE__*/ makeClient(listSurveysOperation);
-export const getSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(getSurveyOperation);
-export const createSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(createSurveyOperation);
-export const updateSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateSurveyOperation);
-export const deleteSurvey = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteSurveyOperation);
+/** Dependencies required by all survey operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listSurveys: (
+  input: ListSurveysRequest
+) => Effect.Effect<PaginatedSurveyList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listSurveysOperation);
+
+export const getSurvey: (
+  input: GetSurveyRequest
+) => Effect.Effect<Survey, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getSurveyOperation);
+
+export const createSurvey: (
+  input: CreateSurveyRequest
+) => Effect.Effect<Survey, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createSurveyOperation);
+
+export const updateSurvey: (
+  input: UpdateSurveyRequest
+) => Effect.Effect<Survey, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateSurveyOperation);
+
+export const deleteSurvey: (
+  input: DeleteSurveyRequest
+) => Effect.Effect<{}, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteSurveyOperation);

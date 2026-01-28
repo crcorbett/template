@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // URL matching type for action steps
@@ -178,13 +183,29 @@ const updateActionOperation: Operation = {
   errors: [],
 };
 
-export const listActions = /*@__PURE__*/ /*#__PURE__*/ makeClient(listActionsOperation);
-export const getAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(getActionOperation);
-export const createAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(createActionOperation);
-export const updateAction = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateActionOperation);
+/** Dependencies required by all action operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listActions: (
+  input: ListActionsRequest
+) => Effect.Effect<PaginatedActionList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listActionsOperation);
+
+export const getAction: (
+  input: GetActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getActionOperation);
+
+export const createAction: (
+  input: CreateActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createActionOperation);
+
+export const updateAction: (
+  input: UpdateActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateActionOperation);
 
 // Delete via soft-delete (marking as deleted: true)
-export const deleteAction = (input: DeleteActionRequest) =>
+export const deleteAction: (
+  input: DeleteActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = (input) =>
   updateAction({
     project_id: input.project_id,
     id: input.id,

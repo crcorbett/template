@@ -1,8 +1,13 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 export class Person extends S.Class<Person>("Person")({
@@ -95,6 +100,17 @@ const deletePersonOperation: Operation = {
   errors: [],
 };
 
-export const listPersons = /*@__PURE__*/ /*#__PURE__*/ makeClient(listPersonsOperation);
-export const getPerson = /*@__PURE__*/ /*#__PURE__*/ makeClient(getPersonOperation);
-export const deletePerson = /*@__PURE__*/ /*#__PURE__*/ makeClient(deletePersonOperation);
+/** Dependencies required by all person operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listPersons: (
+  input: ListPersonsRequest
+) => Effect.Effect<PaginatedPersonList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listPersonsOperation);
+
+export const getPerson: (
+  input: GetPersonRequest
+) => Effect.Effect<Person, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getPersonOperation);
+
+export const deletePerson: (
+  input: DeletePersonRequest
+) => Effect.Effect<EmptyResponse, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deletePersonOperation);

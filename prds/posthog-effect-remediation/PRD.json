@@ -881,7 +881,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Added explicit type annotations to all 41 exported operation functions across 11 service files (dashboards, feature-flags, insights, cohorts, events, persons, surveys, actions, annotations, experiments, me). Each function now has a full signature: (input: InputType) => Effect.Effect<OutputType, PostHogErrorType, Deps>. Introduced local Deps type alias per file for HttpClient.HttpClient | Credentials | Endpoint. For makePaginated (dashboards), annotated the intersection type including .pages() and .items() stream methods. The explicit annotations surfaced 11 pre-existing type bugs in provision-analytics.ts (null-safety on cohort names, missing breakdownFilter on InsightQuery, excess total_periods property) which were fixed. Also added breakdownFilter to InsightQuery and total_periods to CohortPropertyValue schemas. 0 type errors, 226/226 tests passing."
     },
     {
       "id": "VERIFY-001",

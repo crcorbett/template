@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // Experiment type enum
@@ -434,8 +439,25 @@ const deleteExperimentOperation: Operation = {
   errors: [],
 };
 
-export const listExperiments = /*@__PURE__*/ /*#__PURE__*/ makeClient(listExperimentsOperation);
-export const getExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(getExperimentOperation);
-export const createExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(createExperimentOperation);
-export const updateExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateExperimentOperation);
-export const deleteExperiment = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteExperimentOperation);
+/** Dependencies required by all experiment operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listExperiments: (
+  input: ListExperimentsRequest
+) => Effect.Effect<PaginatedExperimentList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listExperimentsOperation);
+
+export const getExperiment: (
+  input: GetExperimentRequest
+) => Effect.Effect<Experiment, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getExperimentOperation);
+
+export const createExperiment: (
+  input: CreateExperimentRequest
+) => Effect.Effect<Experiment, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createExperimentOperation);
+
+export const updateExperiment: (
+  input: UpdateExperimentRequest
+) => Effect.Effect<Experiment, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateExperimentOperation);
+
+export const deleteExperiment: (
+  input: DeleteExperimentRequest
+) => Effect.Effect<{}, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteExperimentOperation);

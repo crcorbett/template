@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // Annotation scope enum
@@ -183,8 +188,25 @@ const deleteAnnotationOperation: Operation = {
   errors: [],
 };
 
-export const listAnnotations = /*@__PURE__*/ /*#__PURE__*/ makeClient(listAnnotationsOperation);
-export const getAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(getAnnotationOperation);
-export const createAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(createAnnotationOperation);
-export const updateAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateAnnotationOperation);
-export const deleteAnnotation = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteAnnotationOperation);
+/** Dependencies required by all annotation operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listAnnotations: (
+  input: ListAnnotationsRequest
+) => Effect.Effect<PaginatedAnnotationList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listAnnotationsOperation);
+
+export const getAnnotation: (
+  input: GetAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getAnnotationOperation);
+
+export const createAnnotation: (
+  input: CreateAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createAnnotationOperation);
+
+export const updateAnnotation: (
+  input: UpdateAnnotationRequest
+) => Effect.Effect<Annotation, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateAnnotationOperation);
+
+export const deleteAnnotation: (
+  input: DeleteAnnotationRequest
+) => Effect.Effect<{}, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteAnnotationOperation);

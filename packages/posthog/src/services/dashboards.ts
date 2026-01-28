@@ -1,9 +1,15 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -214,12 +220,35 @@ const updateDashboardOperation: Operation = {
   errors: [],
 };
 
-export const listDashboards = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listDashboardsOperation);
-export const getDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(getDashboardOperation);
-export const createDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(createDashboardOperation);
-export const updateDashboard = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateDashboardOperation);
+/** Dependencies required by all dashboard operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteDashboard = (input: DeleteDashboardRequest) =>
+export const listDashboards: ((
+  input: ListDashboardsRequest
+) => Effect.Effect<PaginatedDashboardList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListDashboardsRequest
+  ) => Stream.Stream<PaginatedDashboardList, PostHogErrorType, Deps>;
+  items: (
+    input: ListDashboardsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listDashboardsOperation);
+
+export const getDashboard: (
+  input: GetDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getDashboardOperation);
+
+export const createDashboard: (
+  input: CreateDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createDashboardOperation);
+
+export const updateDashboard: (
+  input: UpdateDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateDashboardOperation);
+
+export const deleteDashboard: (
+  input: DeleteDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = (input) =>
   updateDashboard({
     project_id: input.project_id,
     id: input.id,

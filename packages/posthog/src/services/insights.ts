@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -149,6 +154,9 @@ export class InsightQuery extends S.Class<InsightQuery>("InsightQuery")({
   // -- Series-based queries (Trends, Funnels, Stickiness, Lifecycle) --
   series: S.optional(S.Array(SeriesNode)),
   interval: S.optional(S.NullOr(S.String)),
+
+  // -- Breakdown --
+  breakdownFilter: S.optional(S.NullOr(S.Record({ key: S.String, value: S.Unknown }))),
 
   // -- Retention --
   retentionFilter: S.optional(S.NullOr(RetentionFilter)),
@@ -335,12 +343,28 @@ const updateInsightOperation: Operation = {
   errors: [],
 };
 
-export const listInsights = /*@__PURE__*/ /*#__PURE__*/ makeClient(listInsightsOperation);
-export const getInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(getInsightOperation);
-export const createInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(createInsightOperation);
-export const updateInsight = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateInsightOperation);
+/** Dependencies required by all insight operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteInsight = (input: DeleteInsightRequest) =>
+export const listInsights: (
+  input: ListInsightsRequest
+) => Effect.Effect<PaginatedInsightList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listInsightsOperation);
+
+export const getInsight: (
+  input: GetInsightRequest
+) => Effect.Effect<Insight, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getInsightOperation);
+
+export const createInsight: (
+  input: CreateInsightRequest
+) => Effect.Effect<Insight, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createInsightOperation);
+
+export const updateInsight: (
+  input: UpdateInsightRequest
+) => Effect.Effect<Insight, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateInsightOperation);
+
+export const deleteInsight: (
+  input: DeleteInsightRequest
+) => Effect.Effect<Insight, PostHogErrorType, Deps> = (input) =>
   updateInsight({
     project_id: input.project_id,
     id: input.id,

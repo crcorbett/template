@@ -814,3 +814,25 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 224/224 core tests passing (2 pre-existing saas-analytics-setup failures: annotation timeout + summary count)
 
 ---
+
+### P3-004: Add explicit operation type signatures matching distilled-aws pattern
+
+**Status:** PASSED
+**Files modified:** 11 service files (dashboards, feature-flags, insights, cohorts, events, persons, surveys, actions, annotations, experiments, me) + cohorts.ts schema + insights.ts schema + provision-analytics.ts
+
+**Changes:**
+- Added explicit type annotations to all 41 exported operation functions across 11 service files
+- Each function signature: `(input: InputType) => Effect.Effect<OutputType, PostHogErrorType, Deps>`
+- Introduced local `Deps` type alias per file for `HttpClient.HttpClient | Credentials | Endpoint`
+- For `makePaginated` (dashboards), annotated the intersection type including `.pages()` and `.items()` stream methods
+- Added type-only imports for `Effect`, `HttpClient`, `Stream`, `Credentials`, `Endpoint`, `PostHogErrorType`
+- Explicit annotations surfaced 11 pre-existing type bugs in provision-analytics.ts:
+  - 7x `string | null | undefined` assigned to `string` (cohort names) — fixed with `?? PREFIX` fallback
+  - 3x `breakdownFilter` not in `InsightQuery` — added `breakdownFilter` field to schema
+  - 1x `total_periods` not in `CohortPropertyValue` — added `total_periods` field to schema
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 226/226 tests passing
+
+---

@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -39,6 +44,8 @@ export class CohortPropertyValue extends S.Class<CohortPropertyValue>(
   bytecode: S.optional(S.Array(S.Unknown)),
   /** Hash of the filter condition (internal PostHog usage). */
   conditionHash: S.optional(S.String),
+  /** Total periods for behavioral frequency filters (e.g., "at least N times in M days"). */
+  total_periods: S.optional(S.Number),
 }) {}
 
 /**
@@ -210,12 +217,28 @@ const updateCohortOperation: Operation = {
   errors: [],
 };
 
-export const listCohorts = /*@__PURE__*/ /*#__PURE__*/ makeClient(listCohortsOperation);
-export const getCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(getCohortOperation);
-export const createCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(createCohortOperation);
-export const updateCohort = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateCohortOperation);
+/** Dependencies required by all cohort operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteCohort = (input: DeleteCohortRequest) =>
+export const listCohorts: (
+  input: ListCohortsRequest
+) => Effect.Effect<PaginatedCohortList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listCohortsOperation);
+
+export const getCohort: (
+  input: GetCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getCohortOperation);
+
+export const createCohort: (
+  input: CreateCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createCohortOperation);
+
+export const updateCohort: (
+  input: UpdateCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateCohortOperation);
+
+export const deleteCohort: (
+  input: DeleteCohortRequest
+) => Effect.Effect<Cohort, PostHogErrorType, Deps> = (input) =>
   updateCohort({
     project_id: input.project_id,
     id: input.id,

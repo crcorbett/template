@@ -99,7 +99,7 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: powerUsers.id, name: powerUsers.name });
+  created.cohorts.push({ id: powerUsers.id, name: powerUsers.name ?? PREFIX });
   yield* Effect.logInfo(`Created cohort: ${powerUsers.name}`);
 
   const trialUsers = yield* createCohort({
@@ -126,7 +126,7 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: trialUsers.id, name: trialUsers.name });
+  created.cohorts.push({ id: trialUsers.id, name: trialUsers.name ?? PREFIX });
   yield* Effect.logInfo(`Created cohort: ${trialUsers.name}`);
 
   const atRiskUsers = yield* createCohort({
@@ -156,7 +156,7 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: atRiskUsers.id, name: atRiskUsers.name });
+  created.cohorts.push({ id: atRiskUsers.id, name: atRiskUsers.name ?? PREFIX });
   yield* Effect.logInfo(`Created cohort: ${atRiskUsers.name}`);
 
   const enterpriseProspects = yield* createCohort({
@@ -191,7 +191,7 @@ const provision = Effect.gen(function* () {
   });
   created.cohorts.push({
     id: enterpriseProspects.id,
-    name: enterpriseProspects.name,
+    name: enterpriseProspects.name ?? PREFIX,
   });
   yield* Effect.logInfo(`Created cohort: ${enterpriseProspects.name}`);
 
@@ -221,7 +221,7 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: newSignups.id, name: newSignups.name });
+  created.cohorts.push({ id: newSignups.id, name: newSignups.name ?? PREFIX });
   yield* Effect.logInfo(`Created cohort: ${newSignups.name}`);
 
   const mobileUsers = yield* createCohort({
@@ -248,7 +248,7 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: mobileUsers.id, name: mobileUsers.name });
+  created.cohorts.push({ id: mobileUsers.id, name: mobileUsers.name ?? PREFIX });
   yield* Effect.logInfo(`Created cohort: ${mobileUsers.name}`);
 
   const integrationUsers = yield* createCohort({
@@ -277,7 +277,7 @@ const provision = Effect.gen(function* () {
   });
   created.cohorts.push({
     id: integrationUsers.id,
-    name: integrationUsers.name,
+    name: integrationUsers.name ?? PREFIX,
   });
   yield* Effect.logInfo(`Created cohort: ${integrationUsers.name}`);
 

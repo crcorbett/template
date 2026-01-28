@@ -1,8 +1,13 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 // ---------------------------------------------------------------------------
@@ -127,5 +132,13 @@ const getEventOperation: Operation = {
   errors: [],
 };
 
-export const listEvents = /*@__PURE__*/ /*#__PURE__*/ makeClient(listEventsOperation);
-export const getEvent = /*@__PURE__*/ /*#__PURE__*/ makeClient(getEventOperation);
+/** Dependencies required by all event operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listEvents: (
+  input: ListEventsRequest
+) => Effect.Effect<PaginatedClickhouseEventList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listEventsOperation);
+
+export const getEvent: (
+  input: GetEventRequest
+) => Effect.Effect<ClickhouseEvent, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getEventOperation);

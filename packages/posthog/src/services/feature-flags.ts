@@ -1,9 +1,14 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
 
 import type { Operation } from "../client/operation.js";
 
 import { makeClient } from "../client/api.js";
 import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import type { PostHogErrorType } from "../errors.js";
 import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
@@ -202,12 +207,28 @@ const updateFeatureFlagOperation: Operation = {
   errors: [],
 };
 
-export const listFeatureFlags = /*@__PURE__*/ /*#__PURE__*/ makeClient(listFeatureFlagsOperation);
-export const getFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(getFeatureFlagOperation);
-export const createFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(createFeatureFlagOperation);
-export const updateFeatureFlag = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateFeatureFlagOperation);
+/** Dependencies required by all feature flag operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteFeatureFlag = (input: DeleteFeatureFlagRequest) =>
+export const listFeatureFlags: (
+  input: ListFeatureFlagsRequest
+) => Effect.Effect<PaginatedFeatureFlagList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listFeatureFlagsOperation);
+
+export const getFeatureFlag: (
+  input: GetFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getFeatureFlagOperation);
+
+export const createFeatureFlag: (
+  input: CreateFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createFeatureFlagOperation);
+
+export const updateFeatureFlag: (
+  input: UpdateFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateFeatureFlagOperation);
+
+export const deleteFeatureFlag: (
+  input: DeleteFeatureFlagRequest
+) => Effect.Effect<FeatureFlag, PostHogErrorType, Deps> = (input) =>
   updateFeatureFlag({
     project_id: input.project_id,
     id: input.id,
