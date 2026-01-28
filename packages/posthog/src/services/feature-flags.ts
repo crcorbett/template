@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -187,7 +188,7 @@ export class DeleteFeatureFlagRequest extends S.Class<DeleteFeatureFlagRequest>(
   id: S.Number,
 }) {}
 
-const listFeatureFlagsOperation: Operation = {
+const listFeatureFlagsOperation: PaginatedOperation = {
   input: ListFeatureFlagsRequest,
   output: PaginatedFeatureFlagList,
   errors: [...COMMON_ERRORS],
@@ -215,9 +216,16 @@ const updateFeatureFlagOperation: Operation = {
 /** Dependencies required by all feature flag operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listFeatureFlags: (
+export const listFeatureFlags: ((
   input: ListFeatureFlagsRequest
-) => Effect.Effect<PaginatedFeatureFlagList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listFeatureFlagsOperation);
+) => Effect.Effect<PaginatedFeatureFlagList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListFeatureFlagsRequest
+  ) => Stream.Stream<PaginatedFeatureFlagList, PostHogErrorType, Deps>;
+  items: (
+    input: ListFeatureFlagsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listFeatureFlagsOperation);
 
 export const getFeatureFlag: (
   input: GetFeatureFlagRequest

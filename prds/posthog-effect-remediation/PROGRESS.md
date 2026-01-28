@@ -1184,3 +1184,34 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 230/230 tests passing
 
 ---
+
+#### P5-002: Wire up feature-flags listFeatureFlags to use makePaginated for .pages()/.items() streaming
+
+**Status:** Completed
+**Date:** 2026-01-29
+
+**Summary:** Changed `listFeatureFlags` from `makeClient` to `makePaginated` to enable Stream-based pagination via `.pages()` and `.items()` methods. Added 2 new pagination streaming tests.
+
+**Changes:**
+- Updated imports in `src/services/feature-flags.ts`:
+  - Added `import type * as Stream from "effect/Stream"`
+  - Added `PaginatedOperation` to the operation.ts import
+  - Added `makePaginated` to the api.js import
+- Changed `listFeatureFlagsOperation` type from `Operation` to `PaginatedOperation`
+- Changed `listFeatureFlags` export from `makeClient(listFeatureFlagsOperation)` to `makePaginated(listFeatureFlagsOperation)`
+- Added explicit type signature for `listFeatureFlags` including `.pages()` and `.items()` methods (matching dashboards.ts and cohorts.ts pattern)
+- Updated `test/feature-flags.test.ts`:
+  - Added `Chunk`, `Stream` imports from `effect`
+  - Added `FeatureFlag` import for type checking in items test
+  - Added 2 new tests: `.pages()` streaming and `.items()` streaming
+
+**Files changed:**
+- `src/services/feature-flags.ts` — listFeatureFlags now uses makePaginated with full type signature
+- `test/feature-flags.test.ts` — Added 2 pagination streaming tests
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/feature-flags.test.ts` — 9/9 tests passing
+- `bun run test` — 232/232 tests passing
+
+---
