@@ -565,3 +565,25 @@
 - Events tests timeout is pre-existing (confirmed on stashed code)
 
 ---
+
+#### P2-002: Replace instanceof checks with _tag discriminants in retry.ts
+
+**Status:** Completed
+
+**Summary:** Replaced `instanceof` checks in `isRateLimitError` and `isServerError` with a generic `hasTag<T>` helper that uses `_tag` discriminant narrowing only.
+
+**Changes:**
+- Created generic `hasTag<T>(tag)` helper function that returns a type predicate `(error: unknown) => error is T`
+- Replaced `isRateLimitError` implementation (was `instanceof RateLimitError || _tag check`) with `hasTag<RateLimitError>("RateLimitError")`
+- Replaced `isServerError` implementation (was `instanceof ServerError || _tag check`) with `hasTag<ServerError>("ServerError")`
+- Changed `import { RateLimitError, ServerError }` to `import type { ... }` since runtime class values are no longer needed (only used for type parameter)
+
+**Files changed:**
+- `src/retry.ts` — Replaced 2 instanceof checks with _tag discriminant narrowing via hasTag helper
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 220/220 non-events tests passing (events tests have pre-existing timeout issue)
+- Zero `instanceof` checks remain in retry.ts
+
+---
