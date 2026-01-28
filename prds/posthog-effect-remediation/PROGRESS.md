@@ -1151,3 +1151,36 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 230/230 tests passing
 
 ---
+
+### 2026-01-29
+
+#### P5-001: Wire up cohorts listCohorts to use makePaginated for .pages()/.items() streaming
+
+**Status:** Completed
+**Date:** 2026-01-29
+
+**Summary:** Changed `listCohorts` from `makeClient` to `makePaginated` to enable Stream-based pagination via `.pages()` and `.items()` methods. Updated tests to use the exported methods instead of inline `makePaginated` calls.
+
+**Changes:**
+- Updated imports in `src/services/cohorts.ts`:
+  - Added `import type * as Stream from "effect/Stream"`
+  - Added `PaginatedOperation` to the operation.ts import
+  - Added `makePaginated` to the api.js import
+- Changed `listCohortsOperation` type from `Operation` to `PaginatedOperation`
+- Changed `listCohorts` export from `makeClient(listCohortsOperation)` to `makePaginated(listCohortsOperation)`
+- Added explicit type signature for `listCohorts` including `.pages()` and `.items()` methods (matching dashboards.ts pattern)
+- Updated `test/cohorts.test.ts`:
+  - Removed `makePaginated`, `ListCohortsRequest`, `PaginatedCohortList` imports
+  - Added `Cohort` import for type checking in items test
+  - Replaced inline `makePaginated` smoke tests with tests using exported `listCohorts.pages()` and `listCohorts.items()`
+
+**Files changed:**
+- `src/services/cohorts.ts` — listCohorts now uses makePaginated with full type signature
+- `test/cohorts.test.ts` — Tests use exported .pages()/.items() methods
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/cohorts.test.ts` — 9/9 tests passing
+- `bun run test` — 230/230 tests passing
+
+---

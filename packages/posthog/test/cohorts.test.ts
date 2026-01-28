@@ -1,14 +1,12 @@
 import { describe, expect } from "@effect/vitest";
 import { Chunk, Effect, Stream } from "effect";
 
-import { makePaginated } from "../src/client/api.js";
 import {
+  Cohort,
   createCohort,
   deleteCohort,
   getCohort,
-  ListCohortsRequest,
   listCohorts,
-  PaginatedCohortList,
   updateCohort,
 } from "../src/services/cohorts.js";
 import { test, TEST_PROJECT_ID, withResource } from "./test.js";
@@ -256,17 +254,11 @@ describe("PostHog Cohorts Service", () => {
         });
       }));
 
-    test("should stream pages via makePaginated (generic pagination)", () =>
+    test("should stream pages via listCohorts.pages()", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        const listCohortsPaginated = makePaginated({
-          input: ListCohortsRequest,
-          output: PaginatedCohortList,
-          errors: [],
-          pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
-        });
 
-        const pages = yield* listCohortsPaginated
+        const pages = yield* listCohorts
           .pages({
             project_id: projectId,
             limit: 2,
@@ -279,17 +271,11 @@ describe("PostHog Cohorts Service", () => {
         expect(Array.isArray(pageArray[0].results)).toBe(true);
       }));
 
-    test("should stream items via makePaginated (generic pagination)", () =>
+    test("should stream items via listCohorts.items()", () =>
       Effect.gen(function* () {
         const projectId = yield* TEST_PROJECT_ID;
-        const listCohortsPaginated = makePaginated({
-          input: ListCohortsRequest,
-          output: PaginatedCohortList,
-          errors: [],
-          pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
-        });
 
-        const items = yield* listCohortsPaginated
+        const items = yield* listCohorts
           .items({
             project_id: projectId,
             limit: 2,
@@ -299,6 +285,11 @@ describe("PostHog Cohorts Service", () => {
         const itemArray = Chunk.toReadonlyArray(items);
         expect(itemArray.length).toBeGreaterThanOrEqual(1);
         expect(itemArray.length).toBeLessThanOrEqual(3);
+        // Verify items are Cohort objects
+        if (itemArray.length > 0) {
+          const firstItem = itemArray[0] as Cohort;
+          expect(firstItem.id).toBeDefined();
+        }
       }));
 
     test("should handle cohort not found", () =>

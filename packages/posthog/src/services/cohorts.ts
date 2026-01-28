@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -197,7 +198,7 @@ export class DeleteCohortRequest extends S.Class<DeleteCohortRequest>(
   id: S.Number,
 }) {}
 
-const listCohortsOperation: Operation = {
+const listCohortsOperation: PaginatedOperation = {
   input: ListCohortsRequest,
   output: PaginatedCohortList,
   errors: [...COMMON_ERRORS],
@@ -225,9 +226,16 @@ const updateCohortOperation: Operation = {
 /** Dependencies required by all cohort operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listCohorts: (
+export const listCohorts: ((
   input: ListCohortsRequest
-) => Effect.Effect<PaginatedCohortList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listCohortsOperation);
+) => Effect.Effect<PaginatedCohortList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListCohortsRequest
+  ) => Stream.Stream<PaginatedCohortList, PostHogErrorType, Deps>;
+  items: (
+    input: ListCohortsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listCohortsOperation);
 
 export const getCohort: (
   input: GetCohortRequest

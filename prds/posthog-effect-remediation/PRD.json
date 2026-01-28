@@ -1288,8 +1288,8 @@
         "npx tsc --noEmit",
         "bun run test test/cohorts.test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Changed listCohorts from makeClient to makePaginated. Updated listCohortsOperation type to PaginatedOperation. Added explicit type signature with .pages() and .items() methods. Updated tests to use exported listCohorts.pages() and listCohorts.items() instead of inline makePaginated calls. 0 type errors, 9/9 cohorts tests passing, 230/230 total tests passing."
     },
     {
       "id": "P5-002",
