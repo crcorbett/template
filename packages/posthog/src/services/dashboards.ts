@@ -3,7 +3,7 @@ import type * as Effect from "effect/Effect";
 import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
 import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
@@ -200,7 +200,7 @@ export class DeleteDashboardRequest extends S.Class<DeleteDashboardRequest>(
   id: S.Number,
 }) {}
 
-const listDashboardsOperation: Operation = {
+const listDashboardsOperation: PaginatedOperation = {
   input: ListDashboardsRequest,
   output: PaginatedDashboardList,
   errors: [...COMMON_ERRORS],

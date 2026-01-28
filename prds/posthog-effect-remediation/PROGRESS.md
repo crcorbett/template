@@ -1112,3 +1112,42 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 230/230 tests passing
 
 ---
+
+#### VERIFY-002: Final verification after P4 tasks
+
+**Status:** Completed
+**Date:** 2026-01-28
+
+**Summary:** Ran all 11 verification checks for P4 alignment with distilled-aws. All pass.
+
+**Changes:**
+- Added `PaginatedOperation` interface in `src/client/operation.ts` requiring `pagination` field (non-optional)
+- Updated `makePaginated` generic constraint from `Operation` to `PaginatedOperation`, eliminating the `!` non-null assertion on `operation.pagination`
+- Updated `listDashboardsOperation` type annotation from `Operation` to `PaginatedOperation`
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | PASS — 0 type errors |
+| `bun run test` | PASS — 230/230 tests passing (17 test files) |
+| `as` casts in `src/` | Acceptable: traits.ts (distilled-aws pattern), category.ts (internal plumbing), api.ts (1x `as const`) |
+| `as` casts in `src/client/api.ts` | PASS — Only `as const` tuple assertion |
+| Non-null assertions `!` in `src/` | PASS — Zero (eliminated `operation.pagination!` via `PaginatedOperation` constraint) |
+| Lazy init caching | PASS — `let _init` in both `makeClient` and `makePaginated` using `??=` pattern |
+| Effect.logDebug in execute | PASS — 4 calls: Payload, Built Request, Raw Response, Parsed Response |
+| Pagination metadata | PASS — All 10 list operations have `pagination: { inputToken, outputToken, items }` |
+| Per-operation errors | PASS — All 41 operations use `COMMON_ERRORS` or `COMMON_ERRORS_WITH_NOT_FOUND` (no empty `[]`) |
+| isTransientError coverage | PASS — `isThrottlingError || isServerError || isNetworkError || isHttpClientTransportError` |
+| Retry Factory pattern | PASS — `Factory = (Ref<unknown>) => Options` with retry-after support via `makeDefault` |
+
+**Files changed:**
+- `src/client/operation.ts` — Added `PaginatedOperation` interface
+- `src/client/api.ts` — Updated `makePaginated` to use `PaginatedOperation`, removed `!`
+- `src/services/dashboards.ts` — Updated `listDashboardsOperation` type to `PaginatedOperation`
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 230/230 tests passing
+
+---

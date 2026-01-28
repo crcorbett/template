@@ -1266,8 +1266,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All 11 verification checks pass. Added PaginatedOperation interface to eliminate last non-null assertion. 0 type errors, 230/230 tests passing. Lazy init verified (2x _init with ??=), 4 Effect.logDebug calls verified, all 10 list operations have pagination metadata, all 41 operations have typed error arrays, isTransientError covers throttling+server+network+transport, retry Factory pattern with Ref for retry-after verified."
     },
     {
       "id": "P5-001",

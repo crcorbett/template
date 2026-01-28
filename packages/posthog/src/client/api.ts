@@ -16,7 +16,7 @@ import * as Redacted from "effect/Redacted";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
 
-import type { Operation } from "./operation.js";
+import type { Operation, PaginatedOperation } from "./operation.js";
 import type { Request as ApiRequest } from "./request.js";
 import type { Response } from "./response.js";
 
@@ -296,11 +296,11 @@ interface PaginationState<Input> {
  *
  * Each individual page fetch is wrapped with retry logic matching makeClient.
  */
-export const makePaginated = <Op extends Operation>(operation: Op) => {
+export const makePaginated = <Op extends PaginatedOperation>(operation: Op) => {
   type Input = S.Schema.Type<Op["input"]>;
   type Output = S.Schema.Type<Op["output"]>;
 
-  const pagination = operation.pagination!;
+  const pagination = operation.pagination;
 
   // Share the cached init with the single-page client
   let _init: OperationInit | undefined;
