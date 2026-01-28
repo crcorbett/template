@@ -313,7 +313,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/cohorts.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Defined typed schemas: CohortPropertyValue (filter conditions with key/type/value/operator/negation/time fields), CohortFilterGroup (AND/OR groups), CohortFilterProperties (nested group container), CohortFilters (top-level filters object). Remaining S.Unknown: value (polymorphic), bytecode (internal), groups (deprecated), query (undocumented). 0 type errors, 7/7 cohort tests passing."
     },
     {
       "id": "P1-006",

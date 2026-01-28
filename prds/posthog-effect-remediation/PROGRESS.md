@@ -184,3 +184,37 @@
 - `bun run test test/insights.test.ts` -- 8/8 tests passing
 
 ---
+
+#### P1-005: Replace S.Unknown in cohorts.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced `S.Unknown` usages in `src/services/cohorts.ts` with properly typed schemas for cohort filter conditions. The cohort filter system uses nested AND/OR logic with property-based conditions.
+
+**Changes:**
+- Defined `CohortPropertyValue` schema for individual filter conditions (key, type, value, operator, negation, event_type, time_value, time_interval, bytecode, conditionHash)
+- Defined `CohortFilterGroup` schema for AND/OR groups of property values
+- Defined `CohortFilterProperties` schema for top-level properties container
+- Defined `CohortFilters` schema with properties field
+- Replaced `filters: S.NullOr(S.Unknown)` with `S.NullOr(CohortFilters)` on Cohort response
+- Replaced `filters: S.Unknown` with `CohortFilters` on CreateCohortRequest and UpdateCohortRequest
+- Changed `groups` from `S.Unknown` to `S.Array(S.Unknown)` (deprecated legacy format)
+- Used `S.Union(S.String, S.Number)` for `time_value` (API returns inconsistent types)
+
+**Remaining S.Unknown (justified):**
+- `value` in CohortPropertyValue — polymorphic, can be string, number, array, etc.
+- `bytecode` — internal PostHog bytecode format (array of heterogeneous values)
+- `groups` — deprecated legacy format maintained for backward compatibility
+- `query` — alternative cohort definition with no OpenAPI documentation
+
+**Discovery:** PostHog API returns `time_value` as a number (e.g., `7`) but OpenAPI examples show strings (e.g., `"30"`). Always use union types when API behavior diverges from spec.
+
+**Files changed:**
+- `src/services/cohorts.ts` -- Added 4 sub-schemas, replaced filters with typed schema
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/cohorts.test.ts` -- 7/7 tests passing
+- `bun run test` -- 224/224 tests passing
+
+---

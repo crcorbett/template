@@ -422,3 +422,73 @@ Removed from request schemas; kept in response schema (API still returns it).
 - `src/traits.ts` -- Convert if/else to `Match`
 - `scripts/provision-analytics.ts` -- Replace `console.log`, remove `!` assertions
 - `test/saas-analytics-setup.test.ts` -- Replace `console.log`
+
+---
+
+## 12. P1-005 Research: Cohort Schema Typing
+
+### OpenAPI Cohort Schema Analysis
+
+The `Cohort` schema at line 37888 of `schema.yaml` defines:
+- `groups`: `{}` (empty schema, effectively any object) — deprecated legacy format
+- `filters`: `nullable: true` with detailed description but no formal schema — the actual structure is nested AND/OR logic
+- `query`: `nullable: true` with no type — alternative cohort definition
+
+### Filters Structure (from test usage and API responses)
+
+The `filters` field has a nested AND/OR structure:
+```json
+{
+  "properties": {
+    "type": "OR",
+    "values": [
+      {
+        "type": "AND",
+        "values": [
+          {
+            "key": "$browser",
+            "type": "person",
+            "value": ["Chrome"],
+            "operator": "exact"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Filter Types
+
+Based on the OpenAPI documentation examples, cohort filter values support three types:
+1. **person** — Filter on person properties (e.g., `$browser`, `email`)
+2. **behavioral** — Filter on performed events with time constraints
+3. **cohort** — Filter on membership in another cohort (by ID)
+
+### Behavioral Filter Fields
+
+Behavioral filters include additional fields:
+- `event_type`: "events" | "actions"
+- `time_value`: number or string (API inconsistent)
+- `time_interval`: "day" | "week" | "month" | etc.
+- `bytecode`: internal compiled filter (array)
+- `conditionHash`: internal hash string
+
+### API vs OpenAPI Discrepancies
+
+- `time_value`: OpenAPI examples show strings ("30"), but API returns numbers (7)
+- `bytecode` and `conditionHash`: Undocumented fields returned by API
+
+### Schema Design Decisions
+
+Created typed schemas:
+- `CohortPropertyValue` — Single filter condition with all possible fields
+- `CohortFilterGroup` — AND/OR group of property values
+- `CohortFilterProperties` — Container with type and values
+- `CohortFilters` — Top-level with properties field
+
+Remaining S.Unknown:
+- `value` in CohortPropertyValue — polymorphic (string, number, array, etc.)
+- `bytecode` — internal PostHog bytecode array
+- `groups` — deprecated legacy format
+- `query` — undocumented alternative definition
