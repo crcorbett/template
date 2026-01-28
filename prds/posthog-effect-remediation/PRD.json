@@ -510,6 +510,70 @@
       ]
     },
     {
+      "id": "P1-014",
+      "category": "type-safety",
+      "priority": "P1",
+      "description": "Remove type assertions from client source files (response-parser.ts, api.ts, request-builder.ts)",
+      "package": "@packages/posthog",
+      "files": [
+        "src/client/response-parser.ts",
+        "src/client/api.ts",
+        "src/client/request-builder.ts"
+      ],
+      "steps": [
+        "response-parser.ts line 64: JSON.parse(text) as unknown — benign (JSON.parse returns any), replace with a typed parseJson helper that returns unknown without cast",
+        "response-parser.ts line 177: errorBody as Record<string, unknown> — add a type predicate isRecord(x): x is Record<string, unknown> using typeof === 'object' guard",
+        "response-parser.ts line 189: obj['error'] as Record<string, unknown> — use the same isRecord predicate",
+        "api.ts line 80: platformResponse.headers as Record<string, string> — check @effect/platform header types; use Headers.toRecord() or a typed accessor if available, otherwise add a type predicate",
+        "request-builder.ts line 36: ast.propertySignatures as AST.PropertySignature[] — use _tag === 'TypeLiteral' discriminant narrowing (same pattern as P1-012 getProps helper)",
+        "request-builder.ts line 182: input as Record<string, unknown> — S.Class-decoded values are objects; use a type predicate or Object.entries approach",
+        "Ensure zero as casts remain in src/client/ (excluding traits.ts acceptable casts)"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/client/response-parser.test.ts",
+        "bun run test test/client/request-builder.test.ts",
+        "bun run test"
+      ]
+    },
+    {
+      "id": "P1-015",
+      "category": "type-safety",
+      "priority": "P1",
+      "description": "Remove type assertions from saas-analytics-setup.test.ts",
+      "package": "@packages/posthog",
+      "files": ["test/saas-analytics-setup.test.ts"],
+      "steps": [
+        "Lines 46-53: Replace 8 instances of [] as number[] / [] as string[] with properly typed empty arrays",
+        "Option A: Define an interface for the tracking object: interface ResourceTracker { cohorts: number[]; featureFlags: number[]; ... }",
+        "Option B: Use Array<number>() or satisfies annotation to infer types without casting",
+        "Ensure the resource tracking object is fully typed without any as casts",
+        "Verify all 44 tests still pass"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/saas-analytics-setup.test.ts"
+      ]
+    },
+    {
+      "id": "P1-016",
+      "category": "type-safety",
+      "priority": "P1",
+      "description": "Remove type assertions and non-null assertion from generate-clients.ts",
+      "package": "@packages/posthog",
+      "files": ["scripts/generate-clients.ts"],
+      "steps": [
+        "Line 171: schema as SchemaObject — add a type guard isSchemaObject(x): x is SchemaObject that checks for required fields",
+        "Line 503: schema as SchemaObject — use the same type guard",
+        "Line 551: YAML.load(schemaContent) as OpenAPISpec — use a runtime validation or type guard isOpenAPISpec(x) that checks for openapi, paths, components fields",
+        "Line 300: groups.get(tag)!.push — guard with an if check or use Map.has + Map.get pattern",
+        "Ensure the script still generates correct output"
+      ],
+      "verify": [
+        "npx tsc --noEmit"
+      ]
+    },
+    {
       "id": "P2-001",
       "category": "effect-idiom",
       "priority": "P2",
