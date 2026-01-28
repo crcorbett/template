@@ -1,1 +1,1 @@
-// Insights barrel - providers will be added incrementally
+export * from "./insight.js";

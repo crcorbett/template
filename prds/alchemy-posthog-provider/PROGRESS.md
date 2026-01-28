@@ -43,3 +43,10 @@
 - `assertAnnotationDeleted` checks for `deleted: true` field, `NotFoundError`, or `PostHogError` 404 with retry/backoff
 - `bun tsc -b` passes
 - `bun vitest run test/posthog/annotations/annotation.provider.test.ts` passes (1 test, ~2.5s)
+
+## INS-001: Implement Insight resource contract
+- Created `src/posthog/insights/insight.ts` with `InsightProps`, `InsightAttrs` interfaces and `Insight` resource
+- InsightProps: name (string|null), description (string|null), query (unknown), filters (unknown), dashboards (number[]), saved (boolean)
+- InsightAttrs: id (number, stable), shortId (string|undefined), name, description, createdAt, favorited, saved
+- Updated `src/posthog/insights/index.ts` barrel export
+- `bun tsc -b` passes with no type errors

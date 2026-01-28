@@ -628,8 +628,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created insight.ts with InsightProps (name, description, query, filters, dashboards, saved) and InsightAttrs (id, shortId, name, description, createdAt, favorited, saved). Follows Annotation contract pattern with Resource from alchemy-effect npm package. Updated insights/index.ts to export all from insight.js. bun tsc -b passes."
     },
     {
       "id": "INS-002",
