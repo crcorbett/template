@@ -77,7 +77,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
   },
   "dependencies": {
     "@packages/posthog": "workspace:*",
