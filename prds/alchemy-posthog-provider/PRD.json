@@ -136,8 +136,8 @@
         "bun tsc -b passes with no type errors",
         "FeatureFlag, FeatureFlagProps, FeatureFlagAttrs are exported from feature-flags/index.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created feature-flag.ts with FeatureFlagProps (key, name, active, filters, rolloutPercentage, ensureExperienceContinuity) and FeatureFlagAttrs (id, key, name, active, filters, createdAt). Imports Resource from 'alchemy-effect' npm package. Updated index.ts to export all from feature-flag.js."
     },
     {
       "id": "FF-002",

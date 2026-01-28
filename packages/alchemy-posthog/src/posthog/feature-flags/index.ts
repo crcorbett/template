@@ -1,1 +1,1 @@
-// Feature Flags barrel - providers will be added incrementally
+export * from "./feature-flag.js";
