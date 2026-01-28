@@ -696,6 +696,8 @@ Another approach would be to change the response parser to return `Effect.Effect
 
 The same discriminant narrowing pattern should be applied to `traits.test.ts`, `request-builder.test.ts`, and `credentials.test.ts` for their respective type assertions.
 
+---
+
 ## 16. P1-012 Research: Type Assertion Elimination in traits.test.ts
 
 ### AST.TypeLiteral Narrowing via _tag Discriminant
@@ -750,3 +752,344 @@ if (decoded instanceof Date) { ... }
 ```
 
 Widening to `unknown` is always safe (no information is fabricated) and enables TypeScript's type guards.
+
+---
+
+## 17. P4 Research: PostHog API Pagination Patterns
+
+### Two Pagination Styles
+
+PostHog uses **two distinct pagination patterns** across its API:
+
+#### Offset-based pagination (55+ endpoints)
+
+Used by: dashboards, cohorts, feature-flags, insights, actions, annotations, experiments, persons, surveys, and most other list endpoints.
+
+Request parameters:
+- `offset` (integer, default 0) — number of items to skip
+- `limit` (integer, default 100) — page size
+
+Response shape:
+```json
+{
+  "count": 142,
+  "next": "https://us.posthog.com/api/projects/12345/dashboards/?limit=10&offset=10",
+  "previous": null,
+  "results": [...]
+}
+```
+
+Key details:
+- `next` is a **full URL string** with query parameters (not a simple token)
+- `previous` is also a full URL or null
+- `count` is the total number of matching resources
+- `results` is always the items array
+
+#### Cursor-based pagination (16+ endpoints)
+
+Used by: events (`/api/projects/{id}/events/`), event definitions, property definitions, and some newer endpoints.
+
+Request parameters:
+- `cursor` (string) — opaque pagination cursor
+
+Response shape:
+```json
+{
+  "next": "https://us.posthog.com/api/projects/12345/events/?cursor=cDIwMjUtMD...",
+  "results": [...]
+}
+```
+
+Key differences from offset-based:
+- No `count` field — total is not known ahead of time
+- No `previous` field
+- `next` contains a `cursor` query parameter instead of `offset`
+- Cursor values are opaque (base64-encoded)
+
+### Implications for Generic Pagination (P4-007)
+
+The `Operation.pagination` metadata already supports both patterns:
+
+```typescript
+pagination?: {
+  inputToken: string;   // "offset" or "cursor"
+  outputToken: string;  // "next" (always)
+  items?: string;       // "results" (always)
+  pageSize?: string;    // "limit" (offset-only)
+}
+```
+
+The `makePaginated` function must handle both by:
+1. Parsing the `next` URL to extract the named query parameter (`offset` or `cursor`)
+2. Injecting the extracted value into the input using `inputToken` as the field name
+3. Stopping when `next` is `null` or the extracted parameter is absent
+
+This generalises the current hardcoded `parseNextOffset` into a `parseNextToken(url, paramName)` helper.
+
+### OpenAPI Schema References
+
+- Offset pagination: `PaginatedDashboardBasicList` (line 52896), `PaginatedCohortList`, etc.
+- Cursor pagination: `PaginatedClickhouseEventList` (line 52560)
+- Both share the `next`/`results` shape; only `count`/`previous` differ
+
+---
+
+## 18. P4 Research: PostHog API Error Responses
+
+### OpenAPI Error Documentation
+
+PostHog's OpenAPI schema documents **very few explicit error responses**. Most endpoints only specify `200` or `201` success responses. The few documented errors include:
+
+- `/api/projects/{project_id}/batch_exports/backfills/` — 400 (validation)
+- Session recording endpoints — 404 (not found)
+- A handful of endpoints with explicit 400/403/404
+
+### Runtime Error Behaviour
+
+Despite sparse OpenAPI documentation, the PostHog API consistently returns standard HTTP error codes at runtime:
+
+| Status | Error | Category | When |
+|--------|-------|----------|------|
+| 401 | `AuthenticationError` | auth | Invalid/missing API key |
+| 403 | `AuthorizationError` | auth | Valid key, insufficient permissions |
+| 404 | `NotFoundError` | notFound | Resource doesn't exist |
+| 422 | `ValidationError` | validation | Invalid request data |
+| 429 | `RateLimitError` | throttling | Too many requests |
+| 500 | `ServerError` | server | Internal PostHog error |
+
+Error response body shapes vary:
+- `{ "message": "..." }` — most common
+- `{ "detail": "..." }` — DRF-style (Django REST Framework)
+- `{ "error": "...", "error_description": "..." }` — OAuth-style
+- `{ "details": {...} }` — validation errors with field-level details
+
+### Per-Operation Error Typing (P4-008)
+
+Since the OpenAPI spec doesn't enumerate errors per endpoint, the pragmatic approach is:
+
+- **All operations**: `COMMON_ERRORS` (401, 403, 429, 500, 422)
+- **GET by ID / UPDATE / DELETE**: add `NotFoundError`
+- **LIST operations**: no `NotFoundError` (lists return empty results, not 404)
+- **CREATE operations**: `COMMON_ERRORS` only (422 for validation is in `COMMON_ERRORS`)
+
+The `COMMON_ERRORS` array already exists in `errors.ts` (lines 119-126) with all 6 error types. Currently all operations define `errors: []`.
+
+### Missing Error Categories
+
+distilled-aws defines 12 error categories. Our current 5 categories (`ThrottlingError`, `ServerError`, `AuthError`, `ValidationError`, `NotFoundError`) cover the PostHog API well. Two additional categories are needed for transport-level errors:
+
+- **`NetworkError`** — connection refused, DNS failure, socket errors
+- **`TimeoutError`** — request/response timeouts
+
+These originate from `@effect/platform`'s `HttpClient`, not from PostHog's API directly. The `HttpClient` throws `RequestError` with `reason: 'Transport'` for network failures.
+
+---
+
+## 19. P4 Research: Delete Request Trait Inconsistency
+
+### Current State
+
+The SDK has **inconsistent delete implementations** across its 8 service files with delete operations:
+
+**Correct (true DELETE, 3 services):**
+- `experiments.ts` — `DeleteExperimentRequest` has `T.Http({method: 'DELETE', uri: ...})` + `T.HttpLabel()` on path params
+- `surveys.ts` — `DeleteSurveyRequest` with proper DELETE traits
+- `annotations.ts` — `DeleteAnnotationRequest` with proper DELETE traits
+
+**Incorrect (soft-delete workaround, 5 services):**
+- `dashboards.ts` — `DeleteDashboardRequest` has no `T.Http()` trait; `deleteDashboard` calls `updateDashboard({deleted: true})`
+- `feature-flags.ts` — same soft-delete pattern
+- `actions.ts` — same soft-delete pattern
+- `cohorts.ts` — same soft-delete pattern
+- `insights.ts` — same soft-delete pattern
+
+### OpenAPI Verification
+
+The PostHog OpenAPI spec **does document DELETE endpoints** for all of these resources:
+
+```yaml
+/api/projects/{project_id}/dashboards/{id}/:
+  delete:
+    operationId: dashboards_destroy
+    parameters: [project_id, id]
+    responses: { 204: No response body }
+```
+
+Similarly for `feature_flags_destroy`, `actions_destroy`, `cohorts_destroy`, `insights_destroy`.
+
+### Root Cause
+
+These 5 services were likely implemented before the SDK supported true DELETE operations. The soft-delete approach calls PATCH with `{deleted: true}`, which is a PostHog-specific convention (PostHog does support soft-delete via the `deleted` flag), but the standard REST API also supports HTTP DELETE.
+
+### Fix Pattern
+
+Each of the 5 files needs:
+1. Add `T.Http({method: 'DELETE', uri: '/api/projects/{project_id}/{resource}/{id}/'})` to `DeleteXRequest`
+2. Add `T.HttpLabel()` on `project_id` and `id` fields
+3. Add a `VoidResponse = S.Struct({})` schema for the 204 response
+4. Create a proper `deleteXOperation` with the VoidResponse output
+5. Replace the soft-delete export with `makeClient(deleteXOperation)`
+
+---
+
+## 20. P4 Research: Feature Flag Filters Schema Reuse
+
+### Current State
+
+The `FeatureFlagFilters` schema is defined at `feature-flags.ts` lines 49-58 with:
+- `groups` — array of `FeatureFlagGroup` (rollout rules)
+- `multivariate` — `FeatureFlagMultivariate` (A/B test variants)
+- `payloads` — per-variant JSON payloads
+- `super_groups` — additional group rules
+- `aggregation_group_type_index` — group analytics index
+
+However, `CreateFeatureFlagRequest` (line 142) and `UpdateFeatureFlagRequest` (line 164) both use `S.optional(S.Record({ key: S.String, value: S.Unknown }))` for their `filters` field instead of `S.optional(FeatureFlagFilters)`.
+
+### OpenAPI Verification
+
+Both `FeatureFlag` (response) and `PatchedFeatureFlag` (update request) declare `filters` as `type: object, additionalProperties: {}`. The PostHog API **accepts the same filter shape on input as it returns on output** — this is a standard CRUD pattern where the response filter structure can be round-tripped.
+
+### Recommendation
+
+Replace the generic `S.Record({ key: S.String, value: S.Unknown })` with `FeatureFlagFilters` in both create and update request schemas. This provides:
+- Compile-time validation of filter structure
+- IDE autocomplete for filter properties
+- Consistent typing between input and output
+
+Since `S.Class` strips excess properties during decoding, any extra fields the API might accept beyond `FeatureFlagFilters` would be silently dropped. This is acceptable for an SDK — we type the documented fields.
+
+---
+
+## 21. P4 Research: Lazy Init and Debug Logging Patterns
+
+### distilled-aws Lazy Init Pattern
+
+In `distilled-aws/src/client/api.ts` (lines 26-70), the `makeClient` function uses closure-scoped lazy init:
+
+```typescript
+const makeClient = <Op extends Operation>(operation: Op) => {
+  let _requestBuilder: RequestBuilder | undefined;
+  let _responseParser: ResponseParser | undefined;
+
+  const init = () => {
+    _requestBuilder ??= makeRequestBuilder(operation);
+    _responseParser ??= makeResponseParser(operation);
+    return { buildRequest: _requestBuilder, parseResponse: _responseParser };
+  };
+
+  return (input: Input) => Effect.gen(function* () {
+    const { buildRequest, parseResponse } = init();
+    // ... use cached builders ...
+  });
+};
+```
+
+This caches the expensive AST property analysis (traversing schema annotations for HTTP traits, property signatures, etc.) on first invocation. Subsequent calls reuse the cached builders.
+
+### Current PostHog State
+
+In `packages/posthog/src/client/api.ts`, `execute()` calls `yield* makeRequestBuilder(operation)` on **every request** (line 44). `makeRequestBuilder` returns an `Effect` (since P1-010), which traverses the schema AST each time. `makeResponseParser` (line 112) also rebuilds on every call.
+
+### Fix Approach
+
+Since `makeRequestBuilder` now returns `Effect<RequestBuilder, MissingHttpTraitError>`, the lazy init needs to handle the effectful case. Two options:
+
+1. **Eager init in closure** (preferred): Move `makeRequestBuilder` call outside the returned function, execute once during `makeClient` setup
+2. **Lazy ??= with Effect.runSync**: Since the builder only depends on the operation schema (no runtime context), it can be safely `Effect.runSync`'d in the closure
+
+### distilled-aws Debug Logging Pattern
+
+distilled-aws adds 4 `Effect.logDebug` calls in `execute()`:
+
+1. **After input**: `yield* Effect.logDebug("Payload").pipe(Effect.annotateLogs("payload", input))`
+2. **After request build**: `yield* Effect.logDebug("Built Request").pipe(Effect.annotateLogs("request", req))`
+3. **After HTTP response**: `yield* Effect.logDebug("Raw Response").pipe(Effect.annotateLogs("status", res.status))`
+4. **After parse**: `yield* Effect.logDebug("Parsed Response").pipe(Effect.annotateLogs("result", result))`
+
+These are zero-cost unless a debug-level log layer is provided. They help debug API integration issues without adding runtime overhead.
+
+---
+
+## 22. P4 Research: Transport Error Detection
+
+### @effect/platform Error Model
+
+`@effect/platform`'s `HttpClient` throws `RequestError` when the HTTP request fails at the transport layer:
+
+```typescript
+interface RequestError {
+  _tag: "RequestError";
+  reason: "Transport" | "Encode" | "Decode";
+  // ... error details
+}
+```
+
+`reason: "Transport"` indicates network-level failures:
+- Connection refused (ECONNREFUSED)
+- DNS resolution failure (ENOTFOUND)
+- Socket timeout (ETIMEDOUT)
+- TLS handshake failure
+- Connection reset (ECONNRESET)
+
+### distilled-aws Pattern
+
+distilled-aws defines `isHttpClientTransportError` (src/category.ts lines 285-296):
+
+```typescript
+export const isHttpClientTransportError = (error: unknown): boolean => {
+  if (Predicate.isObject(error) && '_tag' in error &&
+      error._tag === 'RequestError' && 'reason' in error &&
+      error.reason === 'Transport') return true;
+  return false;
+};
+```
+
+This is included in `isTransientError` so transport failures trigger automatic retry.
+
+### Current PostHog State
+
+Our `isTransientError` only checks `isThrottlingError || isServerError`. Transport errors from `HttpClient` pass through unmatched — they won't trigger retry even though they're inherently transient.
+
+### Fix
+
+Add `isHttpClientTransportError` to `category.ts` and include it in `isTransientError`. No new error classes needed — the detection is purely predicate-based on `@effect/platform`'s existing error shape.
+
+---
+
+## 23. P4 Research: Retry Factory Pattern
+
+### distilled-aws Retry Factory
+
+distilled-aws uses a Factory pattern for retry (src/retry.ts lines 120-148):
+
+```typescript
+export type Factory = (lastError: Ref.Ref<unknown>) => Options;
+
+export type Policy = Options | Factory;
+```
+
+The factory receives a `Ref<unknown>` that holds the most recent error. This enables:
+- **Retry-after header support**: Read `retryAfter` from the last `RateLimitError` and use it as the delay
+- **Adaptive backoff**: Increase delay based on error severity
+- **Error-specific scheduling**: Different schedules for throttling vs server errors
+
+In `execute()`, the retry wrapper:
+1. Creates `Ref.make<unknown>(undefined)` for the last error
+2. Resolves the retry policy (factory or static) from context
+3. Wraps execution with `Effect.tapError((e) => Ref.set(lastError, e))`
+4. Applies `Effect.retry({ while, schedule })` from the resolved options
+
+### Current PostHog State
+
+Our `retry.ts` only supports static `Options`:
+- `Retry` context tag holds `Options` directly
+- No factory pattern
+- No `Ref` for last error
+- `RateLimitError` already has a `retryAfter` field (line 83 of errors.ts) but nothing reads it
+
+### Fix Scope
+
+1. Add `Factory` type and `Policy` union to `retry.ts`
+2. Add a `makeDefault` factory that reads `retryAfter` from `RateLimitError`
+3. Update `api.ts` execute to create `Ref`, resolve policy, and wire retry
+4. Update `Retry` tag to accept `Policy` instead of just `Options`

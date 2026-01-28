@@ -1,6 +1,6 @@
 # PostHog SDK Effect TS Remediation
 
-**Status**: Design Complete - Ready for Implementation
+**Status**: P0–P3 Complete, P4 In Design
 **Created**: 2026-01-28
 **Updated**: 2026-01-28
 **Owner**: Platform Team
@@ -18,24 +18,36 @@ Bring `packages/posthog` into full compliance with Effect TS best practices and 
 
 ### 1.2 Problem Statement
 
-The PostHog SDK is functional (224 tests passing) but has:
+The PostHog SDK is functional (226 tests passing after P0-P3) but had / has:
 
-1. **75+ type assertions** (`as`, `!`) that bypass type safety
-2. **30+ `S.Unknown` escape hatches** in service schemas instead of proper typed schemas
-3. **A critical `Effect.ensuring` bug** where cleanup never runs on test failure (eager evaluation)
-4. **Vanilla JS patterns** (async/await, try/catch, instanceof, console.log, mutable let) where Effect primitives should be used
-5. **No pagination support** -- distilled-aws provides `.pages()` / `.items()` via `Stream.unfoldEffect`
-6. **Duplicated schemas** -- `UserBasic` defined identically in 8 files
-7. **No error categories** -- distilled-aws decorates errors with `withThrottlingError`, `isTransientError`, etc.
+1. ~~**75+ type assertions** (`as`, `!`) that bypass type safety~~ ✅ Resolved (P1)
+2. ~~**30+ `S.Unknown` escape hatches** in service schemas~~ ✅ Resolved (P1), ~35 deep polymorphic S.Unknown remain (justified)
+3. ~~**A critical `Effect.ensuring` bug**~~ ✅ Resolved (P0)
+4. ~~**Vanilla JS patterns** (async/await, try/catch, instanceof, console.log, mutable let)~~ ✅ Resolved (P1-P2)
+5. ~~**No pagination support**~~ ✅ Basic pagination added (P2), generic pagination pending (P4-007)
+6. ~~**Duplicated schemas**~~ ✅ Resolved (P1-001)
+7. ~~**No error categories**~~ ✅ Resolved (P2-003), transport/network categories pending (P4-005, P4-009)
+
+**Remaining distilled-aws divergences (P4):**
+
+8. **No lazy init caching** — `makeRequestBuilder` rebuilds schema AST on every API call
+9. **No debug logging** — distilled-aws has 4 `Effect.logDebug` calls at key transformation points
+10. **5 inconsistent delete operations** — using soft-delete workaround instead of true HTTP DELETE
+11. **Generic `S.Record` for feature-flag filters** — `FeatureFlagFilters` schema exists but isn't used in create/update
+12. **No transport error detection** — `isTransientError` misses `@effect/platform` `RequestError` with `reason: 'Transport'`
+13. **No retry factory pattern** — static `Options` only, no `Ref`-based retry-after support
+14. **Hardcoded pagination** — uses PostHog-specific field names instead of `Operation.pagination` metadata
+15. **Empty per-operation error arrays** — all operations define `errors: []` instead of typed error lists
 
 ### 1.3 Solution
 
-Systematic remediation across four priority tiers:
+Systematic remediation across five priority tiers:
 
 - **P0 (Critical):** Fix the `Effect.ensuring` cleanup bug using `Effect.suspend` or `Effect.acquireUseRelease`
 - **P1 (High):** Eliminate `S.Unknown`, remove avoidable type assertions, convert `parseJsonBody` to Effect
 - **P2 (Medium):** Add error categories, deduplicate schemas, add pagination, replace `instanceof`/`console.log`
 - **P3 (Low):** Tree-shaking annotations, explicit operation signatures, convert raw interfaces to Schema
+- **P4 (Alignment):** Close remaining distilled-aws divergences — lazy init, debug logging, generic pagination, retry factory, per-operation errors, transport error detection, delete trait fixes
 
 ### 1.4 Scope
 
@@ -77,60 +89,142 @@ packages/posthog/
 
 ### 2.2 Key Patterns (from distilled-aws)
 
-| Concern | Pattern |
-|---|---|
-| Service functions | Top-level exported `const`, `API.make()` with `/*@__PURE__*/` |
-| Dependencies | `Context.Tag` for Credentials, Endpoint, Retry, HttpClient |
-| Schemas | `S.Class` (our modern pattern) or `interface + S.Struct + cast` (distilled-aws) |
-| Errors | `S.TaggedError` + category decoration via prototype |
-| Retry | `Context.Tag<Retry, Options>`, predicate-based with exponential backoff |
-| Pagination | `Stream.unfoldEffect` with `.pages()` / `.items()` |
-| HTTP | `@effect/platform` HttpClient as context dependency |
-| Traits | Symbol-based annotations on Schema AST, composable via `T.all()` |
+| Concern | Pattern | Status |
+|---|---|---|
+| Service functions | Top-level exported `const`, `API.make()` with `/*@__PURE__*/` | ✅ Done (P3-001) |
+| Dependencies | `Context.Tag` for Credentials, Endpoint, Retry, HttpClient | ✅ Done |
+| Schemas | `S.Class` (our modern pattern) or `interface + S.Struct + cast` (distilled-aws) | ✅ Done |
+| Errors | `S.TaggedError` + category decoration via prototype | ✅ Done (P2-003) |
+| Retry | `Context.Tag<Retry, Options>`, predicate-based with exponential backoff | ✅ Static; Factory pending (P4-006) |
+| Pagination | `Stream.unfoldEffect` with `.pages()` / `.items()` | ✅ Basic; Generic pending (P4-007) |
+| HTTP | `@effect/platform` HttpClient as context dependency | ✅ Done |
+| Traits | Symbol-based annotations on Schema AST, composable via `T.all()` | ✅ Done |
+| Lazy init | `??=` caching of request/response builders per operation | ⬜ Pending (P4-001) |
+| Debug logging | `Effect.logDebug` at 4 transformation points in `execute()` | ⬜ Pending (P4-002) |
+| Transport errors | `isHttpClientTransportError` + inclusion in `isTransientError` | ⬜ Pending (P4-005) |
+| Per-op errors | Typed error arrays on each operation definition | ⬜ Pending (P4-008) |
 
-### 2.3 Error Category System (new)
+### 2.3 Error Category System (implemented)
+
+The category system is implemented in `src/category.ts` with 5 categories and prototype-based decoration:
 
 ```typescript
-// src/errors.ts -- new category system matching distilled-aws
-const categorySymbol = Symbol.for("@posthog/error/categories");
+// src/category.ts
+export const categoriesKey = "@posthog/error/categories";
 
-type ErrorCategory = "throttling" | "server" | "auth" | "validation" | "notFound";
-
-export const withCategory = (category: ErrorCategory) =>
-  <T extends new (...args: any[]) => any>(errorClass: T): T => {
-    const existing: ErrorCategory[] = (errorClass.prototype as any)[categorySymbol] ?? [];
-    (errorClass.prototype as any)[categorySymbol] = [...existing, category];
-    return errorClass;
+export const withCategory = <Categories extends Array<Category>>(...categories: Categories) =>
+  <C extends { new (...args: any[]): any }>(C: C): C => {
+    for (const category of categories) {
+      C.prototype[categoriesKey] ??= {};
+      C.prototype[categoriesKey][category] = true;
+    }
+    return C;
   };
 
-export const isThrottlingError = (error: unknown): boolean =>
-  hasCategory(error, "throttling");
-
-export const isTransientError = (error: unknown): boolean =>
-  isThrottlingError(error) || hasCategory(error, "server");
+// Decorators: withThrottlingError, withServerError, withAuthError, withValidationError, withNotFoundError
+// Predicates: isThrottlingError, isServerError, isAuthError, isValidationError, isNotFoundError
+// Composite: isTransientError = isThrottlingError || isServerError
+// Catchers: catchThrottlingError, catchServerError, catchAuthError, catchValidationError, catchNotFoundError, catchErrors
 ```
 
-### 2.4 Pagination (new)
+**P4-005 Extension:** Add `isHttpClientTransportError` predicate for `@effect/platform` transport errors and include it in `isTransientError`.
+
+**P4-009 Extension:** Add `NetworkError` and `TimeoutError` categories for transport-level failures.
+
+### 2.4 Pagination (implemented, P4-007 planned)
+
+Current implementation uses `Stream.unfoldEffect` with hardcoded PostHog conventions:
 
 ```typescript
-// src/client/api.ts -- pagination via Stream
-export const makePaginated = <I, O, E>(op: Operation<I, O, E>) => {
-  const fn = make(op);
-  return Object.assign(fn, {
-    pages: (input: I) => Stream.unfoldEffect(input, (cursor) =>
-      fn(cursor).pipe(
-        Effect.map(page => page.next
-          ? Option.some([page, { ...cursor, offset: nextOffset }] as const)
-          : Option.some([page, undefined] as const)
-        )
-      )
-    ),
-    items: (input: I) => fn.pages(input).pipe(
-      Stream.mapConcat(page => page.results)
-    ),
+// src/client/api.ts (current)
+export const makePaginated = <Op extends Operation>(operation: Op) => {
+  // Hardcoded: page.next for token, page.results for items, offset for input
+  const parseNextOffset = (nextUrl: string): Option<number> => { /* parse offset from URL */ };
+  // .pages(input) and .items(input) via Stream.unfoldEffect
+};
+```
+
+**P4-007 Refactor:** Adopt distilled-aws generic pagination using `Operation.pagination` metadata:
+
+```typescript
+// src/client/api.ts (planned)
+export const makePaginated = <Op extends Operation>(operation: Op) => {
+  const { inputToken, outputToken, items: itemsKey } = operation.pagination!;
+  // Generic: parseNextToken(url, inputToken) for both offset and cursor
+  // Generic: page[outputToken] for next URL, page[itemsKey] for items
+};
+
+// Per-service operation definitions:
+// Offset-based (dashboards, cohorts, etc.):
+//   pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" }
+// Cursor-based (events):
+//   pagination: { inputToken: "cursor", outputToken: "next", items: "results" }
+```
+
+PostHog uses two pagination patterns — offset-based (55+ endpoints) and cursor-based (16+ endpoints, including events). Both return `next` as a full URL string. See RESEARCH.md §17.
+
+### 2.5 Lazy Init Caching (P4-001, planned)
+
+Cache `makeRequestBuilder` and `makeResponseParser` per operation to avoid rebuilding schema AST on every request:
+
+```typescript
+// src/client/api.ts (planned, matching distilled-aws lines 26-70)
+export const makeClient = <Op extends Operation>(operation: Op) => {
+  let _init: { buildRequest: RequestBuilder; parseResponse: ResponseParser } | undefined;
+  const init = () => (_init ??= {
+    buildRequest: /* cached makeRequestBuilder result */,
+    parseResponse: makeResponseParser(operation),
+  });
+
+  return (input: Input) => Effect.gen(function* () {
+    const { buildRequest, parseResponse } = init();
+    // ... use cached builders — zero AST traversal after first call
   });
 };
 ```
+
+### 2.6 Debug Logging (P4-002, planned)
+
+Add 4 `Effect.logDebug` calls at key transformation points matching distilled-aws:
+
+```typescript
+// src/client/api.ts execute() (planned)
+yield* Effect.logDebug("Payload").pipe(Effect.annotateLogs("input", input));
+yield* Effect.logDebug("Built Request").pipe(Effect.annotateLogs("request", request));
+yield* Effect.logDebug("Raw Response").pipe(Effect.annotateLogs("status", status));
+yield* Effect.logDebug("Parsed Response").pipe(Effect.annotateLogs("result", result));
+```
+
+Zero runtime cost unless a debug-level log layer is provided. Do NOT log credentials or Authorization headers.
+
+### 2.7 Retry Factory (P4-006, planned)
+
+Add Factory pattern with `Ref` for retry-after header support:
+
+```typescript
+// src/retry.ts (planned, matching distilled-aws)
+export type Factory = (lastError: Ref.Ref<unknown>) => Options;
+export type Policy = Options | Factory;
+
+export const makeDefault: Factory = (lastError) => ({
+  while: isTransientError,
+  schedule: pipe(
+    Schedule.exponential(Duration.millis(100), 2),
+    Schedule.modifyDelayEffect(Effect.fnUntraced(function* (duration) {
+      const error = yield* lastError;
+      // Read retryAfter from RateLimitError
+      if (isThrottlingError(error) && hasRetryAfter(error)) {
+        return Duration.toMillis(Duration.seconds(error.retryAfter));
+      }
+      return Duration.toMillis(duration);
+    })),
+    Schedule.intersect(Schedule.recurs(5)),
+    Schedule.jittered,
+  ),
+});
+```
+
+In `execute()`, creates `Ref.make<unknown>(undefined)`, resolves policy from context, wraps with `Effect.tapError` + `Effect.retry`.
 
 ---
 
@@ -162,6 +256,19 @@ export const makePaginated = <I, O, E>(op: Operation<I, O, E>) => {
 - Fix `Effect.ensuring` bug in 30 test blocks across 8 files
 - Add `withResource` combinator for create/assert/cleanup lifecycle
 - Deduplicate `.env` config resolution (3 copies -> 1)
+
+### 3.5 distilled-aws Alignment (P4)
+
+- **P4-001: Lazy init caching** — Cache `makeRequestBuilder`/`makeResponseParser` per operation using `??=` pattern
+- **P4-002: Debug logging** — Add 4 `Effect.logDebug` calls in `execute()` at input/request/response/result points
+- **P4-003: Delete trait fixes** — Fix 5 services using soft-delete workaround to use true HTTP DELETE with proper `T.Http()` traits (dashboards, feature-flags, actions, cohorts, insights)
+- **P4-004: Filter schema reuse** — Use `FeatureFlagFilters` schema in create/update request `filters` field instead of generic `S.Record`
+- **P4-005: Transport error detection** — Add `isHttpClientTransportError` predicate for `@effect/platform` `RequestError` with `reason: 'Transport'`; include in `isTransientError`
+- **P4-006: Retry factory** — Add `Factory = (lastError: Ref<unknown>) => Options` pattern with retry-after header support
+- **P4-007: Generic pagination** — Move from hardcoded `next`/`results`/`offset` to `Operation.pagination` metadata; support both offset-based and cursor-based pagination
+- **P4-008: Per-operation errors** — Replace empty `errors: []` with `COMMON_ERRORS` (and `NotFoundError` for get/update/delete) on all operation definitions
+- **P4-009: New error categories** — Add `NetworkError` and `TimeoutError` categories to the category system
+- **P4-010: Cast elimination** — Remove 3 remaining `as` casts in `makePaginated` via proper generic constraints
 
 ---
 
@@ -229,6 +336,95 @@ Match.value(ast).pipe(
   Match.when({ _tag: "Transformation" }, (t) => handleTransformation(t)),
   Match.orElse(() => fallback),
 )
+```
+
+### 5.5 Transport Error Detection
+
+```typescript
+// src/category.ts — detect @effect/platform transport failures
+export const isHttpClientTransportError = (error: unknown): boolean =>
+  Predicate.isObject(error) &&
+  '_tag' in error && error._tag === 'RequestError' &&
+  'reason' in error && error.reason === 'Transport';
+
+// Updated composite predicate
+export const isTransientError = (error: unknown): boolean =>
+  isThrottlingError(error) || isServerError(error) ||
+  isHttpClientTransportError(error) || isNetworkError(error);
+```
+
+### 5.6 Per-Operation Error Arrays
+
+```typescript
+// src/services/dashboards.ts — typed error arrays per operation
+import { COMMON_ERRORS, NotFoundError } from "../errors.js";
+
+const listDashboardsOperation: Operation = {
+  input: ListDashboardsRequest,
+  output: PaginatedDashboardList,
+  errors: [...COMMON_ERRORS],  // no NotFoundError for lists
+};
+
+const getDashboardOperation: Operation = {
+  input: GetDashboardRequest,
+  output: Dashboard,
+  errors: [...COMMON_ERRORS, NotFoundError],  // 404 possible for get-by-id
+};
+```
+
+### 5.7 True DELETE Operations
+
+```typescript
+// Pattern for all 5 services needing delete trait fixes
+export class DeleteDashboardRequest extends S.Class<DeleteDashboardRequest>(
+  "DeleteDashboardRequest"
+)(
+  {
+    project_id: S.String.pipe(T.HttpLabel()),
+    id: S.Number.pipe(T.HttpLabel()),
+  },
+  T.all(
+    T.Http({ method: "DELETE", uri: "/api/environments/{project_id}/dashboards/{id}/" }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+const VoidResponse = S.Struct({});
+const deleteDashboardOperation: Operation = {
+  input: DeleteDashboardRequest,
+  output: VoidResponse,
+  errors: [...COMMON_ERRORS, NotFoundError],
+};
+```
+
+### 5.8 Generic Pagination with Operation Metadata
+
+```typescript
+// src/client/api.ts — generic parseNextToken replaces parseNextOffset
+const parseNextToken = (nextUrl: string, paramName: string): Option.Option<string> => {
+  try {
+    const url = new URL(nextUrl);
+    return Option.fromNullable(url.searchParams.get(paramName));
+  } catch {
+    return Option.none();
+  }
+};
+
+// Per-service operation metadata (offset-based)
+const listDashboardsOperation: Operation = {
+  input: ListDashboardsRequest,
+  output: PaginatedDashboardList,
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
+};
+
+// Per-service operation metadata (cursor-based, events)
+const listEventsOperation: Operation = {
+  input: ListEventsRequest,
+  output: PaginatedEventList,
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "cursor", outputToken: "next", items: "results" },
+};
 ```
 
 ---

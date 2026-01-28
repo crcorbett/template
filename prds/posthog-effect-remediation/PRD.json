@@ -910,6 +910,364 @@
       ],
       "passes": true,
       "notes": "Final verification complete. 0 type errors, 226/226 tests passing. Source as casts: only acceptable traits.ts (distilled-aws pattern), category.ts (internal type plumbing), api.ts (3 minor). Test as casts: zero. Non-null assertions: zero. instanceof in src: 2 Date checks in request-builder.ts (acceptable). console.log in test/scripts: zero in Effect contexts (only generate-clients.ts sync script). throw in src: zero. S.Unknown: ~35 remaining, all justified as deep polymorphic/dynamic fields."
+    },
+    {
+      "id": "P4-001",
+      "category": "performance",
+      "priority": "P1",
+      "description": "Cache makeRequestBuilder and makeResponseParser per operation using lazy init pattern",
+      "package": "@packages/posthog",
+      "files": ["src/client/api.ts"],
+      "steps": [
+        "Open packages/posthog/src/client/api.ts",
+        "In makeClient(), add a closure-scoped `let _init;` variable",
+        "Create an `init()` function that calls makeRequestBuilder(operation) and makeResponseParser(operation), returning both",
+        "In the returned function body, replace the per-call `yield* makeRequestBuilder(operation)` with `const { buildRequest, parseResponse } = (_init ??= init());`",
+        "This caches the expensive AST property analysis done by makeRequestBuilder on first call",
+        "Apply the same pattern to makePaginated() — it should share the cached init from its inner makeClient call",
+        "Reference: distilled-aws src/client/api.ts lines 26-70 uses this exact ??= lazy init pattern",
+        "Ensure all existing tests pass — behaviour must be identical, only performance changes"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-002",
+      "category": "effect-idiom",
+      "priority": "P1",
+      "description": "Add Effect.logDebug at key transformation points in execute()",
+      "package": "@packages/posthog",
+      "files": ["src/client/api.ts"],
+      "steps": [
+        "Open packages/posthog/src/client/api.ts",
+        "Add 4 Effect.logDebug calls matching the distilled-aws pattern:",
+        "  1. After receiving input: yield* Effect.logDebug('Payload', input)",
+        "  2. After building request: yield* Effect.logDebug('Built Request', request)",
+        "  3. After receiving HTTP response: yield* Effect.logDebug('Raw Response Status', platformResponse.status)",
+        "  4. After parsing response: yield* Effect.logDebug('Parsed Response', result)",
+        "These are no-ops unless a debug log layer is provided, so zero runtime cost in production",
+        "Reference: distilled-aws src/client/api.ts lines 71, 76, 240, 275",
+        "Do NOT log credentials or Authorization headers"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-003",
+      "category": "type-safety",
+      "priority": "P1",
+      "description": "Fix inconsistent delete request traits across 5 service files",
+      "package": "@packages/posthog",
+      "files": [
+        "src/services/dashboards.ts",
+        "src/services/feature-flags.ts",
+        "src/services/actions.ts",
+        "src/services/cohorts.ts",
+        "src/services/insights.ts"
+      ],
+      "steps": [
+        "Currently 5 services implement delete as soft-delete via updateX({deleted: true}) with no T.Http() traits on their DeleteRequest class",
+        "3 services (experiments.ts, surveys.ts, annotations.ts) correctly use true DELETE with T.Http({method: 'DELETE', uri: ...}) + T.HttpLabel()",
+        "The PostHog OpenAPI spec supports DELETE endpoints for all these resources",
+        "For each of the 5 files, update the DeleteXRequest class to match the experiments.ts/surveys.ts/annotations.ts pattern:",
+        "  dashboards.ts: Add T.Http({method:'DELETE', uri:'/api/projects/{project_id}/dashboards/{id}/'}) + T.HttpLabel() on project_id and id",
+        "  feature-flags.ts: Add T.Http({method:'DELETE', uri:'/api/projects/{project_id}/feature_flags/{id}/'}) + T.HttpLabel()",
+        "  actions.ts: Add T.Http({method:'DELETE', uri:'/api/projects/{project_id}/actions/{id}/'}) + T.HttpLabel()",
+        "  cohorts.ts: Add T.Http({method:'DELETE', uri:'/api/projects/{project_id}/cohorts/{id}/'}) + T.HttpLabel()",
+        "  insights.ts: Add T.Http({method:'DELETE', uri:'/api/projects/{project_id}/insights/{id}/'}) + T.HttpLabel()",
+        "Add a VoidResponse schema (S.Struct({})) if not already present in each file",
+        "Create deleteXOperation const with input/output/errors like the experiments.ts pattern",
+        "Replace the soft-delete export (e.g., deleteX = (input) => updateX({...input, deleted:true})) with makeClient(deleteXOperation)",
+        "Update the explicit type signature on the exported delete function",
+        "Verify the delete tests still pass — they should work with true DELETE"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-004",
+      "category": "type-safety",
+      "priority": "P1",
+      "description": "Use FeatureFlagFilters schema in create/update request filters field",
+      "package": "@packages/posthog",
+      "files": ["src/services/feature-flags.ts"],
+      "steps": [
+        "Open packages/posthog/src/services/feature-flags.ts",
+        "Line 142: CreateFeatureFlagRequest has `filters: S.optional(S.Record({ key: S.String, value: S.Unknown }))`",
+        "Line 164: UpdateFeatureFlagRequest has the same generic S.Record for filters",
+        "The FeatureFlagFilters schema is already defined at lines 49-58 with groups, multivariate, payloads, etc.",
+        "The PostHog API accepts the same filter shape on input as it returns on output (verified in schema.yaml: both FeatureFlag and PatchedFeatureFlag use `type: object, additionalProperties: {}`)",
+        "Replace line 142: `filters: S.optional(FeatureFlagFilters)`",
+        "Replace line 164: `filters: S.optional(FeatureFlagFilters)`",
+        "This provides typed validation instead of any-object pass-through",
+        "Run feature-flag tests to verify create/update still works with typed filters"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test test/feature-flags.test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-005",
+      "category": "effect-idiom",
+      "priority": "P1",
+      "description": "Add isHttpClientTransportError to isTransientError predicate",
+      "package": "@packages/posthog",
+      "files": ["src/category.ts"],
+      "steps": [
+        "Open packages/posthog/src/category.ts",
+        "Add an isHttpClientTransportError predicate matching distilled-aws src/category.ts lines 285-296:",
+        "  export const isHttpClientTransportError = (error: unknown): boolean => {",
+        "    if (Predicate.isObject(error) && '_tag' in error && error._tag === 'RequestError' && 'reason' in error && error.reason === 'Transport') return true;",
+        "    return false;",
+        "  };",
+        "This detects network-level failures from @effect/platform's HttpClient (connection timeouts, DNS failures, socket errors, TLS failures, connection refused)",
+        "Update isTransientError (currently line 100-101) to include transport errors:",
+        "  export const isTransientError = (error: unknown): boolean => isThrottlingError(error) || isServerError(error) || isHttpClientTransportError(error);",
+        "Export isHttpClientTransportError from category.ts",
+        "Import Predicate from effect if not already imported"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-006",
+      "category": "effect-idiom",
+      "priority": "P2",
+      "description": "Add Retry Factory pattern with Ref for retry-after support",
+      "package": "@packages/posthog",
+      "files": ["src/retry.ts", "src/client/api.ts"],
+      "steps": [
+        "Open packages/posthog/src/retry.ts",
+        "Add Factory type: export type Factory = (lastError: Ref.Ref<unknown>) => Options;",
+        "Update Policy type: export type Policy = Options | Factory;",
+        "Update the Retry Context.Tag to accept Policy instead of Options",
+        "Add a makeDefault factory that reads lastError Ref to extract retryAfter from RateLimitError:",
+        "  export const makeDefault: Factory = (lastError) => ({",
+        "    while: (error) => isTransientError(error) || isThrottlingError(error),",
+        "    schedule: pipe(",
+        "      Schedule.exponential(Duration.millis(100), 2),",
+        "      Schedule.modifyDelayEffect(Effect.fnUntraced(function* (duration) {",
+        "        const error = yield* lastError;",
+        "        if (isThrottlingError(error) && Predicate.isObject(error) && 'retryAfter' in error) {",
+        "          const retryAfter = Number((error as any).retryAfter);",
+        "          if (!isNaN(retryAfter) && retryAfter > 0) return Duration.toMillis(Duration.seconds(retryAfter));",
+        "        }",
+        "        if (isThrottlingError(error) && Duration.toMillis(duration) < 500) return Duration.toMillis(Duration.millis(500));",
+        "        return Duration.toMillis(duration);",
+        "      })),",
+        "      Schedule.intersect(Schedule.recurs(5)),",
+        "      Schedule.jittered,",
+        "    ),",
+        "  });",
+        "Open packages/posthog/src/client/api.ts",
+        "In makeClient(), wrap the returned function in Effect.fn that:",
+        "  1. Creates a Ref.make<unknown>(undefined) for lastError",
+        "  2. Resolves the Retry policy (factory or static) from context with Effect.serviceOption(Retry)",
+        "  3. Falls back to makeDefault(lastError)",
+        "  4. Wraps execution with Effect.tapError((e) => Ref.set(lastError, e)) and Effect.retry({while, schedule})",
+        "Reference: distilled-aws src/client/api.ts lines 281-300 and src/retry.ts lines 120-148",
+        "Update policy() overloads in retry.ts to accept both Options and Factory"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-007",
+      "category": "effect-idiom",
+      "priority": "P2",
+      "description": "Add pagination metadata to Operation type and adopt distilled-aws generic pagination",
+      "package": "@packages/posthog",
+      "files": [
+        "src/client/operation.ts",
+        "src/client/api.ts",
+        "src/services/dashboards.ts",
+        "src/services/cohorts.ts",
+        "src/services/feature-flags.ts",
+        "src/services/insights.ts",
+        "src/services/actions.ts",
+        "src/services/annotations.ts",
+        "src/services/experiments.ts",
+        "src/services/persons.ts",
+        "src/services/surveys.ts",
+        "src/services/events.ts"
+      ],
+      "steps": [
+        "PostHog uses two pagination patterns: offset-based (offset/limit, 55+ endpoints) and cursor-based (cursor, 16+ endpoints). Both return `next` as a full URL string and `results` as the items array.",
+        "Open src/client/operation.ts — the pagination field already exists with inputToken/outputToken/items/pageSize. Verify it matches:",
+        "  pagination?: { inputToken: string; outputToken: string; items?: string; pageSize?: string; }",
+        "Open src/client/api.ts — refactor makePaginated to use operation.pagination metadata instead of hardcoded field names:",
+        "  1. Extract pagination config from operation: `const pagination = operation.pagination!`",
+        "  2. Replace hardcoded 'next' with `pagination.outputToken` for token extraction",
+        "  3. Replace hardcoded 'results' with `pagination.items` for items extraction",
+        "  4. Replace hardcoded 'offset' input with `pagination.inputToken` for token injection",
+        "  5. Use getPath() helper (from traits.ts) for dot-separated path traversal if needed",
+        "  6. Keep the URL-parsing logic since PostHog returns full URLs in `next` — add a parseNextToken(url, paramName) helper that extracts the named query param from the URL",
+        "  7. Remove the PaginatedInput/PaginatedOutput interfaces — types should be inferred from the operation schemas",
+        "  8. Remove the 3 remaining `as` casts in makePaginated by using proper generic constraints",
+        "Update each service's list operation to include pagination metadata:",
+        "  dashboards.ts: { inputToken: 'offset', outputToken: 'next', items: 'results', pageSize: 'limit' }",
+        "  cohorts.ts: same pattern",
+        "  feature-flags.ts: same pattern",
+        "  insights.ts: same pattern",
+        "  actions.ts: same pattern",
+        "  annotations.ts: same pattern",
+        "  experiments.ts: same pattern",
+        "  persons.ts: same pattern",
+        "  surveys.ts: same pattern",
+        "  events.ts: { inputToken: 'cursor', outputToken: 'next', items: 'results' } — events use cursor-based pagination per OpenAPI spec",
+        "Reference: distilled-aws src/client/api.ts lines 306-372 for generic pagination"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-008",
+      "category": "type-safety",
+      "priority": "P2",
+      "description": "Add per-operation error type arrays to all service operations",
+      "package": "@packages/posthog",
+      "files": [
+        "src/services/dashboards.ts",
+        "src/services/feature-flags.ts",
+        "src/services/insights.ts",
+        "src/services/cohorts.ts",
+        "src/services/events.ts",
+        "src/services/persons.ts",
+        "src/services/surveys.ts",
+        "src/services/actions.ts",
+        "src/services/annotations.ts",
+        "src/services/experiments.ts",
+        "src/services/me.ts",
+        "src/errors.ts"
+      ],
+      "steps": [
+        "Currently all operations define `errors: []` — no per-operation error typing",
+        "The PostHog API documents very few explicit error responses in its OpenAPI spec, but at runtime returns standard HTTP errors (401, 403, 404, 422, 429, 500) with consistent error body shapes",
+        "Define a COMMON_ERRORS array in errors.ts (matching distilled-aws pattern):",
+        "  export const COMMON_ERRORS = [AuthenticationError, AuthorizationError, RateLimitError, ServerError, ValidationError] as const;",
+        "For GET-by-id / UPDATE / DELETE operations: add NotFoundError to the errors array",
+        "For LIST operations: use only COMMON_ERRORS (lists don't 404)",
+        "For CREATE operations: use COMMON_ERRORS + ValidationError (already in COMMON_ERRORS)",
+        "Update each operation definition across all 11 service files:",
+        "  list operations: errors: [...COMMON_ERRORS]",
+        "  get-by-id operations: errors: [...COMMON_ERRORS, NotFoundError]",
+        "  create operations: errors: [...COMMON_ERRORS]",
+        "  update operations: errors: [...COMMON_ERRORS, NotFoundError]",
+        "  delete operations: errors: [...COMMON_ERRORS, NotFoundError]",
+        "Update the explicit type signatures on exported functions to use the per-operation error union instead of generic PostHogErrorType",
+        "Note: The response parser already handles these errors dynamically via status code matching — this change adds compile-time type information only",
+        "Reference: distilled-aws services list specific errors per operation (e.g. account.ts lines 696-701)"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-009",
+      "category": "effect-idiom",
+      "priority": "P2",
+      "description": "Add NetworkError and TimeoutError categories to error category system",
+      "package": "@packages/posthog",
+      "files": ["src/category.ts", "src/errors.ts"],
+      "steps": [
+        "Open packages/posthog/src/category.ts",
+        "Add 2 new category constants matching distilled-aws:",
+        "  export const NetworkError = 'NetworkError';",
+        "  export const TimeoutError = 'TimeoutError';",
+        "Add corresponding decorators: export const withNetworkError = withCategory(NetworkError); export const withTimeoutError = withCategory(TimeoutError);",
+        "Add predicates: export const isNetworkError = ...; export const isTimeoutError = ...;",
+        "Add catch helpers: export const catchNetworkError = makeCatcher(NetworkError); export const catchTimeoutError = makeCatcher(TimeoutError);",
+        "Update the Category type union to include the new constants",
+        "Update isTransientError to include NetworkError: isThrottlingError(error) || isServerError(error) || isHttpClientTransportError(error) || isNetworkError(error)",
+        "Open packages/posthog/src/errors.ts — no new error classes needed yet (transport errors come from @effect/platform, not PostHog), but the categories are now available for future use",
+        "Reference: distilled-aws src/category.ts defines 12 categories including NetworkError and TimeoutError"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P4-010",
+      "category": "type-safety",
+      "priority": "P3",
+      "description": "Eliminate remaining as casts in api.ts makePaginated",
+      "package": "@packages/posthog",
+      "files": ["src/client/api.ts"],
+      "steps": [
+        "Open packages/posthog/src/client/api.ts",
+        "Line 203: `execute(operation, input) as Effect.Effect<Output, ...>` — eliminate by adding proper generic constraints to makePaginated that connect Op['output'] to PaginatedOutput",
+        "Line 212: `input as Input | undefined` — eliminate by typing the Stream.unfoldEffect state parameter correctly",
+        "Line 229: `[page, nextCursor] as const` — this is a tuple assertion, acceptable but could use explicit tuple type annotation",
+        "Consider restructuring makePaginated's generics: instead of intersecting with PaginatedInput/PaginatedOutput, use conditional types or schema-level constraints",
+        "If P4-007 (generic pagination) is completed first, some of these casts may already be eliminated",
+        "Ensure zero as casts remain in api.ts after changes"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "VERIFY-002",
+      "category": "verification",
+      "priority": "P0",
+      "description": "Final verification after P4 tasks: all tests pass, zero type errors, distilled-aws alignment confirmed",
+      "package": "@packages/posthog",
+      "files": [],
+      "steps": [
+        "Run npx tsc --noEmit — must be 0 errors",
+        "Run bun run test — must be 226+ tests passing",
+        "Run grep -rn ' as ' src/ — verify only acceptable traits.ts casts remain (category.ts internal casts should be reduced)",
+        "Run grep -rn ' as ' src/client/api.ts — verify zero casts in api.ts",
+        "Verify lazy init pattern: makeRequestBuilder and makeResponseParser are called once per operation, not per request",
+        "Verify all delete operations use true HTTP DELETE (no more soft-delete workarounds)",
+        "Verify all list operations include pagination metadata in their operation definitions",
+        "Verify all operations have typed error arrays (not empty [])",
+        "Verify isTransientError covers: throttling, server, HTTP transport, and network errors",
+        "Verify retry system supports Factory pattern with Ref for retry-after headers",
+        "Verify Effect.logDebug is present at all 4 transformation points in execute()"
+      ],
+      "verify": [
+        "npx tsc --noEmit",
+        "bun run test"
+      ],
+      "passes": false,
+      "notes": ""
     }
   ]
 }
