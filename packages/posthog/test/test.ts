@@ -74,6 +74,27 @@ const platform = Layer.mergeAll(
   Logger.pretty
 );
 
+const resolveConfigProvider = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  return (yield* fs.exists("../../.env"))
+    ? ConfigProvider.orElse(
+        yield* PlatformConfigProvider.fromDotEnv("../../.env"),
+        ConfigProvider.fromEnv
+      )
+    : ConfigProvider.fromEnv();
+});
+
+const withConfigAndCredentials = <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) =>
+  Effect.gen(function* () {
+    const configProvider = yield* resolveConfigProvider;
+    return yield* effect.pipe(
+      Effect.provide(Credentials.fromEnv()),
+      Effect.withConfigProvider(configProvider)
+    );
+  });
+
 type TestCase =
   | Effect.Effect<void, unknown, Provided>
   | ((ctx: TestContext) => Effect.Effect<void, unknown, Provided>);
@@ -97,22 +118,7 @@ export function test(
     name,
     (ctx) => {
       const effect = typeof testCase === "function" ? testCase(ctx) : testCase;
-      return provideTestEnv(
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem;
-          const configProvider = (yield* fs.exists("../../.env"))
-            ? ConfigProvider.orElse(
-                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-                ConfigProvider.fromEnv
-              )
-            : ConfigProvider.fromEnv();
-
-          return yield* effect.pipe(
-            Effect.provide(Credentials.fromEnv()),
-            Effect.withConfigProvider(configProvider)
-          );
-        })
-      );
+      return provideTestEnv(withConfigAndCredentials(effect));
     },
     options.timeout ?? 30_000
   );
@@ -130,24 +136,7 @@ export async function run<E>(
   effect: Effect.Effect<void, E, Provided>
 ): Promise<void> {
   await Effect.runPromise(
-    provideTestEnv(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem;
-          const configProvider = (yield* fs.exists("../../.env"))
-            ? ConfigProvider.orElse(
-                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-                ConfigProvider.fromEnv
-              )
-            : ConfigProvider.fromEnv();
-
-          return yield* effect.pipe(
-            Effect.provide(Credentials.fromEnv()),
-            Effect.withConfigProvider(configProvider)
-          );
-        })
-      )
-    )
+    provideTestEnv(Effect.scoped(withConfigAndCredentials(effect)))
   );
 }
 

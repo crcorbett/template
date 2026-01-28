@@ -688,3 +688,24 @@ Replaced all 40 `console.log` calls with `yield* Effect.logInfo(...)` throughout
 - Zero `console.log`, `console.error`, `process.exit`, `as {`, `.name!`, `.content!` remaining in file
 
 ---
+
+### P2-007: Deduplicate .env config resolution in test.ts
+
+**Status:** PASSED
+**Date:** 2026-01-28
+
+Extracted the duplicated `fs.exists('../../.env') + ConfigProvider.orElse` pattern (appearing in both `test()` and `run()`) into two shared helpers:
+
+1. `resolveConfigProvider` — Effect that checks for `../../.env` and returns the appropriate `ConfigProvider` (dot-env with env fallback, or plain env)
+2. `withConfigAndCredentials` — wraps any effect with the resolved config provider and `Credentials.fromEnv()` layer
+
+The `process.env.DEBUG` ternary in `provideTestEnv` was evaluated for replacement with `Config.string("DEBUG")` but kept as-is — it's a synchronous environment check that doesn't fit cleanly into the `pipe` chain without restructuring `provideTestEnv` into an Effect-returning function.
+
+**Files changed:**
+- `test/test.ts` — Extracted resolveConfigProvider and withConfigAndCredentials, replaced 2 duplicated blocks
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 222/224 tests passing (2 pre-existing: cohorts CRUD race condition, events timeout)
+
+---

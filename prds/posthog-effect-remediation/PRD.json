@@ -739,7 +739,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test"
-      ]
+      ],
+      "passes": true,
+      "notes": "Extracted resolveConfigProvider and withConfigAndCredentials helpers, replacing 2 duplicated fs.exists + ConfigProvider.orElse blocks. process.env.DEBUG ternary kept as-is — converting to Config.string('DEBUG') doesn't work cleanly inside provideTestEnv's pipe chain (it's a sync environment check, not an effectful config). 0 type errors, 222/224 tests passing (2 pre-existing failures: cohorts CRUD race condition, events timeout)."
     },
     {
       "id": "P2-008",
