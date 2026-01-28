@@ -1216,8 +1216,8 @@
         "npx tsc --noEmit",
         "bun run test"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added NetworkError and TimeoutError category constants, decorators (withNetworkError, withTimeoutError), predicates (isNetworkError, isTimeoutError), and catchers (catchNetworkError, catchTimeoutError) to category.ts. Updated Category type union to include both new constants. Updated isTransientError composite predicate to include isNetworkError. No new error classes needed in errors.ts — the categories are now available for future transport-level error classification. 0 type errors, 230/230 tests passing."
     },
     {
       "id": "P4-010",

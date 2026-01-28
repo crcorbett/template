@@ -18,13 +18,17 @@ export const ServerError = "ServerError";
 export const AuthError = "AuthError";
 export const ValidationError = "ValidationError";
 export const NotFoundError = "NotFoundError";
+export const NetworkError = "NetworkError";
+export const TimeoutError = "TimeoutError";
 
 export type Category =
   | typeof ThrottlingError
   | typeof ServerError
   | typeof AuthError
   | typeof ValidationError
-  | typeof NotFoundError;
+  | typeof NotFoundError
+  | typeof NetworkError
+  | typeof TimeoutError;
 
 export const categoriesKey = "@posthog/error/categories";
 
@@ -59,6 +63,8 @@ export const withServerError = withCategory(ServerError);
 export const withAuthError = withCategory(AuthError);
 export const withValidationError = withCategory(ValidationError);
 export const withNotFoundError = withCategory(NotFoundError);
+export const withNetworkError = withCategory(NetworkError);
+export const withTimeoutError = withCategory(TimeoutError);
 
 // ============================================================================
 // Predicates
@@ -93,6 +99,12 @@ export const isValidationError = (error: unknown): boolean =>
 export const isNotFoundError = (error: unknown): boolean =>
   hasCategory(error, NotFoundError);
 
+export const isNetworkError = (error: unknown): boolean =>
+  hasCategory(error, NetworkError);
+
+export const isTimeoutError = (error: unknown): boolean =>
+  hasCategory(error, TimeoutError);
+
 /**
  * Check if an error is an @effect/platform HTTP client transport error.
  * These are network-level failures: connection timeouts, DNS failures,
@@ -109,10 +121,13 @@ export const isHttpClientTransportError = (error: unknown): boolean =>
 
 /**
  * Check if an error is transient and should be automatically retried.
- * Transient errors include throttling, server, and HTTP transport errors.
+ * Transient errors include throttling, server, network, and HTTP transport errors.
  */
 export const isTransientError = (error: unknown): boolean =>
-  isThrottlingError(error) || isServerError(error) || isHttpClientTransportError(error);
+  isThrottlingError(error) ||
+  isServerError(error) ||
+  isNetworkError(error) ||
+  isHttpClientTransportError(error);
 
 // ============================================================================
 // Category catchers (for use with .pipe(Category.catchAuthError(...)))
@@ -152,3 +167,5 @@ export const catchServerError = makeCatcher(ServerError);
 export const catchAuthError = makeCatcher(AuthError);
 export const catchValidationError = makeCatcher(ValidationError);
 export const catchNotFoundError = makeCatcher(NotFoundError);
+export const catchNetworkError = makeCatcher(NetworkError);
+export const catchTimeoutError = makeCatcher(TimeoutError);

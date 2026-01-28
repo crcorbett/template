@@ -1060,3 +1060,28 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 230/230 tests passing (19 error tests now including new tests)
 
 ---
+
+#### P4-009: Add NetworkError and TimeoutError categories to error category system
+
+**Status:** Completed
+
+**Summary:** Added `NetworkError` and `TimeoutError` category constants, decorators, predicates, and catchers to the error category system in `category.ts`, matching the distilled-aws pattern.
+
+**Changes:**
+- Added 2 new category constants: `NetworkError = "NetworkError"` and `TimeoutError = "TimeoutError"`
+- Updated `Category` type union to include both new constants
+- Added 2 new decorators: `withNetworkError = withCategory(NetworkError)` and `withTimeoutError = withCategory(TimeoutError)`
+- Added 2 new predicates: `isNetworkError(error)` and `isTimeoutError(error)` using `hasCategory`
+- Added 2 new catchers: `catchNetworkError = makeCatcher(NetworkError)` and `catchTimeoutError = makeCatcher(TimeoutError)`
+- Updated `isTransientError` composite predicate to include `isNetworkError`:
+  - New: `isThrottlingError || isServerError || isNetworkError || isHttpClientTransportError`
+- No changes to `errors.ts` needed — the categories are now available for future transport-level error classification (transport errors come from `@effect/platform`, not PostHog)
+
+**Files changed:**
+- `src/category.ts` — Added constants, decorators, predicates, catchers, updated isTransientError
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 230/230 tests passing
+
+---
