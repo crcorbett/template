@@ -129,6 +129,23 @@
   - Updated `experiments/index.ts` barrel to export all from `experiment.js`
   - `bun tsc -b` passes with no errors
 
+### EXP-002 - Implement Experiment provider with CRUD lifecycle
+- **Status:** PASSED
+- **Date:** 2025-01-28
+- **Summary:** Created `src/posthog/experiments/experiment.provider.ts` with:
+  - `experimentProvider()` function using `Experiment.provider.effect(Effect.gen(...))`
+  - `stables: ['id', 'featureFlagKey']` - both id and featureFlagKey are stable
+  - `diff` using `Effect.sync()` to detect featureFlagKey changes -> replace action
+  - `read` with output.id check and NotFoundError handling
+  - `create` mapping props to snake_case API params (featureFlagKey -> feature_flag_key, startDate -> start_date, endDate -> end_date, holdoutId -> holdout_id, metricsSecondary -> metrics_secondary)
+  - `update` with session.note() for progress reporting
+  - `delete` using hard DELETE (Experiments use HTTP DELETE, not soft delete)
+  - Helper `mapResponseToAttrs()` for API response mapping
+  - Added `@packages/posthog/experiments` alias to vitest.config.ts
+  - Updated `experiments/index.ts` to export provider
+  - Updated `posthog/index.ts` with Experiments namespace export and added `experimentProvider()` to `resources()`
+  - `bun tsc -b` passes with no errors
+
 ---
 
 ## Task Status Summary
@@ -138,11 +155,11 @@
 | Setup | 3 | 3 | 0 | 0 |
 | FeatureFlag | 3 | 3 | 0 | 0 |
 | Dashboard | 3 | 3 | 0 | 0 |
-| Experiment | 3 | 1 | 0 | 2 |
+| Experiment | 3 | 2 | 0 | 1 |
 | Survey | 3 | 0 | 0 | 3 |
 | Cohort | 3 | 0 | 0 | 3 |
 | Action | 3 | 0 | 0 | 3 |
 | Annotation | 3 | 0 | 0 | 3 |
 | Insight | 3 | 0 | 0 | 3 |
 | Final | 2 | 0 | 0 | 2 |
-| **Total** | **29** | **10** | **0** | **19** |
+| **Total** | **29** | **11** | **0** | **18** |

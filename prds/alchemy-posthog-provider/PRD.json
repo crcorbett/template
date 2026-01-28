@@ -329,8 +329,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created experiment.provider.ts following FeatureFlag pattern. Imports from @packages/posthog/experiments. Maps camelCase props to snake_case API params (featureFlagKey -> feature_flag_key, startDate -> start_date, etc.). Diff uses Effect.sync for featureFlagKey change detection triggering replace. Delete uses hard DELETE (not soft delete like feature flags). Added @packages/posthog/experiments alias to vitest.config.ts. Updated experiments/index.ts barrel and posthog/index.ts with Experiments namespace export and experimentProvider() in resources(). bun tsc -b passes."
     },
     {
       "id": "EXP-003",

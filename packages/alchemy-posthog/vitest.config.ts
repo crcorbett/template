@@ -21,6 +21,10 @@ export default defineConfig({
         __dirname,
         "../posthog/src/services/dashboards.ts"
       ),
+      "@packages/posthog/experiments": path.resolve(
+        __dirname,
+        "../posthog/src/services/experiments.ts"
+      ),
       "@packages/posthog/errors": path.resolve(
         __dirname,
         "../posthog/src/errors.ts"
