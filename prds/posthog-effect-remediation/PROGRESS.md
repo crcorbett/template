@@ -88,3 +88,31 @@
 - `bun run test` -- 224/224 tests passing
 
 ---
+
+#### P1-002: Replace S.Unknown in dashboards.ts with proper schemas
+
+**Status:** Completed
+
+**Summary:** Replaced all top-level `S.Unknown` usages in `src/services/dashboards.ts` with properly typed schemas derived from the PostHog OpenAPI spec (`schema.yaml`).
+
+**Changes:**
+- Defined `LayoutEntry` schema for dashboard tile grid positioning (h, w, x, y, minH, minW)
+- Defined `TileInsight` schema for minimal insight reference on tiles (id, short_id, name, derived_name, description, tags, favorited, saved)
+- Defined `TileText` schema for text-only tile content (body, last_modified_at)
+- Defined `DashboardFilter` schema from OpenAPI DashboardFilter (date_from, date_to, explicitDate, properties)
+- Replaced `S.Array(S.Unknown)` with `S.Array(S.String)` for tags in both `Dashboard` and `DashboardBasic`
+- Replaced `S.Record({ key: S.String, value: S.Unknown })` for filters with `DashboardFilter`
+- Replaced `S.NullOr(S.Unknown)` for insight with `S.NullOr(TileInsight)`
+- Replaced `S.NullOr(S.Unknown)` for text with `S.NullOr(TileText)`
+- Replaced layout record values with `LayoutEntry`
+
+**Remaining:** One `S.Unknown` inside `DashboardFilter.properties` — the property filter union has 17 variants in the OpenAPI spec; typing the full union is out of scope for this task.
+
+**Files changed:**
+- `src/services/dashboards.ts` -- Replaced 5 S.Unknown fields with typed schemas
+
+**Verification:**
+- `npx tsc --noEmit` -- 0 type errors
+- `bun run test test/dashboards.test.ts` -- 5/5 tests passing
+
+---

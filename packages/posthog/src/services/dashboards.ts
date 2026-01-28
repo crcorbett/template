@@ -8,12 +8,64 @@ import * as T from "../traits.js";
 
 export { UserBasic } from "../common.js";
 
+// ---------------------------------------------------------------------------
+// Dashboard tile sub-schemas
+// ---------------------------------------------------------------------------
+
+/** Grid layout entry describing tile position/size at a given breakpoint. */
+export class LayoutEntry extends S.Class<LayoutEntry>("LayoutEntry")({
+  h: S.optional(S.Number),
+  w: S.optional(S.Number),
+  x: S.optional(S.Number),
+  y: S.optional(S.Number),
+  minH: S.optional(S.Number),
+  minW: S.optional(S.Number),
+}) {}
+
+/** Minimal insight reference embedded in a dashboard tile. */
+export class TileInsight extends S.Class<TileInsight>("TileInsight")({
+  id: S.Number,
+  short_id: S.optional(S.NullOr(S.String)),
+  name: S.optional(S.NullOr(S.String)),
+  derived_name: S.optional(S.NullOr(S.String)),
+  description: S.optional(S.NullOr(S.String)),
+  tags: S.optional(S.Array(S.String)),
+  favorited: S.optional(S.Boolean),
+  saved: S.optional(S.Boolean),
+}) {}
+
+/** Text content for a text-only dashboard tile. */
+export class TileText extends S.Class<TileText>("TileText")({
+  body: S.optional(S.NullOr(S.String)),
+  last_modified_at: S.optional(S.NullOr(S.String)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Dashboard filter schema (from OpenAPI DashboardFilter)
+// ---------------------------------------------------------------------------
+
+/** Dashboard-level filter applied across all tiles. */
+export class DashboardFilter extends S.Class<DashboardFilter>(
+  "DashboardFilter"
+)({
+  date_from: S.optional(S.NullOr(S.String)),
+  date_to: S.optional(S.NullOr(S.String)),
+  explicitDate: S.optional(S.NullOr(S.Boolean)),
+  properties: S.optional(
+    S.NullOr(S.Array(S.Record({ key: S.String, value: S.Unknown })))
+  ),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Core dashboard schemas
+// ---------------------------------------------------------------------------
+
 export class DashboardTile extends S.Class<DashboardTile>("DashboardTile")({
   id: S.Number,
-  layouts: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  layouts: S.optional(S.Record({ key: S.String, value: LayoutEntry })),
   color: S.optional(S.NullOr(S.String)),
-  insight: S.optional(S.NullOr(S.Unknown)),
-  text: S.optional(S.NullOr(S.Unknown)),
+  insight: S.optional(S.NullOr(TileInsight)),
+  text: S.optional(S.NullOr(TileText)),
 }) {}
 
 export class Dashboard extends S.Class<Dashboard>("Dashboard")({
@@ -26,9 +78,9 @@ export class Dashboard extends S.Class<Dashboard>("Dashboard")({
   is_shared: S.optional(S.Boolean),
   deleted: S.optional(S.Boolean),
   creation_mode: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   tiles: S.optional(S.Array(DashboardTile)),
-  filters: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  filters: S.optional(DashboardFilter),
   restriction_level: S.optional(S.Number),
   effective_restriction_level: S.optional(S.Number),
   effective_privilege_level: S.optional(S.Number),
@@ -44,7 +96,7 @@ export class DashboardBasic extends S.Class<DashboardBasic>("DashboardBasic")({
   is_shared: S.optional(S.Boolean),
   deleted: S.optional(S.Boolean),
   creation_mode: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
 }) {}
 
 export class PaginatedDashboardList extends S.Class<PaginatedDashboardList>(

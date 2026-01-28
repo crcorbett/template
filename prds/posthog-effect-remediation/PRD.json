@@ -245,7 +245,9 @@
       "verify": [
         "npx tsc --noEmit",
         "bun run test test/dashboards.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Replaced 5 S.Unknown usages with typed schemas: LayoutEntry (tile grid positioning), TileInsight (minimal insight ref), TileText (text tile content), DashboardFilter (date_from/date_to/properties), and S.Array(S.String) for tags. One deep S.Unknown remains in DashboardFilter.properties array items (17-member property filter union from OpenAPI). 0 type errors, 5/5 dashboard tests passing."
     },
     {
       "id": "P1-003",

@@ -300,6 +300,25 @@ All tests pass against the live PostHog API at `https://us.posthog.com`.
 ### P0
 - `test/actions.test.ts`, `test/annotations.test.ts`, `test/cohorts.test.ts`, `test/dashboards.test.ts`, `test/experiments.test.ts`, `test/feature-flags.test.ts`, `test/insights.test.ts`, `test/surveys.test.ts` -- Fix `Effect.ensuring` bug
 
+---
+
+## 9. P1-002 Research: Dashboard Schema Typing
+
+### OpenAPI Observations
+
+- **Dashboard.filters**: The OpenAPI spec defines it as `type: object, additionalProperties: {}` (generic record), but a separate `DashboardFilter` schema exists with `date_from`, `date_to`, `explicitDate`, and `properties` fields. The `properties` field is a 17-member union of property filter types (EventPropertyFilter, PersonPropertyFilter, etc.).
+- **Dashboard.tags**: OpenAPI says `type: array, items: {}` (untyped), but DashboardTemplate confirms tags are `type: array, items: { type: string, maxLength: 255 }`. Safe to type as `S.Array(S.String)`.
+- **Dashboard.tiles**: OpenAPI defines tiles as `type: array, items: { type: object, additionalProperties: {} }` — there is no `DashboardTile` schema in the OpenAPI spec. Our `DashboardTile` S.Class is a custom schema.
+- **Tile insight/text**: These are embedded objects within tiles. The insight is a full Insight object (massive schema). A minimal typed struct with core identifiers (id, short_id, name) is sufficient since tests don't access deep insight fields on tiles.
+
+### S.Class Excess Property Handling
+
+Effect Schema's `S.Class` strips excess properties during decoding by default. This means defining a minimal schema (e.g., `TileInsight` with only id/name/tags) will decode successfully even when the API returns many more fields. This is safe for response schemas but means we lose access to unlisted fields at the type level.
+
+### DashboardFilter.properties Deep Union
+
+The `properties` field in DashboardFilter is a 17-member union of filter types. Typing this completely would require defining schemas for: EventPropertyFilter, PersonPropertyFilter, ElementPropertyFilter, EventMetadataPropertyFilter, SessionPropertyFilter, CohortPropertyFilter, RecordingPropertyFilter, LogEntryPropertyFilter, GroupPropertyFilter, FeaturePropertyFilter, FlagPropertyFilter, HogQLPropertyFilter, EmptyPropertyFilter, DataWarehousePropertyFilter, DataWarehousePersonPropertyFilter, ErrorTrackingIssueFilter, LogPropertyFilter, RevenueAnalyticsPropertyFilter. This is best deferred to a dedicated task if needed.
+
 ### P1
 - `src/services/*.ts` (9 files) -- Replace `S.Unknown` with proper schemas
 - `test/client/response-parser.test.ts` -- Remove 26 `as PostHogError` casts
