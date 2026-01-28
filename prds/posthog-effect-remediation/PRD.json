@@ -507,7 +507,9 @@
         "npx tsc --noEmit",
         "bun run test test/client/request-builder.test.ts",
         "bun run test test/credentials.test.ts"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created assertStringBody assertion function (using asserts return type, zero as casts) for request-builder.test.ts, replacing 3 instances of `JSON.parse(request.body as string)`. Removed 1 instance of `(error as Error).message` in credentials.test.ts — error type was already `Error` from Effect.flip. Zero as casts, zero non-null assertions in either file. 0 type errors, 14/14 request-builder tests + 8/8 credentials tests passing."
     },
     {
       "id": "P1-014",

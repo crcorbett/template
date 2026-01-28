@@ -8,6 +8,14 @@ import { makeRequestBuilder } from "../../src/client/request-builder.js";
 import { MissingHttpTraitError } from "../../src/errors.js";
 import * as T from "../../src/traits.js";
 
+/** Assert request.body is a string and return it for JSON.parse */
+function assertStringBody(
+  body: string | Uint8Array | ReadableStream<Uint8Array> | undefined
+): asserts body is string {
+  expect(body).toBeDefined();
+  expect(typeof body).toBe("string");
+}
+
 describe("makeRequestBuilder", () => {
   describe("basic GET request", () => {
     const GetRequest = S.Struct({}).pipe(
@@ -190,7 +198,8 @@ describe("makeRequestBuilder", () => {
           email: "john@example.com",
         });
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body).toEqual({ name: "John", email: "john@example.com" });
         expect("age" in body).toBe(false);
       })
@@ -272,7 +281,8 @@ describe("makeRequestBuilder", () => {
         expect(request.query["type"]).toBe("pageview");
         expect(request.headers["Authorization"]).toBe("Bearer token123");
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body.event.name).toBe("Page View");
         expect(body.event.properties).toEqual({ url: "/home" });
       })
@@ -316,7 +326,8 @@ describe("makeRequestBuilder", () => {
         const date = new Date("2024-01-15T10:30:00.000Z");
         const request = yield* builder({ timestamp: date });
 
-        const body = JSON.parse(request.body as string);
+        assertStringBody(request.body);
+        const body = JSON.parse(request.body);
         expect(body.timestamp).toBe("2024-01-15T10:30:00.000Z");
       })
     );

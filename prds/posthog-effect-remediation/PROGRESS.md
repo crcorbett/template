@@ -441,3 +441,30 @@
 - Zero `!` non-null assertions in file
 
 ---
+
+#### P1-013: Remove type assertions from request-builder.test.ts and credentials.test.ts
+
+**Status:** Completed
+
+**Summary:** Eliminated all type assertions from both test files using an `asserts` return type helper and typed error channel access.
+
+**Changes in request-builder.test.ts:**
+- Created `assertStringBody` function with TypeScript `asserts body is string` return type (zero `as` casts)
+- Replaced 3 instances of `JSON.parse(request.body as string)` with `assertStringBody(request.body); JSON.parse(request.body)`
+- The `asserts` return type narrows `body` from `string | Uint8Array | ReadableStream | undefined` to `string` in the subsequent scope
+
+**Changes in credentials.test.ts:**
+- Removed `(error as Error).message` — the error type from `Effect.flip` is already `Error` (from `Layer.Layer<Credentials, Error>`)
+- Simply changed to `error.message` since TypeScript already knows the type
+
+**Files changed:**
+- `test/client/request-builder.test.ts` — 3 type assertions removed, assertStringBody helper added
+- `test/credentials.test.ts` — 1 type assertion removed
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/client/request-builder.test.ts` — 14/14 tests passing
+- `bun run test test/credentials.test.ts` — 8/8 tests passing
+- Zero `as` casts in either file (verified with grep)
+
+---

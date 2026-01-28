@@ -57,7 +57,7 @@ describe("Credentials", () => {
           );
 
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toContain("POSTHOG_API_KEY");
+          expect(error.message).toContain("POSTHOG_API_KEY");
         })
       )
     );
