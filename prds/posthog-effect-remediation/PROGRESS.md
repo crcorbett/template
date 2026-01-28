@@ -1273,3 +1273,33 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test test/actions.test.ts` — 10/10 tests passing
 
 ---
+
+#### P5-005: Wire up annotations listAnnotations to use makePaginated for .pages()/.items() streaming
+
+**Status:** Completed
+**Date:** 2026-01-29
+
+**Summary:** Changed `listAnnotations` from `makeClient` to `makePaginated` to enable Stream-based pagination via `.pages()` and `.items()` methods. Added 2 new pagination streaming tests.
+
+**Changes:**
+- Updated imports in `src/services/annotations.ts`:
+  - Added `import type * as Stream from "effect/Stream"`
+  - Added `PaginatedOperation` to the operation.ts import
+  - Added `makePaginated` to the api.js import
+- Changed `listAnnotationsOperation` type from `Operation` to `PaginatedOperation`
+- Changed `listAnnotations` export from `makeClient(listAnnotationsOperation)` to `makePaginated(listAnnotationsOperation)`
+- Added explicit type signature for `listAnnotations` including `.pages()` and `.items()` methods
+- Updated `test/annotations.test.ts`:
+  - Added `Chunk` and `Stream` imports from `effect`
+  - Added `Annotation` type import
+  - Added 2 new tests: `.pages()` streaming and `.items()` streaming
+
+**Files changed:**
+- `src/services/annotations.ts` — listAnnotations now uses makePaginated with full type signature
+- `test/annotations.test.ts` — Added 2 pagination streaming tests
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test test/annotations.test.ts` — 10/10 tests passing
+
+---

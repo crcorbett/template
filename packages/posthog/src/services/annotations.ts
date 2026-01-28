@@ -1,10 +1,11 @@
 import type { HttpClient } from "@effect/platform";
 import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
 import { UserBasic } from "../common.js";
 import type { Credentials } from "../credentials.js";
 import type { Endpoint } from "../endpoint.js";
@@ -162,7 +163,7 @@ export class DeleteAnnotationRequest extends S.Class<DeleteAnnotationRequest>(
 // Void response for delete
 const VoidResponse = S.Struct({});
 
-const listAnnotationsOperation: Operation = {
+const listAnnotationsOperation: PaginatedOperation = {
   input: ListAnnotationsRequest,
   output: PaginatedAnnotationList,
   errors: [...COMMON_ERRORS],
@@ -196,9 +197,16 @@ const deleteAnnotationOperation: Operation = {
 /** Dependencies required by all annotation operations. */
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const listAnnotations: (
+export const listAnnotations: ((
   input: ListAnnotationsRequest
-) => Effect.Effect<PaginatedAnnotationList, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(listAnnotationsOperation);
+) => Effect.Effect<PaginatedAnnotationList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListAnnotationsRequest
+  ) => Stream.Stream<PaginatedAnnotationList, PostHogErrorType, Deps>;
+  items: (
+    input: ListAnnotationsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listAnnotationsOperation);
 
 export const getAnnotation: (
   input: GetAnnotationRequest
