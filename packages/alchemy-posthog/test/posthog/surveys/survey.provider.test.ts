@@ -45,6 +45,8 @@ describe("PostHog Survey Provider", () => {
       "create, update, delete survey",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         class TestSurvey extends Survey("TestSurvey", {

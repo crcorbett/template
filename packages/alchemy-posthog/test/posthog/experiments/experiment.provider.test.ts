@@ -52,6 +52,8 @@ describe("PostHog Experiment Provider", () => {
       "create, update, delete experiment",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
 
@@ -119,6 +121,8 @@ describe("PostHog Experiment Provider", () => {
       "replace experiment on feature flag key change",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
 

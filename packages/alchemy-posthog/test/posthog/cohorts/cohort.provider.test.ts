@@ -55,6 +55,8 @@ describe("PostHog Cohort Provider", () => {
       "create, update, delete cohort",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create a cohort

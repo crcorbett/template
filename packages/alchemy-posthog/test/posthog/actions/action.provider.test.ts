@@ -55,6 +55,8 @@ describe("PostHog Action Provider", () => {
       "create, update, delete action",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create an action

@@ -694,7 +694,64 @@
       "passes": true,
       "notes": "bun tsc -b passes with no type errors. All 8 service namespaces exported (FeatureFlags, Dashboards, Experiments, Surveys, Cohorts, Actions, Annotations, Insights). All 8 providers included in resources(). providers() includes Project, Credentials, Endpoint, FetchHttpClient layers. All 10 package.json export entries present. All 10 tests across 8 test files pass (8.64s)."
     },
+   
     {
+      "id": "FIX-001",
+      "category": "testing",
+      "package": "alchemy-effect",
+      "description": "Add initial destroy() call to all PostHog provider tests for idempotent test recovery",
+      "steps": [
+        "For each of the 8 provider test files plus any smoke test, add 'yield* destroy()' as the FIRST statement inside the Effect.gen function, before any resource class declarations.",
+        "This matches the canonical alchemy-effect test pattern (see S3 Bucket, Cloudflare KV tests) which starts every test with destroy() to clean up leftover state from previously failed test runs.",
+        "Files to update:",
+        "  - test/posthog/feature-flags/feature-flag.provider.test.ts (both tests)",
+        "  - test/posthog/dashboards/dashboard.provider.test.ts",
+        "  - test/posthog/experiments/experiment.provider.test.ts (both tests)",
+        "  - test/posthog/surveys/survey.provider.test.ts",
+        "  - test/posthog/cohorts/cohort.provider.test.ts",
+        "  - test/posthog/actions/action.provider.test.ts",
+        "  - test/posthog/annotations/annotation.provider.test.ts",
+        "  - test/posthog/insights/insight.provider.test.ts",
+        "The initial destroy() must appear BEFORE the first class declaration and BEFORE any resource creation."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "Every test's Effect.gen body starts with 'yield* destroy()' (grep confirms)"
+      ],
+      "passes": true,
+      "notes": "Added 'yield* destroy()' as the first statement in all 10 test Effect.gen bodies across 8 test files (feature-flags has 2 tests, experiments has 2 tests, all others have 1 test each). bun tsc -b passes. All 10 tests across 8 files pass."
+    },
+    {
+      "id": "FIX-002",
+      "category": "testing",
+      "package": "alchemy-effect",
+      "description": "Replace Date.now() with deterministic resource names in all PostHog provider tests",
+      "steps": [
+        "Replace all uses of Date.now() in resource property values with deterministic, fixed strings.",
+        "The alchemy-effect convention (per AGENTS.md) is: 'Never use Date.now() when constructing the physical name of a resource.' Resource names must be the same across test runs to enable idempotent test recovery via the initial destroy() call.",
+        "Replacement mapping:",
+        "  - feature-flag: key: `test-flag-crud-${Date.now()}` -> key: 'test-flag-crud'",
+        "  - feature-flag replace test: `test-flag-v1-${timestamp}` / `test-flag-v2-${timestamp}` -> 'test-flag-v1' / 'test-flag-v2'",
+        "  - dashboard: name: `Test Dashboard ${Date.now()}` -> name: 'Test Dashboard'",
+        "  - experiment: name/key using timestamp -> fixed strings like 'test-exp-flag', 'exp-flag-v1', 'exp-flag-v2'",
+        "  - survey: name: `Test Survey ${Date.now()}` -> name: 'Test Survey'",
+        "  - cohort: name: `Test Cohort ${Date.now()}` -> name: 'Test Cohort'",
+        "  - action: name: `Test Action ${Date.now()}` -> name: 'Test Action'",
+        "  - annotation: content: `Test annotation ${Date.now()}` -> content: 'Test annotation'",
+        "  - insight: name: `Test Insight ${Date.now()}` -> name: 'Test Insight'",
+        "Remove any const timestamp = Date.now() declarations that are no longer used.",
+        "This task depends on FIX-001 — deterministic names only work correctly when tests start with destroy()."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "grep -r 'Date.now()' test/posthog/ returns no results"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+     {
       "id": "FINAL-002",
       "category": "final",
       "package": "alchemy-effect",

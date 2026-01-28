@@ -1,18 +1,17 @@
 # Progress Log
 
-## FINAL-001: Full type check and verify all PostHog exports
+## FIX-001: Add initial destroy() to all PostHog provider tests
 
-**Status**: PASSED
-**Date**: 2026-01-28
+Added `yield* destroy()` as the first statement in all 10 test `Effect.gen` bodies across 8 test files. This follows the canonical alchemy-effect test pattern for idempotent test recovery from previously failed runs.
 
-### Verification Results
+Files updated:
+- test/posthog/feature-flags/feature-flag.provider.test.ts (2 tests)
+- test/posthog/dashboards/dashboard.provider.test.ts (1 test)
+- test/posthog/experiments/experiment.provider.test.ts (2 tests)
+- test/posthog/surveys/survey.provider.test.ts (1 test)
+- test/posthog/cohorts/cohort.provider.test.ts (1 test)
+- test/posthog/actions/action.provider.test.ts (1 test)
+- test/posthog/annotations/annotation.provider.test.ts (1 test)
+- test/posthog/insights/insight.provider.test.ts (1 test)
 
-- `bun tsc -b`: Passes with no type errors
-- `bun vitest run test/posthog/`: All 10 tests across 8 test files pass (8.64s)
-
-### Verified Exports
-
-- 8 service namespaces: FeatureFlags, Dashboards, Experiments, Surveys, Cohorts, Actions, Annotations, Insights
-- 8 providers in `resources()`: featureFlagProvider, dashboardProvider, experimentProvider, surveyProvider, cohortProvider, actionProvider, annotationProvider, insightProvider
-- 4 infrastructure layers in `providers()`: Project.fromStageConfig, Credentials.fromStageConfig, Endpoint.fromStageConfig, FetchHttpClient.layer
-- 10 package.json export entries (root + ./posthog + 8 service subpaths)
+Verification: `bun tsc -b` passes, all 10 tests pass.

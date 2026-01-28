@@ -51,6 +51,8 @@ describe("PostHog FeatureFlag Provider", () => {
       "create, update, delete feature flag",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create a feature flag
@@ -112,6 +114,8 @@ describe("PostHog FeatureFlag Provider", () => {
       "replace feature flag on key change",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
         const timestamp = Date.now();
 

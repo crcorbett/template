@@ -58,6 +58,8 @@ describe("PostHog Dashboard Provider", () => {
       "create, update, delete dashboard",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create a dashboard

@@ -55,6 +55,8 @@ describe("PostHog Annotation Provider", () => {
       "create, update, delete annotation",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create an annotation

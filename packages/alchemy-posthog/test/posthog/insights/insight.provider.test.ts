@@ -55,6 +55,8 @@ describe("PostHog Insight Provider", () => {
       "create, update, delete insight",
       { timeout: 120_000 },
       Effect.gen(function* () {
+        yield* destroy();
+
         const projectId = yield* TEST_PROJECT_ID;
 
         // Create an insight
