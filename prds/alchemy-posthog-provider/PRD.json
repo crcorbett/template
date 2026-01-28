@@ -1,0 +1,723 @@
+{
+  "feature": "alchemy-effect PostHog Provider",
+  "version": "1.0.0",
+  "created": "2025-01-28",
+  "updated": "2025-01-28",
+  "buildCommands": {
+    "typeCheck": "bun tsc -b",
+    "test": "bun vitest run test/posthog/",
+    "testFile": "bun vitest run {file}",
+    "note": "All paths relative to the alchemy-effect package root. Each task includes verification steps to ensure atomic completeness."
+  },
+  "tasks": [
+    {
+      "id": "SETUP-001",
+      "category": "setup",
+      "package": "alchemy-effect",
+      "description": "Add distilled-posthog dependency and PostHog package.json export entries",
+      "steps": [
+        "Add 'distilled-posthog': 'workspace:*' (or appropriate version) to alchemy-effect package.json dependencies",
+        "Add the following export entries to package.json 'exports' field:",
+        "  './posthog' -> src/posthog/index.ts (types, bun, import conditions)",
+        "  './posthog/feature-flags' -> src/posthog/feature-flags/index.ts",
+        "  './posthog/dashboards' -> src/posthog/dashboards/index.ts",
+        "  './posthog/experiments' -> src/posthog/experiments/index.ts",
+        "  './posthog/surveys' -> src/posthog/surveys/index.ts",
+        "  './posthog/cohorts' -> src/posthog/cohorts/index.ts",
+        "  './posthog/actions' -> src/posthog/actions/index.ts",
+        "  './posthog/annotations' -> src/posthog/annotations/index.ts",
+        "  './posthog/insights' -> src/posthog/insights/index.ts",
+        "Each export entry follows the pattern: { types: './lib/...d.ts', bun: './src/...ts', import: './lib/...js' }",
+        "Run: bun install"
+      ],
+      "verify": [
+        "bun install completes without errors",
+        "Verify package.json has distilled-posthog in dependencies",
+        "Verify all 9 PostHog export entries are present in package.json"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "SETUP-002",
+      "category": "setup",
+      "package": "alchemy-effect",
+      "description": "Create PostHog stage config augmentation and shared infrastructure files",
+      "steps": [
+        "Create src/posthog/config.ts:",
+        "  - Define PostHogStageConfig interface with: projectId (string), apiKey? (string), endpoint? (string)",
+        "  - Use 'declare module \"../stage.ts\"' to augment StageConfig with posthog?: PostHogStageConfig",
+        "Create src/posthog/project.ts:",
+        "  - Define Project class extending Context.Tag('PostHog::ProjectId')<Project, string>()",
+        "  - Export fromStageConfig() that reads from app.config.posthog?.projectId or POSTHOG_PROJECT_ID env var",
+        "  - Fall back to Effect.dieMessage if neither is set",
+        "Create src/posthog/credentials.ts:",
+        "  - Import Credentials from distilled-posthog",
+        "  - Export fromStageConfig() Layer that reads from app.config.posthog?.apiKey or POSTHOG_API_KEY env var",
+        "  - Wrap string in Redacted.make() for API key",
+        "  - Fall back to Config.redacted('POSTHOG_API_KEY') if stage config not set",
+        "Create src/posthog/endpoint.ts:",
+        "  - Import Endpoint from distilled-posthog",
+        "  - Export fromStageConfig() Layer that reads from app.config.posthog?.endpoint or defaults to 'https://us.posthog.com'"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All four files exist: config.ts, project.ts, credentials.ts, endpoint.ts",
+        "Verify config.ts augments StageConfig interface correctly"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "SETUP-003",
+      "category": "setup",
+      "package": "alchemy-effect",
+      "description": "Create PostHog cloud-level index.ts with empty resources() and providers() composition",
+      "steps": [
+        "Create src/posthog/index.ts:",
+        "  - Import Layer from effect/Layer",
+        "  - Import FetchHttpClient from @effect/platform",
+        "  - Import * as Credentials from './credentials.ts'",
+        "  - Import * as Endpoint from './endpoint.ts'",
+        "  - Import * as Project from './project.ts'",
+        "  - Import './config.ts' for side effects (module augmentation)",
+        "  - Export Project from './project.ts'",
+        "  - Export resources() function returning Layer.mergeAll() (initially empty, will add providers incrementally)",
+        "  - Export providers() function that pipes resources() through:",
+        "    Layer.provideMerge(Project.fromStageConfig()),",
+        "    Layer.provideMerge(Credentials.fromStageConfig()),",
+        "    Layer.provideMerge(Endpoint.fromStageConfig()),",
+        "    Layer.provideMerge(FetchHttpClient.layer)",
+        "Create placeholder barrel files for each service (empty index.ts):",
+        "  - src/posthog/feature-flags/index.ts",
+        "  - src/posthog/dashboards/index.ts",
+        "  - src/posthog/experiments/index.ts",
+        "  - src/posthog/surveys/index.ts",
+        "  - src/posthog/cohorts/index.ts",
+        "  - src/posthog/actions/index.ts",
+        "  - src/posthog/annotations/index.ts",
+        "  - src/posthog/insights/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "src/posthog/index.ts exports resources() and providers() functions",
+        "All 8 service index.ts files exist"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "FF-001",
+      "category": "feature-flag",
+      "package": "alchemy-effect",
+      "description": "Implement FeatureFlag resource contract",
+      "steps": [
+        "Create src/posthog/feature-flags/feature-flag.ts:",
+        "  - Import { Resource } from '../../resource.ts'",
+        "  - Define FeatureFlagProps interface with JSDoc comments:",
+        "    key: string (unique flag key, replaces on change)",
+        "    name?: string",
+        "    active?: boolean",
+        "    filters?: Record<string, unknown>",
+        "    rolloutPercentage?: number | null",
+        "    ensureExperienceContinuity?: boolean | null",
+        "  - Define FeatureFlagAttrs interface:",
+        "    id: number (server-generated, stable)",
+        "    key: string (stable)",
+        "    name: string | undefined",
+        "    active: boolean | undefined",
+        "    filters: unknown | undefined",
+        "    createdAt: string | undefined",
+        "  - Define FeatureFlag interface extending Resource<'PostHog.FeatureFlags.FeatureFlag', ID, Props, Attrs, FeatureFlag>",
+        "  - Export const FeatureFlag = Resource<CtorSignature>('PostHog.FeatureFlags.FeatureFlag')",
+        "Update src/posthog/feature-flags/index.ts to export * from './feature-flag.ts'"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "FeatureFlag, FeatureFlagProps, FeatureFlagAttrs are exported from feature-flags/index.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "FF-002",
+      "category": "feature-flag",
+      "package": "alchemy-effect",
+      "description": "Implement FeatureFlag provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/feature-flags/feature-flag.provider.ts:",
+        "  - Import Effect from effect/Effect",
+        "  - Import * as PostHogFeatureFlags from 'distilled-posthog/FeatureFlags'",
+        "  - Import { FeatureFlag } from './feature-flag.ts'",
+        "  - Import { Project } from '../project.ts'",
+        "  - Export featureFlagProvider() function using FeatureFlag.provider.effect(Effect.gen(...))",
+        "  - Implement stables: ['id', 'key']",
+        "  - Implement diff: if news.key !== olds.key return { action: 'replace' }; otherwise return void",
+        "  - Implement create: yield* Project, call PostHogFeatureFlags.createFeatureFlag() with mapped props (camelCase -> snake_case), yield* session.note(), return mapped attrs",
+        "  - Implement update: yield* Project, call PostHogFeatureFlags.updateFeatureFlag() with output.id + mapped props, yield* session.note(), return mapped attrs",
+        "  - Implement delete: yield* Project, call PostHogFeatureFlags.deleteFeatureFlag() with output.id, pipe with Effect.catchTag('NotFoundError', () => Effect.void)",
+        "  - Implement read: yield* Project, if output?.id call PostHogFeatureFlags.getFeatureFlag(), catch NotFoundError -> undefined, return mapped attrs or undefined",
+        "  - Helper function mapResponseToAttrs(result) that maps API response to FeatureFlagAttrs",
+        "Update src/posthog/feature-flags/index.ts to also export * from './feature-flag.provider.ts'",
+        "Update src/posthog/index.ts to import FeatureFlags and add featureFlagProvider() to resources() Layer.mergeAll()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "featureFlagProvider is exported from feature-flags/index.ts",
+        "posthog/index.ts resources() includes featureFlagProvider()"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "FF-003",
+      "category": "feature-flag",
+      "package": "alchemy-effect",
+      "description": "Implement FeatureFlag provider integration tests",
+      "steps": [
+        "Create test/posthog/feature-flags/feature-flag.provider.test.ts:",
+        "  - Import * as PostHog from '@/posthog'",
+        "  - Import { FeatureFlag } from '@/posthog/feature-flags'",
+        "  - Import { apply, destroy } from '@/index'",
+        "  - Import { test } from '@/test'",
+        "  - Import { expect } from '@effect/vitest'",
+        "  - Import * as FeatureFlagsAPI from 'distilled-posthog/FeatureFlags'",
+        "  - Import Effect, Data, Schedule from effect",
+        "Test 1: 'create, update, delete feature flag'",
+        "  - Create class TestFlag extends FeatureFlag('TestFlag', { key: 'test-flag-crud', name: 'Test Flag', active: true })",
+        "  - yield* apply(TestFlag), verify id/key/active",
+        "  - Verify via FeatureFlagsAPI.getFeatureFlag()",
+        "  - Update: class UpdatedFlag with name: 'Updated Flag', active: false",
+        "  - yield* apply(UpdatedFlag), verify update",
+        "  - yield* destroy(), verify deleted",
+        "  - Pipe with Effect.provide(PostHog.providers())",
+        "Test 2: 'replace feature flag on key change'",
+        "  - Create with key 'test-flag-v1', apply",
+        "  - Change to key 'test-flag-v2', apply",
+        "  - Verify new ID (replacement happened)",
+        "  - yield* destroy()",
+        "  - Pipe with Effect.provide(PostHog.providers())",
+        "Create assertFeatureFlagDeleted helper using Data.TaggedError + retry + catchTag('NotFoundError') pattern"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/feature-flags/feature-flag.provider.test.ts passes (requires POSTHOG_API_KEY and POSTHOG_PROJECT_ID env vars)"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "DASH-001",
+      "category": "dashboard",
+      "package": "alchemy-effect",
+      "description": "Implement Dashboard resource contract",
+      "steps": [
+        "Create src/posthog/dashboards/dashboard.ts:",
+        "  - Import { Resource } from '../../resource.ts'",
+        "  - Define DashboardProps interface with JSDoc:",
+        "    name: string (required)",
+        "    description?: string",
+        "    pinned?: boolean",
+        "    tags?: string[]",
+        "    restrictionLevel?: number",
+        "  - Define DashboardAttrs interface:",
+        "    id: number (stable), name: string, description: string | undefined, pinned: boolean | undefined, createdAt: string | undefined",
+        "  - Define Dashboard interface extending Resource<'PostHog.Dashboards.Dashboard', ...>",
+        "  - Export const Dashboard = Resource<CtorSig>('PostHog.Dashboards.Dashboard')",
+        "Update src/posthog/dashboards/index.ts to export * from './dashboard.ts'"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "DASH-002",
+      "category": "dashboard",
+      "package": "alchemy-effect",
+      "description": "Implement Dashboard provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/dashboards/dashboard.provider.ts:",
+        "  - Follow the same pattern as FeatureFlag provider",
+        "  - Import * as PostHogDashboards from 'distilled-posthog/Dashboards'",
+        "  - stables: ['id']",
+        "  - diff: return void (all changes are updates, no replacement triggers)",
+        "  - create: call PostHogDashboards.createDashboard() with mapped props (name -> name, description, pinned, tags, restriction_level)",
+        "  - update: call PostHogDashboards.updateDashboard() with output.id",
+        "  - delete: call PostHogDashboards.deleteDashboard() (soft delete), catch NotFoundError",
+        "  - read: call PostHogDashboards.getDashboard() with output.id, catch NotFoundError",
+        "Update dashboards/index.ts to export provider",
+        "Update posthog/index.ts to add dashboardProvider() to resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "DASH-003",
+      "category": "dashboard",
+      "package": "alchemy-effect",
+      "description": "Implement Dashboard provider integration tests",
+      "steps": [
+        "Create test/posthog/dashboards/dashboard.provider.test.ts:",
+        "Test 1: 'create, update, delete dashboard'",
+        "  - Create dashboard with name: 'Test Dashboard'",
+        "  - Verify via PostHogDashboards.getDashboard()",
+        "  - Update: change description and pinned",
+        "  - Destroy, verify deleted (soft delete - check deleted field or NotFoundError)",
+        "  - Pipe with Effect.provide(PostHog.providers())",
+        "Create assertDashboardDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/dashboards/dashboard.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "EXP-001",
+      "category": "experiment",
+      "package": "alchemy-effect",
+      "description": "Implement Experiment resource contract",
+      "steps": [
+        "Create src/posthog/experiments/experiment.ts:",
+        "  - Import { Resource } from '../../resource.ts'",
+        "  - Define ExperimentProps interface with JSDoc:",
+        "    name: string (required)",
+        "    description?: string | null",
+        "    featureFlagKey: string (required, replaces on change)",
+        "    startDate?: string | null",
+        "    endDate?: string | null",
+        "    parameters?: unknown | null",
+        "    filters?: unknown",
+        "    holdoutId?: number | null",
+        "    type?: 'web' | 'product'",
+        "    metrics?: unknown | null",
+        "    metricsSecondary?: unknown | null",
+        "  - Define ExperimentAttrs interface:",
+        "    id: number (stable), name: string, featureFlagKey: string | undefined (stable), startDate: string | null | undefined, endDate: string | null | undefined, archived: boolean | undefined, createdAt: string | undefined",
+        "  - Define Experiment interface extending Resource<'PostHog.Experiments.Experiment', ...>",
+        "  - Export const Experiment = Resource<CtorSig>('PostHog.Experiments.Experiment')",
+        "Update experiments/index.ts to export"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "EXP-002",
+      "category": "experiment",
+      "package": "alchemy-effect",
+      "description": "Implement Experiment provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/experiments/experiment.provider.ts:",
+        "  - Import * as PostHogExperiments from 'distilled-posthog/Experiments'",
+        "  - stables: ['id', 'featureFlagKey']",
+        "  - diff: if news.featureFlagKey !== olds.featureFlagKey return { action: 'replace' }; otherwise void",
+        "  - create: call PostHogExperiments.createExperiment() mapping featureFlagKey -> feature_flag_key, startDate -> start_date, endDate -> end_date, holdoutId -> holdout_id, metricsSecondary -> metrics_secondary",
+        "  - update: call PostHogExperiments.updateExperiment() with output.id",
+        "  - delete: call PostHogExperiments.deleteExperiment() (hard HTTP DELETE), catch NotFoundError",
+        "  - read: call PostHogExperiments.getExperiment() with output.id, catch NotFoundError",
+        "Update experiments/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "EXP-003",
+      "category": "experiment",
+      "package": "alchemy-effect",
+      "description": "Implement Experiment provider integration tests",
+      "steps": [
+        "Create test/posthog/experiments/experiment.provider.test.ts:",
+        "Test 1: 'create, update, delete experiment'",
+        "  - Create experiment with name: 'Test Experiment', featureFlagKey: 'test-exp-flag'",
+        "  - Verify via PostHogExperiments.getExperiment()",
+        "  - Update description",
+        "  - Destroy (hard delete), verify deleted via NotFoundError",
+        "Test 2: 'replace experiment on feature flag key change'",
+        "  - Create with featureFlagKey 'exp-flag-v1'",
+        "  - Change to 'exp-flag-v2', verify new ID",
+        "  - Destroy",
+        "Create assertExperimentDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/experiments/experiment.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "SRV-001",
+      "category": "survey",
+      "package": "alchemy-effect",
+      "description": "Implement Survey resource contract",
+      "steps": [
+        "Create src/posthog/surveys/survey.ts:",
+        "  - Import { Resource } from '../../resource.ts'",
+        "  - Define SurveyProps interface with JSDoc:",
+        "    name: string (required)",
+        "    description?: string",
+        "    type: 'popover' | 'widget' | 'external_survey' | 'api' (required, replaces on change)",
+        "    questions?: unknown[]",
+        "    appearance?: unknown",
+        "    startDate?: string | null",
+        "    endDate?: string | null",
+        "    responsesLimit?: number | null",
+        "    linkedFlagId?: number | null",
+        "  - Define SurveyAttrs interface (NOTE: id is string UUID, not number):",
+        "    id: string (stable, UUID), name: string, type: string (stable), startDate, endDate, archived, createdAt",
+        "  - Export const Survey = Resource<CtorSig>('PostHog.Surveys.Survey')",
+        "Update surveys/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "SRV-002",
+      "category": "survey",
+      "package": "alchemy-effect",
+      "description": "Implement Survey provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/surveys/survey.provider.ts:",
+        "  - Import * as PostHogSurveys from 'distilled-posthog/Surveys'",
+        "  - stables: ['id', 'type']",
+        "  - diff: if news.type !== olds.type return { action: 'replace' }; otherwise void",
+        "  - create: call PostHogSurveys.createSurvey() mapping startDate -> start_date, endDate -> end_date, responsesLimit -> responses_limit, linkedFlagId -> linked_flag_id",
+        "  - update: call PostHogSurveys.updateSurvey() with output.id (string UUID)",
+        "  - delete: call PostHogSurveys.deleteSurvey() (hard HTTP DELETE), catch NotFoundError",
+        "  - read: call PostHogSurveys.getSurvey() with output.id (string), catch NotFoundError",
+        "Update surveys/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "SRV-003",
+      "category": "survey",
+      "package": "alchemy-effect",
+      "description": "Implement Survey provider integration tests",
+      "steps": [
+        "Create test/posthog/surveys/survey.provider.test.ts:",
+        "Test 1: 'create, update, delete survey'",
+        "  - Create survey with name: 'Test Survey', type: 'api'",
+        "  - Verify id is a string (UUID), verify via API",
+        "  - Update name",
+        "  - Destroy (hard delete)",
+        "Create assertSurveyDeleted helper (note: id is string)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/surveys/survey.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "COH-001",
+      "category": "cohort",
+      "package": "alchemy-effect",
+      "description": "Implement Cohort resource contract",
+      "steps": [
+        "Create src/posthog/cohorts/cohort.ts:",
+        "  - Define CohortProps: name (string | null, required), description?, groups?, filters?, isStatic? (replaces on change)",
+        "  - Define CohortAttrs: id: number (stable), name, description, isCalculating, count, createdAt",
+        "  - Export const Cohort = Resource<CtorSig>('PostHog.Cohorts.Cohort')",
+        "Update cohorts/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "COH-002",
+      "category": "cohort",
+      "package": "alchemy-effect",
+      "description": "Implement Cohort provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/cohorts/cohort.provider.ts:",
+        "  - Import * as PostHogCohorts from 'distilled-posthog/Cohorts'",
+        "  - stables: ['id']",
+        "  - diff: if isStatic changed return { action: 'replace' }; otherwise void",
+        "  - create: call PostHogCohorts.createCohort() mapping isStatic -> is_static",
+        "  - update: call PostHogCohorts.updateCohort() with output.id",
+        "  - delete: call PostHogCohorts.deleteCohort() (soft delete), catch NotFoundError",
+        "  - read: call PostHogCohorts.getCohort() with output.id, catch NotFoundError",
+        "Update cohorts/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "COH-003",
+      "category": "cohort",
+      "package": "alchemy-effect",
+      "description": "Implement Cohort provider integration tests",
+      "steps": [
+        "Create test/posthog/cohorts/cohort.provider.test.ts:",
+        "Test 1: 'create, update, delete cohort'",
+        "  - Create cohort with name: 'Test Cohort'",
+        "  - Verify via API",
+        "  - Update description",
+        "  - Destroy (soft delete)",
+        "Create assertCohortDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/cohorts/cohort.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ACT-001",
+      "category": "action",
+      "package": "alchemy-effect",
+      "description": "Implement Action resource contract",
+      "steps": [
+        "Create src/posthog/actions/action.ts:",
+        "  - Define ActionStepDef interface for action match steps (event?, properties?, selector?, tagName?, text?, textMatching?, href?, hrefMatching?, url?, urlMatching?)",
+        "  - Define ActionProps: name (string | null, required), description?, tags?, postToSlack?, slackMessageFormat?, steps?: ActionStepDef[]",
+        "  - Define ActionAttrs: id: number (stable), name, description, tags, createdAt",
+        "  - Export const Action = Resource<CtorSig>('PostHog.Actions.Action')",
+        "Update actions/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ACT-002",
+      "category": "action",
+      "package": "alchemy-effect",
+      "description": "Implement Action provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/actions/action.provider.ts:",
+        "  - Import * as PostHogActions from 'distilled-posthog/Actions'",
+        "  - stables: ['id']",
+        "  - diff: return void (all changes are updates)",
+        "  - create: call PostHogActions.createAction() mapping postToSlack -> post_to_slack, slackMessageFormat -> slack_message_format, steps need tag_name/text_matching/href_matching/url_matching mapping",
+        "  - update: call PostHogActions.updateAction() with output.id",
+        "  - delete: call PostHogActions.deleteAction() (soft delete), catch NotFoundError",
+        "  - read: call PostHogActions.getAction() with output.id, catch NotFoundError",
+        "Update actions/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ACT-003",
+      "category": "action",
+      "package": "alchemy-effect",
+      "description": "Implement Action provider integration tests",
+      "steps": [
+        "Create test/posthog/actions/action.provider.test.ts:",
+        "Test 1: 'create, update, delete action'",
+        "  - Create action with name: 'Test Action'",
+        "  - Verify via API",
+        "  - Update description",
+        "  - Destroy (soft delete)",
+        "Create assertActionDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/actions/action.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ANN-001",
+      "category": "annotation",
+      "package": "alchemy-effect",
+      "description": "Implement Annotation resource contract",
+      "steps": [
+        "Create src/posthog/annotations/annotation.ts:",
+        "  - Define AnnotationProps: content? (string | null), dateMarker? (string | null), creationType? ('USR' | 'GIT'), dashboardItem? (number | null), scope? ('dashboard_item' | 'dashboard' | 'project' | 'organization' | 'recording')",
+        "  - Define AnnotationAttrs: id: number (stable), content, dateMarker, scope, createdAt",
+        "  - Export const Annotation = Resource<CtorSig>('PostHog.Annotations.Annotation')",
+        "Update annotations/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ANN-002",
+      "category": "annotation",
+      "package": "alchemy-effect",
+      "description": "Implement Annotation provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/annotations/annotation.provider.ts:",
+        "  - Import * as PostHogAnnotations from 'distilled-posthog/Annotations'",
+        "  - stables: ['id']",
+        "  - diff: return void (all changes are updates)",
+        "  - create: call PostHogAnnotations.createAnnotation() mapping dateMarker -> date_marker, creationType -> creation_type, dashboardItem -> dashboard_item",
+        "  - update: call PostHogAnnotations.updateAnnotation() with output.id, mapping dateMarker -> date_marker",
+        "  - delete: call PostHogAnnotations.deleteAnnotation() (hard HTTP DELETE), catch NotFoundError",
+        "  - read: call PostHogAnnotations.getAnnotation() with output.id, catch NotFoundError",
+        "Update annotations/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "ANN-003",
+      "category": "annotation",
+      "package": "alchemy-effect",
+      "description": "Implement Annotation provider integration tests",
+      "steps": [
+        "Create test/posthog/annotations/annotation.provider.test.ts:",
+        "Test 1: 'create, update, delete annotation'",
+        "  - Create annotation with content: 'Test annotation', dateMarker: ISO date string, scope: 'project'",
+        "  - Verify via API",
+        "  - Update content",
+        "  - Destroy (hard delete), verify via NotFoundError",
+        "Create assertAnnotationDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/annotations/annotation.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "INS-001",
+      "category": "insight",
+      "package": "alchemy-effect",
+      "description": "Implement Insight resource contract",
+      "steps": [
+        "Create src/posthog/insights/insight.ts:",
+        "  - Define InsightProps: name? (string | null), description? (string | null), query? (unknown), filters? (unknown), dashboards? (number[]), saved? (boolean)",
+        "  - Define InsightAttrs: id: number (stable), shortId (string | undefined), name, description, createdAt, favorited, saved",
+        "  - Export const Insight = Resource<CtorSig>('PostHog.Insights.Insight')",
+        "Update insights/index.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "INS-002",
+      "category": "insight",
+      "package": "alchemy-effect",
+      "description": "Implement Insight provider with CRUD lifecycle",
+      "steps": [
+        "Create src/posthog/insights/insight.provider.ts:",
+        "  - Import * as PostHogInsights from 'distilled-posthog/Insights'",
+        "  - stables: ['id', 'shortId']",
+        "  - diff: return void (all changes are updates)",
+        "  - create: call PostHogInsights.createInsight()",
+        "  - update: call PostHogInsights.updateInsight() with output.id",
+        "  - delete: call PostHogInsights.deleteInsight() (soft delete), catch NotFoundError",
+        "  - read: call PostHogInsights.getInsight() with output.id, catch NotFoundError",
+        "Update insights/index.ts, update posthog/index.ts resources()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "INS-003",
+      "category": "insight",
+      "package": "alchemy-effect",
+      "description": "Implement Insight provider integration tests",
+      "steps": [
+        "Create test/posthog/insights/insight.provider.test.ts:",
+        "Test 1: 'create, update, delete insight'",
+        "  - Create insight with name: 'Test Insight', saved: true",
+        "  - Verify via API",
+        "  - Update description",
+        "  - Destroy (soft delete)",
+        "Create assertInsightDeleted helper"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/insights/insight.provider.test.ts passes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "FINAL-001",
+      "category": "final",
+      "package": "alchemy-effect",
+      "description": "Full type check and verify all PostHog exports",
+      "steps": [
+        "Run bun tsc -b to verify entire project compiles",
+        "Verify posthog/index.ts exports all 8 service namespaces: FeatureFlags, Dashboards, Experiments, Surveys, Cohorts, Actions, Annotations, Insights",
+        "Verify posthog/index.ts resources() includes all 8 providers",
+        "Verify posthog/index.ts providers() includes Project, Credentials, Endpoint, FetchHttpClient layers",
+        "Verify all package.json export entries resolve correctly",
+        "Run all PostHog tests: bun vitest run test/posthog/"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "FINAL-002",
+      "category": "final",
+      "package": "alchemy-effect",
+      "description": "Create PostHog provider smoke test with multiple related resources",
+      "steps": [
+        "Create test/posthog/posthog.smoke.test.ts:",
+        "  - Test: 'create and manage related PostHog resources'",
+        "  - Create a FeatureFlag (key: 'smoke-test-flag')",
+        "  - Create a Dashboard (name: 'Smoke Test Dashboard')",
+        "  - Create an Annotation (content: 'Smoke test annotation', scope: 'project')",
+        "  - Apply all resources together",
+        "  - Verify all three exist via API",
+        "  - Destroy all",
+        "  - Verify all cleaned up",
+        "  - Pipe with Effect.provide(PostHog.providers())"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/posthog.smoke.test.ts passes",
+        "bun vitest run test/posthog/ -- all tests pass including smoke test"
+      ],
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
