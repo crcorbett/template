@@ -8,10 +8,12 @@ import {
   it,
   type TestContext,
 } from "@effect/vitest";
-import { Config, ConfigProvider, LogLevel } from "effect";
+import { Config, ConfigProvider, LogLevel, pipe } from "effect";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
+import * as Schedule from "effect/Schedule";
 import * as Scope from "effect/Scope";
 import * as net from "node:net";
 
@@ -194,6 +196,25 @@ export const expectSnapshot = (
   );
 };
 
+/**
+ * Test-specific retry policy with shorter backoff than production.
+ *
+ * Uses faster exponential backoff (200ms base, 2s cap, 3 retries) to avoid
+ * test timeouts while still respecting rate limits. Production uses 1s base,
+ * 5s cap, and more retries.
+ */
+const testRetryOptions: Retry.Options = {
+  while: Retry.isTransientError,
+  schedule: pipe(
+    Schedule.exponential(Duration.millis(200), 2),
+    Schedule.modifyDelay((d) =>
+      Duration.toMillis(d) > 2000 ? Duration.millis(2000) : d
+    ),
+    Schedule.intersect(Schedule.recurs(3)),
+    Schedule.jittered
+  ),
+};
+
 function provideTestEnv<A, E, R extends Provided>(
   effect: Effect.Effect<A, E, R>
 ) {
@@ -204,6 +225,6 @@ function provideTestEnv<A, E, R extends Provided>(
       process.env.DEBUG ? LogLevel.Debug : LogLevel.Info
     ),
     Effect.provide(NodeContext.layer),
-    Retry.transient
+    Retry.policy(testRetryOptions)
   );
 }
