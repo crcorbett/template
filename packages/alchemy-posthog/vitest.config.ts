@@ -41,6 +41,10 @@ export default defineConfig({
         __dirname,
         "../posthog/src/services/annotations.ts"
       ),
+      "@packages/posthog/insights": path.resolve(
+        __dirname,
+        "../posthog/src/services/insights.ts"
+      ),
       "@packages/posthog/errors": path.resolve(
         __dirname,
         "../posthog/src/errors.ts"

@@ -12,6 +12,7 @@ import * as Project from "./project.js";
 import * as Actions from "./actions/index.js";
 import * as Cohorts from "./cohorts/index.js";
 import * as Annotations from "./annotations/index.js";
+import * as Insights from "./insights/index.js";
 import * as Surveys from "./surveys/index.js";
 export {
   Actions,
@@ -20,6 +21,7 @@ export {
   Dashboards,
   Experiments,
   FeatureFlags,
+  Insights,
   Surveys,
 };
 
@@ -31,7 +33,8 @@ export const resources = () =>
     Surveys.surveyProvider(),
     Cohorts.cohortProvider(),
     Actions.actionProvider(),
-    Annotations.annotationProvider()
+    Annotations.annotationProvider(),
+    Insights.insightProvider()
   );
 
 export const providers = () =>

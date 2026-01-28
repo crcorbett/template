@@ -50,3 +50,13 @@
 - InsightAttrs: id (number, stable), shortId (string|undefined), name, description, createdAt, favorited, saved
 - Updated `src/posthog/insights/index.ts` barrel export
 - `bun tsc -b` passes with no type errors
+
+## INS-002: Implement Insight provider with CRUD lifecycle
+- Created `src/posthog/insights/insight.provider.ts` with full CRUD lifecycle
+- Stables: `['id', 'shortId']`
+- No camelCase->snake_case mapping needed (Insight props match API field names)
+- Diff always returns undefined (no replacement triggers)
+- Delete uses soft delete via `deleteInsight` (internally PATCHes `deleted: true`)
+- Updated `insights/index.ts` barrel and `posthog/index.ts` with Insights namespace + `insightProvider()` in `resources()`
+- Added `@packages/posthog/insights` alias to `vitest.config.ts`
+- `bun tsc -b` passes with no type errors

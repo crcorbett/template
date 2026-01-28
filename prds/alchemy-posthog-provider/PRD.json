@@ -650,8 +650,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created insight.provider.ts following Annotation provider pattern. Imports from @packages/posthog/insights. No camelCase->snake_case mapping needed for Insight props (name, description, query, filters, dashboards, saved all match API snake_case). Stables=['id', 'shortId']. Diff always returns undefined (no replacement triggers). Delete uses soft delete via deleteInsight (internally PATCHes deleted:true). Added @packages/posthog/insights alias to vitest.config.ts. Updated insights/index.ts barrel and posthog/index.ts with Insights namespace export and insightProvider() in resources(). bun tsc -b passes."
     },
     {
       "id": "INS-003",
