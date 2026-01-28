@@ -24,6 +24,7 @@ import { Credentials } from "../credentials.js";
 import { Endpoint } from "../endpoint.js";
 import { PostHogError, type PostHogErrorType } from "../errors.js";
 import { type Options as RetryOptions, makeDefault, Retry } from "../retry.js";
+import { getPath } from "../traits.js";
 import { makeRequestBuilder } from "./request-builder.js";
 import { makeResponseParser } from "./response-parser.js";
 
@@ -276,6 +277,16 @@ const parseNextToken = (
 };
 
 /**
+ * Pagination state for Stream.unfoldEffect — uses a proper type instead of
+ * casting input to Input | undefined (matching distilled-aws pattern).
+ */
+interface PaginationState<Input> {
+  readonly payload: Input;
+  readonly token: string | undefined;
+  readonly done: boolean;
+}
+
+/**
  * Create a paginated API client for a list operation.
  *
  * Uses `operation.pagination` metadata to generically handle both offset-based
@@ -321,40 +332,51 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
     Output,
     PostHogErrorType,
     HttpClient.HttpClient | Credentials | Endpoint
-  > =>
-    Stream.unfoldEffect(
-      input as Input | undefined,
-      (cursor: Input | undefined) => {
-        if (cursor === undefined) {
-          return Effect.succeed(
-            Option.none<readonly [Output, Input | undefined]>()
-          );
-        }
-        return fn(cursor).pipe(
-          Effect.map((page) => {
-            const record = page as Record<string, unknown>;
-            const nextUrl = record[pagination.outputToken] as
-              | string
-              | null
-              | undefined;
-            const nextTokenValue = Option.flatMap(
-              Option.fromNullable(nextUrl),
-              (url) => parseNextToken(url, pagination.inputToken)
-            );
-            const nextCursor = Option.match(nextTokenValue, {
-              onNone: (): Input | undefined => undefined,
-              onSome: (token): Input | undefined => ({
-                ...cursor,
-                [pagination.inputToken]: token,
-              }),
-            });
-            return Option.some(
-              [page, nextCursor] as const
-            );
-          })
-        );
+  > => {
+    const initialState: PaginationState<Input> = {
+      payload: input,
+      token: undefined,
+      done: false,
+    };
+
+    return Stream.unfoldEffect(initialState, (state) => {
+      if (state.done) {
+        return Effect.succeed(Option.none<readonly [Output, PaginationState<Input>]>());
       }
-    );
+
+      // Build request payload with token if present
+      const requestPayload: Input =
+        state.token !== undefined
+          ? { ...state.payload, [pagination.inputToken]: state.token }
+          : state.payload;
+
+      return fn(requestPayload).pipe(
+        Effect.map((page) => {
+          // Use getPath for safe dynamic property access (encapsulates cast internally)
+          const nextUrl = getPath(page, pagination.outputToken);
+          const nextTokenValue =
+            typeof nextUrl === "string"
+              ? parseNextToken(nextUrl, pagination.inputToken)
+              : Option.none<string>();
+
+          const nextState: PaginationState<Input> = Option.match(nextTokenValue, {
+            onNone: () => ({
+              payload: state.payload,
+              token: undefined,
+              done: true,
+            }),
+            onSome: (token) => ({
+              payload: state.payload,
+              token,
+              done: false,
+            }),
+          });
+
+          return Option.some([page, nextState] as const);
+        })
+      );
+    });
+  };
 
   const items = (
     input: Input
@@ -365,10 +387,11 @@ export const makePaginated = <Op extends Operation>(operation: Op) => {
   > => {
     const itemsKey = pagination.items ?? "results";
     return pages(input).pipe(
-      Stream.mapConcat(
-        (page) =>
-          (page as Record<string, unknown>)[itemsKey] as ReadonlyArray<unknown>
-      )
+      Stream.mapConcat((page) => {
+        // Use getPath for safe dynamic property access (encapsulates cast internally)
+        const itemsArray = getPath(page, itemsKey);
+        return Array.isArray(itemsArray) ? itemsArray : [];
+      })
     );
   };
 

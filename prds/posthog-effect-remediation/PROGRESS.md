@@ -1085,3 +1085,30 @@ Added `makePaginated` function to `src/client/api.ts` that wraps `makeClient` wi
 - `bun run test` — 230/230 tests passing
 
 ---
+
+#### P4-010: Eliminate remaining as casts in api.ts makePaginated
+
+**Status:** Completed
+
+**Summary:** Reduced `as` casts in `makePaginated` from 4 to 1 (only the acceptable `as const` tuple assertion remains). Adopted the distilled-aws `State` pattern and leveraged the existing `getPath` helper for type-safe dynamic property access.
+
+**Changes:**
+- Added import for `getPath` from `../traits.js`
+- Created `PaginationState<Input>` interface with `{ payload: Input; token: string | undefined; done: boolean }` — matches distilled-aws pattern, eliminates `input as Input | undefined` cast
+- Refactored `pages()` to use `PaginationState` instead of using input directly as cursor state
+- Replaced `page as Record<string, unknown>` cast with `getPath(page, pagination.outputToken)` — the cast is now internal to `getPath`
+- Replaced `(page as Record<string, unknown>)[itemsKey] as ReadonlyArray<unknown>` with `getPath(page, itemsKey)` + `Array.isArray()` guard — encapsulates cast internally
+- Kept `[page, nextState] as const` — acceptable tuple assertion pattern
+
+**Cast reduction:**
+- Before: 4 casts (`input as`, `page as Record`, `as const`, double-cast in items)
+- After: 1 cast (`as const` — acceptable)
+
+**Files changed:**
+- `src/client/api.ts` — Added PaginationState interface, refactored pages() and items(), imported getPath
+
+**Verification:**
+- `npx tsc --noEmit` — 0 type errors
+- `bun run test` — 230/230 tests passing
+
+---
