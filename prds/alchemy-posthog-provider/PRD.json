@@ -506,8 +506,8 @@
       "verify": [
         "bun tsc -b passes with no type errors"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created action.ts with ActionStepDef (event, properties, selector, tagName, text, textMatching, href, hrefMatching, url, urlMatching), ActionProps (name as string|null, description, tags, postToSlack, slackMessageFormat, steps as ActionStepDef[]), and ActionAttrs (id as number, name as string|null, description, tags as unknown[]|undefined, createdAt). Follows Cohort contract pattern with Resource from alchemy-effect npm package. Updated actions/index.ts to export all from action.js. bun tsc -b passes."
     },
     {
       "id": "ACT-002",

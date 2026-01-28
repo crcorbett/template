@@ -1,1 +1,1 @@
-// Actions barrel - providers will be added incrementally
+export * from "./action.js";

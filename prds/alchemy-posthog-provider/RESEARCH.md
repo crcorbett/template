@@ -1,6 +1,6 @@
 # Research Notes
 
-## Cohort Delete Behavior
-- PostHog cohorts use soft delete: `deleteCohort` internally calls `updateCohort` with `deleted: true`
-- After soft delete, the cohort is still retrievable via `getCohort` but has `deleted: true` set
-- The `@packages/posthog/cohorts` `deleteCohort` function is a convenience wrapper around `updateCohort`
+## ACT-001
+- Action resource follows same pattern as Cohort: `name` is `string | null`, `tags` in attrs is `unknown[] | undefined`
+- ActionStepDef has 10 optional fields for matching steps (event, properties, selector, tagName, text, textMatching, href, hrefMatching, url, urlMatching)
+- No replacement triggers for Actions - all prop changes are updates
