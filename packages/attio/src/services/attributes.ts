@@ -64,7 +64,7 @@ export class CreateAttributeRequest extends S.Class<CreateAttributeRequest>("Cre
     api_slug: S.optional(S.String),
   },
   T.all(
-    T.Http({ method: "POST", uri: "/v2/{target}/{identifier}/attributes" }),
+    T.Http({ method: "POST", uri: "/v2/{target}/{identifier}/attributes", dataWrapper: true }),
     T.RestJsonProtocol()
   )
 ) {}
@@ -94,7 +94,7 @@ export class UpdateAttributeRequest extends S.Class<UpdateAttributeRequest>("Upd
     is_unique: S.optional(S.Boolean),
   },
   T.all(
-    T.Http({ method: "PATCH", uri: "/v2/{target}/{identifier}/attributes/{attribute}" }),
+    T.Http({ method: "PATCH", uri: "/v2/{target}/{identifier}/attributes/{attribute}", dataWrapper: true }),
     T.RestJsonProtocol()
   )
 ) {}

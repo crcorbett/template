@@ -55,7 +55,7 @@ export class CreateSelectOptionRequest extends S.Class<CreateSelectOptionRequest
     title: S.String,
   },
   T.all(
-    T.Http({ method: "POST", uri: "/v2/{target}/{identifier}/attributes/{attribute}/options" }),
+    T.Http({ method: "POST", uri: "/v2/{target}/{identifier}/attributes/{attribute}/options", dataWrapper: true }),
     T.RestJsonProtocol()
   )
 ) {}
@@ -71,7 +71,7 @@ export class UpdateSelectOptionRequest extends S.Class<UpdateSelectOptionRequest
     is_archived: S.optional(S.Boolean),
   },
   T.all(
-    T.Http({ method: "PATCH", uri: "/v2/{target}/{identifier}/attributes/{attribute}/options/{option}" }),
+    T.Http({ method: "PATCH", uri: "/v2/{target}/{identifier}/attributes/{attribute}/options/{option}", dataWrapper: true }),
     T.RestJsonProtocol()
   )
 ) {}

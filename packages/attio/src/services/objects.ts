@@ -55,7 +55,7 @@ export class CreateObjectRequest extends S.Class<CreateObjectRequest>("CreateObj
     singular_noun: S.String,
     plural_noun: S.String,
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/objects" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/objects", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example UpdateObjectRequest */
@@ -66,7 +66,7 @@ export class UpdateObjectRequest extends S.Class<UpdateObjectRequest>("UpdateObj
     singular_noun: S.optional(S.String),
     plural_noun: S.optional(S.String),
   },
-  T.all(T.Http({ method: "PATCH", uri: "/v2/objects/{object}" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "PATCH", uri: "/v2/objects/{object}", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 // --- Operations ---

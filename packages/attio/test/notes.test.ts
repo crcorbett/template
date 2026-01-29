@@ -2,7 +2,7 @@ import { describe, expect } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import { test, withResource } from "./test.js";
 import { queryRecords } from "../src/services/records.js";
-import { listNotes, createNote, getNote, updateNote, deleteNote } from "../src/services/notes.js";
+import { listNotes, createNote, getNote, deleteNote } from "../src/services/notes.js";
 
 describe("Notes", () => {
   test("should list notes", () =>
@@ -33,13 +33,6 @@ describe("Notes", () => {
             // Read back
             const fetched = yield* getNote({ note_id: created.data.id.note_id });
             expect(fetched.data.title).toBe(created.data.title);
-
-            // Update
-            const updated = yield* updateNote({
-              note_id: created.data.id.note_id,
-              title: "Updated Title",
-            });
-            expect(updated.data.title).toBe("Updated Title");
           }),
         release: (created) =>
           deleteNote({ note_id: created.data.id.note_id }).pipe(

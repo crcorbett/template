@@ -243,9 +243,12 @@ export const makeRequestBuilder = (
             bodyObj[propName] = encodeJsonValue(value);
           }
         }
-        return Object.keys(bodyObj).length > 0
-          ? JSON.stringify(bodyObj)
-          : undefined;
+        if (Object.keys(bodyObj).length > 0) {
+          return httpTrait.dataWrapper
+            ? JSON.stringify({ data: bodyObj })
+            : JSON.stringify(bodyObj);
+        }
+        return undefined;
       }
 
       return undefined;

@@ -55,7 +55,7 @@ export class CreateListRequest extends S.Class<CreateListRequest>("CreateListReq
     name: S.String,
     parent_object: S.optional(S.Array(S.String)),
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/lists" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/lists", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example UpdateListRequest */
@@ -64,7 +64,7 @@ export class UpdateListRequest extends S.Class<UpdateListRequest>("UpdateListReq
     list: S.String.pipe(T.HttpLabel()),
     name: S.optional(S.String),
   },
-  T.all(T.Http({ method: "PATCH", uri: "/v2/lists/{list}" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "PATCH", uri: "/v2/lists/{list}", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example DeleteListRequest */

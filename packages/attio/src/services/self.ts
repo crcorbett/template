@@ -36,7 +36,7 @@ export class GetSelfRequest extends S.Class<GetSelfRequest>("GetSelfRequest")(
 
 const getSelfOp: Operation = {
   input: GetSelfRequest,
-  output: SelfResponse,
+  output: SelfData,
   errors: [...COMMON_ERRORS],
 };
 
@@ -49,5 +49,5 @@ type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 /** @example getSelf */
 export const getSelf: (
   input: GetSelfRequest
-) => Effect.Effect<SelfResponse, AttioErrorType, Deps> =
+) => Effect.Effect<SelfData, AttioErrorType, Deps> =
   /*@__PURE__*/ /*#__PURE__*/ makeClient(getSelfOp);

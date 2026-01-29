@@ -62,7 +62,7 @@ export class CreateTaskRequest extends S.Class<CreateTaskRequest>("CreateTaskReq
     linked_records: S.optional(S.Array(S.Unknown)),
     assignees: S.optional(S.Array(S.Unknown)),
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/tasks" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/tasks", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example GetTaskRequest */
@@ -82,7 +82,7 @@ export class UpdateTaskRequest extends S.Class<UpdateTaskRequest>("UpdateTaskReq
     linked_records: S.optional(S.Array(S.Unknown)),
     assignees: S.optional(S.Array(S.Unknown)),
   },
-  T.all(T.Http({ method: "PATCH", uri: "/v2/tasks/{task_id}" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "PATCH", uri: "/v2/tasks/{task_id}", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example DeleteTaskRequest */

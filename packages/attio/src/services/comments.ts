@@ -35,20 +35,12 @@ export class CommentResponse extends S.Class<CommentResponse>("CommentResponse")
 
 /** @section Request Schemas */
 
-/** @example ListCommentsRequest */
-export class ListCommentsRequest extends S.Class<ListCommentsRequest>("ListCommentsRequest")(
-  { thread_id: S.String.pipe(T.HttpLabel()) },
-  T.all(T.Http({ method: "GET", uri: "/v2/threads/{thread_id}/comments" }), T.RestJsonProtocol())
-) {}
-
 /** @example CreateCommentRequest */
 export class CreateCommentRequest extends S.Class<CreateCommentRequest>("CreateCommentRequest")(
   {
-    thread_id: S.String.pipe(T.HttpLabel()),
-    format: S.optional(S.String),
-    content: S.optional(S.String),
+    data: S.Unknown,
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/threads/{thread_id}/comments" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/comments" }), T.RestJsonProtocol())
 ) {}
 
 /** @example DeleteCommentRequest */
@@ -58,12 +50,6 @@ export class DeleteCommentRequest extends S.Class<DeleteCommentRequest>("DeleteC
 ) {}
 
 // --- Operations ---
-
-const listCommentsOp: Operation = {
-  input: ListCommentsRequest,
-  output: CommentList,
-  errors: [...COMMON_ERRORS],
-};
 
 const createCommentOp: Operation = {
   input: CreateCommentRequest,
@@ -82,12 +68,6 @@ const deleteCommentOp: Operation = {
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
 /** @section Client Functions */
-
-/** @example listComments */
-export const listComments: (
-  input: ListCommentsRequest
-) => Effect.Effect<CommentList, AttioErrorType, Deps> =
-  /*@__PURE__*/ /*#__PURE__*/ makeClient(listCommentsOp);
 
 /** @example createComment */
 export const createComment: (

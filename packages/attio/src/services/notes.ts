@@ -60,24 +60,13 @@ export class CreateNoteRequest extends S.Class<CreateNoteRequest>("CreateNoteReq
     format: S.optional(S.String),
     content: S.optional(S.String),
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/notes" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/notes", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example GetNoteRequest */
 export class GetNoteRequest extends S.Class<GetNoteRequest>("GetNoteRequest")(
   { note_id: S.String.pipe(T.HttpLabel()) },
   T.all(T.Http({ method: "GET", uri: "/v2/notes/{note_id}" }), T.RestJsonProtocol())
-) {}
-
-/** @example UpdateNoteRequest */
-export class UpdateNoteRequest extends S.Class<UpdateNoteRequest>("UpdateNoteRequest")(
-  {
-    note_id: S.String.pipe(T.HttpLabel()),
-    title: S.optional(S.String),
-    format: S.optional(S.String),
-    content: S.optional(S.String),
-  },
-  T.all(T.Http({ method: "PATCH", uri: "/v2/notes/{note_id}" }), T.RestJsonProtocol())
 ) {}
 
 /** @example DeleteNoteRequest */
@@ -112,12 +101,6 @@ const getNoteOp: Operation = {
   errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-const updateNoteOp: Operation = {
-  input: UpdateNoteRequest,
-  output: NoteResponse,
-  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
-};
-
 const deleteNoteOp: Operation = {
   input: DeleteNoteRequest,
   output: S.Struct({}),
@@ -143,9 +126,6 @@ export const createNote = /*@__PURE__*/ /*#__PURE__*/ makeClient(createNoteOp);
 
 /** @example getNote */
 export const getNote = /*@__PURE__*/ /*#__PURE__*/ makeClient(getNoteOp);
-
-/** @example updateNote */
-export const updateNote = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateNoteOp);
 
 /** @example deleteNote */
 export const deleteNote = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteNoteOp);

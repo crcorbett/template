@@ -8,6 +8,5 @@ describe("Self", () => {
     Effect.gen(function* () {
       const result = yield* getSelf({});
       expect(result).toBeDefined();
-      expect(result.data).toBeDefined();
     }));
 });

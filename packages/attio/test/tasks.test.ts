@@ -23,9 +23,10 @@ describe("Tasks", () => {
           content: `Test Task ${Date.now()}`,
           format: "plaintext",
           is_completed: false,
+          deadline_at: null,
           linked_records: [
             {
-              target_object_id: person.id.object_id,
+              target_object: "people",
               target_record_id: person.id.record_id,
             },
           ],

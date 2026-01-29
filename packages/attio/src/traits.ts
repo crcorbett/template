@@ -172,6 +172,7 @@ export const httpSymbol = Symbol.for("distilled-attio/http");
 export interface HttpTrait {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS";
   uri: string;
+  dataWrapper?: boolean;
 }
 export const Http = (trait: HttpTrait) => makeAnnotation(httpSymbol, trait);
 

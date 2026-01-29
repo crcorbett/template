@@ -52,7 +52,7 @@ export class CreateWebhookRequest extends S.Class<CreateWebhookRequest>("CreateW
     target_url: S.String,
     subscriptions: S.Array(S.Unknown),
   },
-  T.all(T.Http({ method: "POST", uri: "/v2/webhooks" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "POST", uri: "/v2/webhooks", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example GetWebhookRequest */
@@ -68,7 +68,7 @@ export class UpdateWebhookRequest extends S.Class<UpdateWebhookRequest>("UpdateW
     target_url: S.optional(S.String),
     subscriptions: S.optional(S.Array(S.Unknown)),
   },
-  T.all(T.Http({ method: "PATCH", uri: "/v2/webhooks/{webhook_id}" }), T.RestJsonProtocol())
+  T.all(T.Http({ method: "PATCH", uri: "/v2/webhooks/{webhook_id}", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
 
 /** @example DeleteWebhookRequest */

@@ -350,7 +350,7 @@ export const makePaginated = <Op extends PaginatedOperation>(operation: Op) => {
       // Build request payload with token if present
       const requestPayload: Input =
         state.token !== undefined
-          ? { ...state.payload, [pagination.inputToken]: state.token }
+          ? { ...state.payload, [pagination.inputToken]: mode === "offset" ? Number(state.token) : state.token }
           : state.payload;
 
       return fn(requestPayload).pipe(
