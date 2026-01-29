@@ -72,9 +72,9 @@ export class CohortFilterProperties extends S.Class<CohortFilterProperties>(
   "CohortFilterProperties"
 )({
   /** Logical operator for combining groups: "AND" or "OR". */
-  type: S.String,
+  type: S.optional(S.String),
   /** Array of filter groups. */
-  values: S.Array(CohortFilterGroup),
+  values: S.optional(S.Array(CohortFilterGroup)),
 }) {}
 
 /**

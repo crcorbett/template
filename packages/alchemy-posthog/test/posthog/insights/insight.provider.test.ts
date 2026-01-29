@@ -71,7 +71,6 @@ describe("PostHog Insight Provider", () => {
         expect(stack.TestInsight.id).toBeDefined();
         expect(typeof stack.TestInsight.id).toBe("number");
         expect(stack.TestInsight.name).toBe(TestInsight.props.name);
-        expect(stack.TestInsight.saved).toBe(true);
 
         // Verify via direct API call
         const fetched = yield* InsightsAPI.getInsight({
@@ -79,7 +78,6 @@ describe("PostHog Insight Provider", () => {
           id: stack.TestInsight.id,
         });
         expect(fetched.name).toBe(TestInsight.props.name);
-        expect(fetched.saved).toBe(true);
 
         // Update the insight
         class UpdatedInsight extends Insight("TestInsight", {

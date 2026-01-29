@@ -1,3 +1,4 @@
+import type { SurveyAppearance, SurveyQuestion } from "@packages/posthog/surveys";
 import { Resource } from "alchemy-effect";
 
 /**
@@ -22,12 +23,12 @@ export interface SurveyProps {
   /**
    * Survey questions configuration.
    */
-  questions?: unknown[];
+  questions?: readonly SurveyQuestion[];
 
   /**
    * Visual appearance configuration.
    */
-  appearance?: unknown;
+  appearance?: SurveyAppearance;
 
   /**
    * ISO start date for the survey.

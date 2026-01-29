@@ -17,7 +17,6 @@ function mapResponseToAttrs(result: PostHogInsights.Insight): InsightAttrs {
     description: result.description,
     createdAt: result.created_at,
     favorited: result.favorited,
-    saved: result.saved,
   };
 }
 
@@ -64,8 +63,6 @@ export const insightProvider = () =>
               name: news.name,
               description: news.description,
               query: news.query,
-              filters: news.filters,
-              dashboards: news.dashboards,
               saved: news.saved,
             });
 
@@ -84,8 +81,6 @@ export const insightProvider = () =>
               name: news.name,
               description: news.description,
               query: news.query,
-              filters: news.filters,
-              dashboards: news.dashboards,
               saved: news.saved,
             });
 

@@ -68,11 +68,6 @@ export interface InsightAttrs {
    * Whether favorited.
    */
   favorited: boolean | undefined;
-
-  /**
-   * Whether saved.
-   */
-  saved: boolean | undefined;
 }
 
 /**
