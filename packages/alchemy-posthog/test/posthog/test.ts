@@ -171,6 +171,22 @@ export namespace test {
     return it.skip(name, () => {}, options.timeout ?? 60_000);
   }
 
+  export function skipIf(condition: boolean) {
+    return function (
+      name: string,
+      ...args:
+        | [{ timeout?: number }, Effect.Effect<void, unknown, Provided>]
+        | [Effect.Effect<void, unknown, Provided>]
+    ) {
+      if (condition) {
+        const [options = {}] = args.length === 1 ? [undefined] : args;
+        it.skip(name, () => {}, options.timeout ?? 60_000);
+      } else {
+        test(name, ...(args as [Effect.Effect<void, unknown, Provided>]));
+      }
+    };
+  }
+
   export const state = (
     resources: Record<string, State.ResourceState> = {},
   ) =>

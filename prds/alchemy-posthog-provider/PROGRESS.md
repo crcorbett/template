@@ -133,3 +133,14 @@ Changes to test/posthog/test.ts:
 - Both accept `Record<string, State.ResourceState>` parameters matching the reference
 
 Verification: `npx tsc --noEmit` passes.
+
+## CONFORM-020: Add test.skipIf() conditional skip helper
+
+Added `test.skipIf(condition)` to the test namespace in test/posthog/test.ts, matching the alchemy-effect reference pattern. When condition is true, delegates to `it.skip()`; otherwise delegates to `test()`.
+
+Changes to test/posthog/test.ts:
+- Added `export function skipIf(condition: boolean)` inside the `test` namespace
+- Returns a function accepting `(name, ...args)` with the same overload signature as `test()`
+- Enables conditional skipping of tests based on environment (e.g., missing POSTHOG_API_KEY)
+
+Verification: `npx tsc --noEmit` passes. `test.skipIf` is exported from test.ts.

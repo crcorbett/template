@@ -1218,8 +1218,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "test.skipIf is exported from test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added test.skipIf(condition) to the test namespace in test/posthog/test.ts. Follows the alchemy-effect reference pattern: returns a function that either delegates to test() or calls it.skip() based on the condition boolean. Typecheck passes."
     },
     {
       "id": "CONFORM-021",
