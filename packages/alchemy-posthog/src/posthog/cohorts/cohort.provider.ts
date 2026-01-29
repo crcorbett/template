@@ -122,7 +122,7 @@ export const cohortProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output, session }) {
+        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
           yield* PostHogCohorts.deleteCohort({
             project_id: projectId,
             id: output.id,

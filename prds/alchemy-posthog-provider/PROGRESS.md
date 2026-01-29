@@ -389,3 +389,19 @@ Files updated:
 - 8 provider .provider.ts files (3 imports each)
 
 Verification: `npx tsc --noEmit` passes. `grep '.js' src/` returns no `.js` extension imports.
+
+## CONFORM-036: Provider delete methods include full parameter destructuring
+
+Updated all 8 provider delete methods to destructure the full parameter set `{ id, output, session, olds }`, matching the alchemy-effect reference pattern. Previously only `{ output, session }` were destructured. Unused parameters `id` and `olds` are prefixed with underscores (`id: _id`, `olds: _olds`) to satisfy TypeScript's noUnusedLocals check.
+
+Files updated:
+- src/posthog/feature-flags/feature-flag.provider.ts
+- src/posthog/dashboards/dashboard.provider.ts
+- src/posthog/experiments/experiment.provider.ts
+- src/posthog/surveys/survey.provider.ts
+- src/posthog/cohorts/cohort.provider.ts
+- src/posthog/actions/action.provider.ts
+- src/posthog/annotations/annotation.provider.ts
+- src/posthog/insights/insight.provider.ts
+
+Verification: `npx tsc --noEmit` passes. All 8 delete methods destructure full parameter set. Tests require POSTHOG_API_KEY (integration tests).

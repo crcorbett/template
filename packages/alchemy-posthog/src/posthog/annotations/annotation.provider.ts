@@ -127,7 +127,7 @@ export const annotationProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output, session }) {
+        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
           // PostHog annotations don't reliably support HTTP DELETE.
           // Soft-delete by patching deleted: true instead.
           yield* PostHogAnnotations.updateAnnotation({

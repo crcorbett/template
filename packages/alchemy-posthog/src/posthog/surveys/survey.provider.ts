@@ -131,7 +131,7 @@ export const surveyProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output, session }) {
+        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
           yield* PostHogSurveys.deleteSurvey({
             project_id: projectId,
             id: output.id,

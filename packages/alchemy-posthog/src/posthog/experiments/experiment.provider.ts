@@ -141,7 +141,7 @@ export const experimentProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output, session }) {
+        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
           // PostHog experiments don't support HTTP DELETE (returns 405).
           // Soft-delete by archiving the experiment instead.
           yield* PostHogExperiments.updateExperiment({

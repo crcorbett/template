@@ -1556,8 +1556,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "All delete methods destructure full parameter set"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Updated all 8 provider delete methods to destructure { id: _id, output, session, olds: _olds }. Unused parameters (id, olds) are prefixed with underscore to satisfy TypeScript noUnusedLocals. output and session are used in all delete methods. npx tsc --noEmit passes."
     },
     {
       "id": "CONFORM-037",
