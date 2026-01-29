@@ -1,3 +1,4 @@
-// Dashboards barrel - providers will be added incrementally
+import "../config";
+
 export * from "./dashboard";
 export * from "./dashboard.provider";
