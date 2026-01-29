@@ -1392,8 +1392,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "bareProviders() is exported from src/posthog/index.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added bareProviders() to src/posthog/index.ts that composes resources() with Project, Credentials, and Endpoint layers. Updated providers() to build on bareProviders() + FetchHttpClient.layer. Follows alchemy-effect AWS cloud index pattern. Typecheck passes."
     },
     {
       "id": "CONFORM-029",

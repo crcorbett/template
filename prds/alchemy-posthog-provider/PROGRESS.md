@@ -264,3 +264,18 @@ Changes to src/posthog/index.ts:
 - Added `export const config = () => Effect.gen(function* () { const app = yield* App; return app.config.posthog; })`
 
 Verification: `npx tsc --noEmit` passes. `config()` is exported from src/posthog/index.ts.
+
+## CONFORM-028: Add bareProviders() separation from providers()
+
+Added `bareProviders()` to `src/posthog/index.ts` between `resources()` and `providers()`, matching the alchemy-effect AWS cloud index pattern where:
+- `resources()` - just the resource provider layers
+- `bareProviders()` - resources() + shared context (Project, Credentials, Endpoint)
+- `providers()` - bareProviders() + HttpClient
+
+This separation allows users to provide their own HttpClient while still getting all PostHog-specific layers.
+
+Changes to src/posthog/index.ts:
+- Added `export const bareProviders = () => resources().pipe(Layer.provideMerge(Project.fromStageConfig()), Layer.provideMerge(Credentials.fromStageConfig()), Layer.provideMerge(Endpoint.fromStageConfig()))`
+- Simplified `providers()` to `bareProviders().pipe(Layer.provideMerge(FetchHttpClient.layer))`
+
+Verification: `npx tsc --noEmit` passes. `bareProviders()` is exported from src/posthog/index.ts.

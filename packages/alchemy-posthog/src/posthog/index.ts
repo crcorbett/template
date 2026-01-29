@@ -45,10 +45,12 @@ export const resources = () =>
     Insights.insightProvider()
   );
 
-export const providers = () =>
+export const bareProviders = () =>
   resources().pipe(
     Layer.provideMerge(Project.fromStageConfig()),
     Layer.provideMerge(Credentials.fromStageConfig()),
-    Layer.provideMerge(Endpoint.fromStageConfig()),
-    Layer.provideMerge(FetchHttpClient.layer)
+    Layer.provideMerge(Endpoint.fromStageConfig())
   );
+
+export const providers = () =>
+  bareProviders().pipe(Layer.provideMerge(FetchHttpClient.layer));
