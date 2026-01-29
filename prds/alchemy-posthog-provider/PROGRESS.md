@@ -166,3 +166,22 @@ Files updated:
 - insight.provider.ts: `()` -> `{ id: _id, news: _news, olds: _olds, output: _output }`
 
 Verification: `npx tsc --noEmit` passes. All 8 diff methods include id and output in destructuring.
+
+## CONFORM-023: Provider read method fallback lookup via list APIs
+
+Added fallback list-based lookup to all 8 provider read methods. When `output?.id` is missing or the ID-based GET returns not found, each provider now falls back to listing resources and matching by a unique identifier from `olds`:
+
+- **FeatureFlag**: match by `olds.key`, filter `!deleted`
+- **Dashboard**: match by `olds.name`, filter `!deleted`, then fetch full Dashboard from DashboardBasic
+- **Experiment**: match by `olds.featureFlagKey` via `feature_flag_key`, filter `!archived`
+- **Survey**: match by `olds.name`, filter `!archived`
+- **Cohort**: match by `olds.name`, filter `!deleted`
+- **Action**: match by `olds.name`, filter `!deleted`
+- **Insight**: match by `olds.name`, filter `!deleted`
+- **Annotation**: match by `olds.content` + `olds.dateMarker`, filter `!deleted`
+
+All fallbacks catch `PostHogError` to gracefully degrade if the list API fails.
+
+Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
+
+Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).

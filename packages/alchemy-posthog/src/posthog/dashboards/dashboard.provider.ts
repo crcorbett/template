@@ -38,23 +38,50 @@ export const dashboardProvider = () =>
           return undefined;
         }),
 
-        read: Effect.fn(function* ({ output }) {
-          if (!output?.id) {
-            return undefined;
+        read: Effect.fn(function* ({ olds, output }) {
+          if (output?.id) {
+            const result = yield* PostHogDashboards.getDashboard({
+              project_id: projectId,
+              id: output.id,
+            }).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            );
+
+            if (result) {
+              return mapResponseToAttrs(result);
+            }
           }
 
-          const result = yield* PostHogDashboards.getDashboard({
-            project_id: projectId,
-            id: output.id,
-          }).pipe(
-            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-          );
+          // Fallback: search by name using list API to recover from state loss
+          if (olds?.name) {
+            const page = yield* PostHogDashboards.listDashboards({
+              project_id: projectId,
+            }).pipe(
+              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+            );
 
-          if (!result) {
-            return undefined;
+            const match = page?.results?.find(
+              (d) => d.name === olds.name && !d.deleted
+            );
+
+            if (match) {
+              // List returns DashboardBasic; fetch full Dashboard for complete attrs
+              const full = yield* PostHogDashboards.getDashboard({
+                project_id: projectId,
+                id: match.id,
+              }).pipe(
+                Effect.catchTag("NotFoundError", () =>
+                  Effect.succeed(undefined)
+                )
+              );
+
+              if (full) {
+                return mapResponseToAttrs(full);
+              }
+            }
           }
 
-          return mapResponseToAttrs(result);
+          return undefined;
         }),
 
         create: Effect.fn(function* ({ news, session }) {

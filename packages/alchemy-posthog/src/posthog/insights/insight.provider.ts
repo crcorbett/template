@@ -36,23 +36,38 @@ export const insightProvider = () =>
           return undefined;
         }),
 
-        read: Effect.fn(function* ({ output }) {
-          if (!output?.id) {
-            return undefined;
+        read: Effect.fn(function* ({ olds, output }) {
+          if (output?.id) {
+            const result = yield* PostHogInsights.getInsight({
+              project_id: projectId,
+              id: output.id,
+            }).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            );
+
+            if (result) {
+              return mapResponseToAttrs(result);
+            }
           }
 
-          const result = yield* PostHogInsights.getInsight({
-            project_id: projectId,
-            id: output.id,
-          }).pipe(
-            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-          );
+          // Fallback: search by name using list API to recover from state loss
+          if (olds?.name) {
+            const page = yield* PostHogInsights.listInsights({
+              project_id: projectId,
+            }).pipe(
+              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+            );
 
-          if (!result) {
-            return undefined;
+            const match = page?.results?.find(
+              (i) => i.name === olds.name && !i.deleted
+            );
+
+            if (match) {
+              return mapResponseToAttrs(match);
+            }
           }
 
-          return mapResponseToAttrs(result);
+          return undefined;
         }),
 
         create: Effect.fn(function* ({ news, session }) {

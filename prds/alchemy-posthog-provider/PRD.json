@@ -1285,8 +1285,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "read methods have fallback lookup for resources that support list APIs"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added fallback list-based lookup to all 8 provider read methods. When output.id is missing or not found, each provider falls back to listing resources and matching by a unique identifier from olds: FeatureFlag by key, Dashboard by name, Experiment by featureFlagKey, Survey by name, Cohort by name, Action by name, Insight by name, Annotation by content+dateMarker. All fallbacks filter out deleted/archived resources. Dashboard fallback fetches full Dashboard after matching DashboardBasic from list. Typecheck passes. Tests require POSTHOG_API_KEY (integration tests)."
     },
     {
       "id": "CONFORM-024",

@@ -37,23 +37,41 @@ export const annotationProvider = () =>
           return undefined;
         }),
 
-        read: Effect.fn(function* ({ output }) {
-          if (!output?.id) {
-            return undefined;
+        read: Effect.fn(function* ({ olds, output }) {
+          if (output?.id) {
+            const result = yield* PostHogAnnotations.getAnnotation({
+              project_id: projectId,
+              id: output.id,
+            }).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            );
+
+            if (result) {
+              return mapResponseToAttrs(result);
+            }
           }
 
-          const result = yield* PostHogAnnotations.getAnnotation({
-            project_id: projectId,
-            id: output.id,
-          }).pipe(
-            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-          );
+          // Fallback: search by content + dateMarker using list API to recover from state loss
+          if (olds?.content) {
+            const page = yield* PostHogAnnotations.listAnnotations({
+              project_id: projectId,
+            }).pipe(
+              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+            );
 
-          if (!result) {
-            return undefined;
+            const match = page?.results?.find(
+              (a) =>
+                a.content === olds.content &&
+                a.date_marker === olds.dateMarker &&
+                !a.deleted
+            );
+
+            if (match) {
+              return mapResponseToAttrs(match);
+            }
           }
 
-          return mapResponseToAttrs(result);
+          return undefined;
         }),
 
         create: Effect.fn(function* ({ news, session }) {
