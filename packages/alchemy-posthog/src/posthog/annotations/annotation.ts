@@ -1,3 +1,4 @@
+import type { Input } from "alchemy-effect";
 import { Resource } from "alchemy-effect";
 
 /**
@@ -22,7 +23,7 @@ export interface AnnotationProps {
   /**
    * Attached insight (dashboard item) ID.
    */
-  dashboardItem?: number | null;
+  dashboardItem?: Input<number | null>;
 
   /**
    * Scope of the annotation.

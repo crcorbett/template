@@ -279,3 +279,17 @@ Changes to src/posthog/index.ts:
 - Simplified `providers()` to `bareProviders().pipe(Layer.provideMerge(FetchHttpClient.layer))`
 
 Verification: `npx tsc --noEmit` passes. `bareProviders()` is exported from src/posthog/index.ts.
+
+## CONFORM-029: Add Input<T> wrapper to cross-resource reference properties
+
+Added `Input<T>` wrapper from alchemy-effect to 4 Props interfaces that contain cross-resource reference properties. This follows the alchemy-effect convention where properties that may reference another resource's output attributes are wrapped in `Input<T>` to support lazy resolution.
+
+Changes:
+- **survey.ts**: `linkedFlagId?: number | null` -> `linkedFlagId?: Input<number | null>` (references FeatureFlag.id)
+- **annotation.ts**: `dashboardItem?: number | null` -> `dashboardItem?: Input<number | null>` (references Insight/dashboard item id)
+- **insight.ts**: `dashboards?: number[]` -> `dashboards?: Input<number>[]` (references Dashboard.id array)
+- **experiment.ts**: `holdoutId?: number | null` -> `holdoutId?: Input<number | null>` (references holdout group id)
+
+Each file also received `import type { Input } from "alchemy-effect"`.
+
+Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).

@@ -1,3 +1,4 @@
+import type { Input } from "alchemy-effect";
 import { Resource } from "alchemy-effect";
 
 /**
@@ -27,7 +28,7 @@ export interface InsightProps {
   /**
    * Dashboard IDs this insight is attached to.
    */
-  dashboards?: number[];
+  dashboards?: Input<number>[];
 
   /**
    * Whether the insight is saved.

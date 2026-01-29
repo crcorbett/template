@@ -1,4 +1,5 @@
 import type { SurveyAppearance, SurveyQuestion } from "@packages/posthog/surveys";
+import type { Input } from "alchemy-effect";
 import { Resource } from "alchemy-effect";
 
 /**
@@ -48,7 +49,7 @@ export interface SurveyProps {
   /**
    * Linked feature flag ID.
    */
-  linkedFlagId?: number | null;
+  linkedFlagId?: Input<number | null>;
 }
 
 /**

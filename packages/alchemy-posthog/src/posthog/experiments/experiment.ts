@@ -1,3 +1,4 @@
+import type { Input } from "alchemy-effect";
 import { Resource } from "alchemy-effect";
 
 /**
@@ -42,7 +43,7 @@ export interface ExperimentProps {
   /**
    * Holdout group ID.
    */
-  holdoutId?: number | null;
+  holdoutId?: Input<number | null>;
 
   /**
    * Experiment type.
