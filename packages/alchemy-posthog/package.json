@@ -78,6 +78,7 @@
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",
+    "test": "bun --env-file=.env vitest run",
     "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
   },
   "dependencies": {

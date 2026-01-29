@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "build": "bun run generate && tsc",
+    "build": "tsc",
     "check-types": "tsc --noEmit",
     "generate": "bun run scripts/generate-clients.ts",
     "test": "vitest run",
