@@ -85,6 +85,35 @@ export const dashboardProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if a dashboard with this name already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Name is not strictly unique, but serves as best-effort detection.
+          const existing = yield* PostHogDashboards.listDashboards({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find((d) => d.name === news.name && !d.deleted)
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            // Fetch full dashboard details since list returns DashboardBasic
+            const full = yield* PostHogDashboards.getDashboard({
+              project_id: projectId,
+              id: existing.id,
+            }).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            );
+
+            if (full) {
+              yield* session.note(
+                `Dashboard already exists (idempotent create): ${full.name}`
+              );
+              return mapResponseToAttrs(full);
+            }
+          }
+
           const result = yield* PostHogDashboards.createDashboard({
             project_id: projectId,
             name: news.name,

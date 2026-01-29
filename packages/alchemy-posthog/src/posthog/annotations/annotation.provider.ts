@@ -75,6 +75,30 @@ export const annotationProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if an annotation with this content + dateMarker already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Content + dateMarker combination serves as best-effort detection.
+          const existing = yield* PostHogAnnotations.listAnnotations({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find(
+                (a) =>
+                  a.content === news.content &&
+                  a.date_marker === news.dateMarker &&
+                  !a.deleted
+              )
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            yield* session.note(
+              `Annotation already exists (idempotent create): ${existing.id}`
+            );
+            return mapResponseToAttrs(existing);
+          }
+
           const result = yield* PostHogAnnotations.createAnnotation({
             project_id: projectId,
             content: news.content,

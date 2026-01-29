@@ -74,6 +74,25 @@ export const cohortProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if a cohort with this name already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Name is not strictly unique, but serves as best-effort detection.
+          const existing = yield* PostHogCohorts.listCohorts({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find((c) => c.name === news.name && !c.deleted)
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            yield* session.note(
+              `Cohort already exists (idempotent create): ${existing.name}`
+            );
+            return mapResponseToAttrs(existing);
+          }
+
           const result = yield* PostHogCohorts.createCohort({
             project_id: projectId,
             name: news.name,

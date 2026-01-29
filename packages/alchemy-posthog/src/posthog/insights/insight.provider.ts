@@ -71,6 +71,27 @@ export const insightProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if an insight with this name already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Name is not strictly unique, but serves as best-effort detection.
+          if (news.name) {
+            const existing = yield* PostHogInsights.listInsights({
+              project_id: projectId,
+            }).pipe(
+              Effect.map((page) =>
+                page.results?.find((i) => i.name === news.name && !i.deleted)
+              ),
+              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+            );
+
+            if (existing) {
+              yield* session.note(
+                `Insight already exists (idempotent create): ${existing.id}`
+              );
+              return mapResponseToAttrs(existing);
+            }
+          }
+
           const result = yield* PostHogInsights.createInsight({
             project_id: projectId,
             name: news.name,

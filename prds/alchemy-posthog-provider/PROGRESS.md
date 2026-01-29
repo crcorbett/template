@@ -185,3 +185,23 @@ All fallbacks catch `PostHogError` to gracefully degrade if the list API fails.
 Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
 
 Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-024: Add idempotency handling to provider create methods
+
+Added idempotency checks to all 8 provider create methods. Before calling the create API, each provider now lists existing resources and checks for a match to prevent duplicate creation after state persistence failures.
+
+Lookup strategies by resource type:
+- **FeatureFlag**: unique `key` match, filter `!deleted`
+- **Experiment**: unique `featureFlagKey` via `feature_flag_key` match, filter `!archived`
+- **Dashboard**: `name` match, filter `!deleted`, then fetch full Dashboard from DashboardBasic
+- **Survey**: `name` match, filter `!archived`
+- **Cohort**: `name` match, filter `!deleted`
+- **Action**: `name` match, filter `!deleted`
+- **Insight**: `name` match (guarded by `if (news.name)` since name is optional), filter `!deleted`
+- **Annotation**: `content` + `dateMarker` combination match, filter `!deleted`
+
+All lookups catch `PostHogError` to gracefully degrade if the list API fails. When an existing resource is found, the provider returns its attrs and logs an "(idempotent create)" session note.
+
+Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
+
+Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).

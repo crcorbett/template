@@ -78,6 +78,25 @@ export const featureFlagProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if a feature flag with this key already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Since FeatureFlag.key is unique, we look it up to avoid duplicates.
+          const existing = yield* PostHogFeatureFlags.listFeatureFlags({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find((f) => f.key === news.key && !f.deleted)
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            yield* session.note(
+              `Feature flag already exists (idempotent create): ${existing.key}`
+            );
+            return mapResponseToAttrs(existing);
+          }
+
           const result = yield* PostHogFeatureFlags.createFeatureFlag({
             project_id: projectId,
             key: news.key,

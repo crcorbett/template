@@ -1308,8 +1308,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "create methods check for existing resource before creating (at least for FeatureFlag)"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added idempotency handling to all 8 provider create methods. FeatureFlag looks up by unique key, Experiment by unique featureFlagKey. Dashboard, Survey, Action, Cohort use name as best-effort detection. Insight uses name (guarded by if-check since name is optional). Annotation uses content+dateMarker combination. Each provider calls listX API before createX, catches PostHogError gracefully, and returns existing resource attrs if found. Typecheck passes."
     },
     {
       "id": "CONFORM-025",

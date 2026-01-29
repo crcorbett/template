@@ -75,6 +75,25 @@ export const surveyProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if a survey with this name already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Name is not strictly unique, but serves as best-effort detection.
+          const existing = yield* PostHogSurveys.listSurveys({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find((s) => s.name === news.name && !s.archived)
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            yield* session.note(
+              `Survey already exists (idempotent create): ${existing.name}`
+            );
+            return mapResponseToAttrs(existing);
+          }
+
           const result = yield* PostHogSurveys.createSurvey({
             project_id: projectId,
             name: news.name,

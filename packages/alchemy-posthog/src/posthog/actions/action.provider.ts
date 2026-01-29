@@ -91,6 +91,25 @@ export const actionProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
+          // Idempotency: check if an action with this name already exists.
+          // State persistence can fail after create, so a retry would call create
+          // again. Name is not strictly unique, but serves as best-effort detection.
+          const existing = yield* PostHogActions.listActions({
+            project_id: projectId,
+          }).pipe(
+            Effect.map((page) =>
+              page.results?.find((a) => a.name === news.name && !a.deleted)
+            ),
+            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
+          );
+
+          if (existing) {
+            yield* session.note(
+              `Action already exists (idempotent create): ${existing.name}`
+            );
+            return mapResponseToAttrs(existing);
+          }
+
           const result = yield* PostHogActions.createAction({
             project_id: projectId,
             name: news.name,
