@@ -113,6 +113,73 @@ export class AssertRecordRequest extends S.Class<AssertRecordRequest>("AssertRec
   )
 ) {}
 
+/** @example OverwriteRecordRequest */
+export class OverwriteRecordRequest extends S.Class<OverwriteRecordRequest>("OverwriteRecordRequest")(
+  {
+    object: S.String.pipe(T.HttpLabel()),
+    record_id: S.String.pipe(T.HttpLabel()),
+    data: S.Unknown,
+  },
+  T.all(
+    T.Http({ method: "PUT", uri: "/v2/objects/{object}/records/{record_id}", dataWrapper: true }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example ListRecordAttributeValuesRequest */
+export class ListRecordAttributeValuesRequest extends S.Class<ListRecordAttributeValuesRequest>("ListRecordAttributeValuesRequest")(
+  {
+    object: S.String.pipe(T.HttpLabel()),
+    record_id: S.String.pipe(T.HttpLabel()),
+    attribute: S.String.pipe(T.HttpLabel()),
+  },
+  T.all(
+    T.Http({ method: "GET", uri: "/v2/objects/{object}/records/{record_id}/attributes/{attribute}/values" }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example RecordAttributeValueList */
+export class RecordAttributeValueList extends S.Class<RecordAttributeValueList>("RecordAttributeValueList")({
+  data: S.Array(S.Unknown),
+}) {}
+
+/** @example ListRecordEntriesRequest */
+export class ListRecordEntriesRequest extends S.Class<ListRecordEntriesRequest>("ListRecordEntriesRequest")(
+  {
+    object: S.String.pipe(T.HttpLabel()),
+    record_id: S.String.pipe(T.HttpLabel()),
+  },
+  T.all(
+    T.Http({ method: "GET", uri: "/v2/objects/{object}/records/{record_id}/entries" }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example RecordEntryList */
+export class RecordEntryList extends S.Class<RecordEntryList>("RecordEntryList")({
+  data: S.Array(S.Unknown),
+}) {}
+
+/** @example SearchRecordsRequest */
+export class SearchRecordsRequest extends S.Class<SearchRecordsRequest>("SearchRecordsRequest")(
+  {
+    query: S.String,
+    limit: S.optional(S.Number),
+    objects: S.Array(S.String),
+    request_as: S.Unknown,
+  },
+  T.all(
+    T.Http({ method: "POST", uri: "/v2/objects/records/search" }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example SearchRecordList */
+export class SearchRecordList extends S.Class<SearchRecordList>("SearchRecordList")({
+  data: S.Array(S.Unknown),
+}) {}
+
 // --- Operations ---
 
 const queryRecordsOp: PaginatedOperation = {
@@ -157,6 +224,30 @@ const assertRecordOp: Operation = {
   errors: [...COMMON_ERRORS_WITH_CONFLICT],
 };
 
+const overwriteRecordOp: Operation = {
+  input: OverwriteRecordRequest,
+  output: RecordResponse,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
+const listRecordAttributeValuesOp: Operation = {
+  input: ListRecordAttributeValuesRequest,
+  output: RecordAttributeValueList,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
+const listRecordEntriesOp: Operation = {
+  input: ListRecordEntriesRequest,
+  output: RecordEntryList,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
+const searchRecordsOp: Operation = {
+  input: SearchRecordsRequest,
+  output: SearchRecordList,
+  errors: [...COMMON_ERRORS],
+};
+
 // --- Exports ---
 
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
@@ -185,3 +276,15 @@ export const deleteRecord = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteRecordO
 
 /** @example assertRecord */
 export const assertRecord = /*@__PURE__*/ /*#__PURE__*/ makeClient(assertRecordOp);
+
+/** @example overwriteRecord */
+export const overwriteRecord = /*@__PURE__*/ /*#__PURE__*/ makeClient(overwriteRecordOp);
+
+/** @example listRecordAttributeValues */
+export const listRecordAttributeValues = /*@__PURE__*/ /*#__PURE__*/ makeClient(listRecordAttributeValuesOp);
+
+/** @example listRecordEntries */
+export const listRecordEntries = /*@__PURE__*/ /*#__PURE__*/ makeClient(listRecordEntriesOp);
+
+/** @example searchRecords */
+export const searchRecords = /*@__PURE__*/ /*#__PURE__*/ makeClient(searchRecordsOp);

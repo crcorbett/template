@@ -21,4 +21,12 @@ describe("WorkspaceMembers", () => {
       });
       expect(result.data.id.workspace_member_id).toBe(first.id.workspace_member_id);
     }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getWorkspaceMember({
+        workspace_member_id: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
+    }));
 });

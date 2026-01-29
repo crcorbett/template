@@ -69,6 +69,33 @@ export class WorkspaceMemberId extends S.Class<WorkspaceMemberId>("WorkspaceMemb
   workspace_member_id: S.String,
 }) {}
 
+/** Composite thread ID — { workspace_id, thread_id } */
+export class ThreadId extends S.Class<ThreadId>("ThreadId")({
+  workspace_id: S.String,
+  thread_id: S.String,
+}) {}
+
+/** Composite status ID — { workspace_id, object_id, attribute_id, status_id } */
+export class StatusId extends S.Class<StatusId>("StatusId")({
+  workspace_id: S.String,
+  object_id: S.String,
+  attribute_id: S.String,
+  status_id: S.String,
+}) {}
+
+/** Composite meeting ID — { workspace_id, meeting_id } */
+export class MeetingId extends S.Class<MeetingId>("MeetingId")({
+  workspace_id: S.String,
+  meeting_id: S.String,
+}) {}
+
+/** Composite call recording ID — { workspace_id, meeting_id, call_recording_id } */
+export class CallRecordingId extends S.Class<CallRecordingId>("CallRecordingId")({
+  workspace_id: S.String,
+  meeting_id: S.String,
+  call_recording_id: S.String,
+}) {}
+
 // ---------------------------------------------------------------------------
 // Shared sub-schemas
 // ---------------------------------------------------------------------------

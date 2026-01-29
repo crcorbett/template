@@ -19,4 +19,12 @@ describe("Lists", () => {
       const result = yield* getList({ list: first.id.list_id });
       expect(result.data.id.list_id).toBe(first.id.list_id);
     }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getList({
+        list: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
+    }));
 });

@@ -23,4 +23,14 @@ describe("Attributes", () => {
       });
       expect(result.data.api_slug).toBe(first.api_slug);
     }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getAttribute({
+        target: "objects",
+        identifier: "people",
+        attribute: "nonexistent_attribute_slug_that_does_not_exist",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
+    }));
 });

@@ -9,14 +9,18 @@ export { makePaginated } from "./client/api.js";
 export {
   ActorReference,
   Assignee,
+  CallRecordingId,
   EntryId,
   LinkedRecord,
   ListId,
+  MeetingId,
   NoteId,
   NoteTag,
   ObjectId,
   RecordId,
+  StatusId,
   TaskId,
+  ThreadId,
   WebhookId,
   WebhookSubscription,
   WorkspaceMemberId,
@@ -63,3 +67,6 @@ export * as Comments from "./services/comments.js";
 export * as Webhooks from "./services/webhooks.js";
 export * as WorkspaceMembers from "./services/workspace-members.js";
 export * as Self from "./services/self.js";
+export * as Threads from "./services/threads.js";
+export * as Statuses from "./services/statuses.js";
+export * as Meetings from "./services/meetings.js";

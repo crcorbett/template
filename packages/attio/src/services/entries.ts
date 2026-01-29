@@ -112,6 +112,37 @@ export class AssertEntryRequest extends S.Class<AssertEntryRequest>("AssertEntry
   )
 ) {}
 
+/** @example OverwriteEntryRequest */
+export class OverwriteEntryRequest extends S.Class<OverwriteEntryRequest>("OverwriteEntryRequest")(
+  {
+    list: S.String.pipe(T.HttpLabel()),
+    entry_id: S.String.pipe(T.HttpLabel()),
+    data: S.Unknown,
+  },
+  T.all(
+    T.Http({ method: "PUT", uri: "/v2/lists/{list}/entries/{entry_id}", dataWrapper: true }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example ListEntryAttributeValuesRequest */
+export class ListEntryAttributeValuesRequest extends S.Class<ListEntryAttributeValuesRequest>("ListEntryAttributeValuesRequest")(
+  {
+    list: S.String.pipe(T.HttpLabel()),
+    entry_id: S.String.pipe(T.HttpLabel()),
+    attribute: S.String.pipe(T.HttpLabel()),
+  },
+  T.all(
+    T.Http({ method: "GET", uri: "/v2/lists/{list}/entries/{entry_id}/attributes/{attribute}/values" }),
+    T.RestJsonProtocol()
+  )
+) {}
+
+/** @example EntryAttributeValueList */
+export class EntryAttributeValueList extends S.Class<EntryAttributeValueList>("EntryAttributeValueList")({
+  data: S.Array(S.Unknown),
+}) {}
+
 // --- Operations ---
 
 const queryEntriesOp: PaginatedOperation = {
@@ -156,6 +187,18 @@ const assertEntryOp: Operation = {
   errors: [...COMMON_ERRORS_WITH_CONFLICT],
 };
 
+const overwriteEntryOp: Operation = {
+  input: OverwriteEntryRequest,
+  output: EntryResponse,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
+const listEntryAttributeValuesOp: Operation = {
+  input: ListEntryAttributeValuesRequest,
+  output: EntryAttributeValueList,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
 // --- Exports ---
 
 type Deps = HttpClient.HttpClient | Credentials | Endpoint;
@@ -184,3 +227,9 @@ export const deleteEntry = /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteEntryOp)
 
 /** @example assertEntry */
 export const assertEntry = /*@__PURE__*/ /*#__PURE__*/ makeClient(assertEntryOp);
+
+/** @example overwriteEntry */
+export const overwriteEntry = /*@__PURE__*/ /*#__PURE__*/ makeClient(overwriteEntryOp);
+
+/** @example listEntryAttributeValues */
+export const listEntryAttributeValues = /*@__PURE__*/ /*#__PURE__*/ makeClient(listEntryAttributeValuesOp);

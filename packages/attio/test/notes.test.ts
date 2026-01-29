@@ -4,6 +4,7 @@ import { test, withResource } from "./test.js";
 import { queryRecords } from "../src/services/records.js";
 import { listNotes, createNote, getNote, deleteNote } from "../src/services/notes.js";
 
+
 describe("Notes", () => {
   test("should list notes", () =>
     Effect.gen(function* () {
@@ -39,5 +40,13 @@ describe("Notes", () => {
             Effect.catchAll(() => Effect.void)
           ),
       });
+    }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getNote({
+        note_id: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
     }));
 });

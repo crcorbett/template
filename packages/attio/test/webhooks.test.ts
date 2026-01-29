@@ -1,7 +1,7 @@
 import { describe, expect } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import { test, withResource } from "./test.js";
-import { createWebhook, getWebhook, updateWebhook, deleteWebhook } from "../src/services/webhooks.js";
+import { createWebhook, getWebhook, updateWebhook, deleteWebhook, listWebhooks } from "../src/services/webhooks.js";
 
 describe("Webhooks", () => {
   test("should perform full CRUD", { timeout: 60_000 }, () =>
@@ -32,5 +32,13 @@ describe("Webhooks", () => {
             Effect.catchAll(() => Effect.void)
           ),
       });
+    }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getWebhook({
+        webhook_id: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
     }));
 });

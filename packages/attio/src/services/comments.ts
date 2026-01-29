@@ -43,6 +43,12 @@ export class CreateCommentRequest extends S.Class<CreateCommentRequest>("CreateC
   T.all(T.Http({ method: "POST", uri: "/v2/comments" }), T.RestJsonProtocol())
 ) {}
 
+/** @example GetCommentRequest */
+export class GetCommentRequest extends S.Class<GetCommentRequest>("GetCommentRequest")(
+  { comment_id: S.String.pipe(T.HttpLabel()) },
+  T.all(T.Http({ method: "GET", uri: "/v2/comments/{comment_id}" }), T.RestJsonProtocol())
+) {}
+
 /** @example DeleteCommentRequest */
 export class DeleteCommentRequest extends S.Class<DeleteCommentRequest>("DeleteCommentRequest")(
   { comment_id: S.String.pipe(T.HttpLabel()) },
@@ -55,6 +61,12 @@ const createCommentOp: Operation = {
   input: CreateCommentRequest,
   output: CommentResponse,
   errors: [...COMMON_ERRORS],
+};
+
+const getCommentOp: Operation = {
+  input: GetCommentRequest,
+  output: CommentResponse,
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deleteCommentOp: Operation = {
@@ -74,6 +86,12 @@ export const createComment: (
   input: CreateCommentRequest
 ) => Effect.Effect<CommentResponse, AttioErrorType, Deps> =
   /*@__PURE__*/ /*#__PURE__*/ makeClient(createCommentOp);
+
+/** @example getComment */
+export const getComment: (
+  input: GetCommentRequest
+) => Effect.Effect<CommentResponse, AttioErrorType, Deps> =
+  /*@__PURE__*/ /*#__PURE__*/ makeClient(getCommentOp);
 
 /** @example deleteComment */
 export const deleteComment: (

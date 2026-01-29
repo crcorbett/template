@@ -2,7 +2,7 @@ import { describe, expect } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import { test } from "./test.js";
 import { queryRecords } from "../src/services/records.js";
-import { createComment, deleteComment } from "../src/services/comments.js";
+import { createComment, getComment, deleteComment } from "../src/services/comments.js";
 import { listWorkspaceMembers } from "../src/services/workspace-members.js";
 
 describe("Comments", () => {
@@ -42,5 +42,13 @@ describe("Comments", () => {
       yield* deleteComment({
         comment_id: commentId,
       }).pipe(Effect.catchAll(() => Effect.void));
+    }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getComment({
+        comment_id: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
     }));
 });

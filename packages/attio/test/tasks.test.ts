@@ -53,4 +53,12 @@ describe("Tasks", () => {
           ),
       });
     }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getTask({
+        task_id: "00000000-0000-0000-0000-000000000000",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
+    }));
 });

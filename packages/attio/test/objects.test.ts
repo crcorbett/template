@@ -21,4 +21,12 @@ describe("Objects", () => {
       expect(result.data.api_slug).toBe("people");
       expect(result.data.id.object_id).toBeDefined();
     }));
+
+  test("should handle not found", () =>
+    Effect.gen(function* () {
+      const result = yield* getObject({
+        object: "nonexistent_object_slug_that_does_not_exist",
+      }).pipe(Effect.either);
+      expect(result._tag).toBe("Left");
+    }));
 });
