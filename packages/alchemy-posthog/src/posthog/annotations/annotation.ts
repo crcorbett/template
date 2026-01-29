@@ -73,7 +73,7 @@ export interface Annotation<
   ID extends string = string,
   Props extends AnnotationProps = AnnotationProps,
 > extends Resource<
-    "PostHog.Annotations.Annotation",
+    "PostHog.Annotation",
     ID,
     Props,
     AnnotationAttrs<Input.Resolve<Props>>,
@@ -85,4 +85,4 @@ export const Annotation = Resource<{
     id: ID,
     props: Props
   ): Annotation<ID, Props>;
-}>("PostHog.Annotations.Annotation");
+}>("PostHog.Annotation");

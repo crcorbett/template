@@ -67,7 +67,7 @@ export interface Dashboard<
   ID extends string = string,
   Props extends DashboardProps = DashboardProps,
 > extends Resource<
-  "PostHog.Dashboards.Dashboard",
+  "PostHog.Dashboard",
   ID,
   Props,
   DashboardAttrs<Props>,
@@ -79,4 +79,4 @@ export const Dashboard = Resource<{
     id: ID,
     props: Props
   ): Dashboard<ID, Props>;
-}>("PostHog.Dashboards.Dashboard");
+}>("PostHog.Dashboard");

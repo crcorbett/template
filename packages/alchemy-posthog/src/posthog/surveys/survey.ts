@@ -99,11 +99,11 @@ export interface SurveyAttrs<_Props extends Input.Resolve<SurveyProps> = Input.R
 export interface Survey<
   ID extends string = string,
   Props extends SurveyProps = SurveyProps,
-> extends Resource<"PostHog.Surveys.Survey", ID, Props, SurveyAttrs<Input.Resolve<Props>>, Survey> {}
+> extends Resource<"PostHog.Survey", ID, Props, SurveyAttrs<Input.Resolve<Props>>, Survey> {}
 
 export const Survey = Resource<{
   <const ID extends string, const Props extends SurveyProps>(
     id: ID,
     props: Props
   ): Survey<ID, Props>;
-}>("PostHog.Surveys.Survey");
+}>("PostHog.Survey");

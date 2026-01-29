@@ -87,11 +87,11 @@ export interface ActionAttrs<_Props extends ActionProps = ActionProps> {
 export interface Action<
   ID extends string = string,
   Props extends ActionProps = ActionProps,
-> extends Resource<"PostHog.Actions.Action", ID, Props, ActionAttrs<Props>, Action> {}
+> extends Resource<"PostHog.Action", ID, Props, ActionAttrs<Props>, Action> {}
 
 export const Action = Resource<{
   <const ID extends string, const Props extends ActionProps>(
     id: ID,
     props: Props
   ): Action<ID, Props>;
-}>("PostHog.Actions.Action");
+}>("PostHog.Action");

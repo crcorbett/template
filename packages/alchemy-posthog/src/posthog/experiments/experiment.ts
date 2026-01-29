@@ -108,7 +108,7 @@ export interface Experiment<
   ID extends string = string,
   Props extends ExperimentProps = ExperimentProps,
 > extends Resource<
-  "PostHog.Experiments.Experiment",
+  "PostHog.Experiment",
   ID,
   Props,
   ExperimentAttrs<Input.Resolve<Props>>,
@@ -120,4 +120,4 @@ export const Experiment = Resource<{
     id: ID,
     props: Props
   ): Experiment<ID, Props>;
-}>("PostHog.Experiments.Experiment");
+}>("PostHog.Experiment");

@@ -71,11 +71,11 @@ export interface CohortAttrs<_Props extends CohortProps = CohortProps> {
 export interface Cohort<
   ID extends string = string,
   Props extends CohortProps = CohortProps,
-> extends Resource<"PostHog.Cohorts.Cohort", ID, Props, CohortAttrs<Props>, Cohort> {}
+> extends Resource<"PostHog.Cohort", ID, Props, CohortAttrs<Props>, Cohort> {}
 
 export const Cohort = Resource<{
   <const ID extends string, const Props extends CohortProps>(
     id: ID,
     props: Props
   ): Cohort<ID, Props>;
-}>("PostHog.Cohorts.Cohort");
+}>("PostHog.Cohort");

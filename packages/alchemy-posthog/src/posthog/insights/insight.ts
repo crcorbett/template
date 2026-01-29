@@ -78,7 +78,7 @@ export interface Insight<
   ID extends string = string,
   Props extends InsightProps = InsightProps,
 > extends Resource<
-    "PostHog.Insights.Insight",
+    "PostHog.Insight",
     ID,
     Props,
     InsightAttrs<Input.Resolve<Props>>,
@@ -90,4 +90,4 @@ export const Insight = Resource<{
     id: ID,
     props: Props
   ): Insight<ID, Props>;
-}>("PostHog.Insights.Insight");
+}>("PostHog.Insight");

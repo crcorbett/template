@@ -77,7 +77,7 @@ export interface FeatureFlag<
   ID extends string = string,
   Props extends FeatureFlagProps = FeatureFlagProps,
 > extends Resource<
-  "PostHog.FeatureFlags.FeatureFlag",
+  "PostHog.FeatureFlag",
   ID,
   Props,
   FeatureFlagAttrs<Props>,
@@ -89,4 +89,4 @@ export const FeatureFlag = Resource<{
     id: ID,
     props: Props
   ): FeatureFlag<ID, Props>;
-}>("PostHog.FeatureFlags.FeatureFlag");
+}>("PostHog.FeatureFlag");
