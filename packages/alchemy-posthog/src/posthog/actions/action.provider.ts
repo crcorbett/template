@@ -1,10 +1,10 @@
 import * as PostHogActions from "@packages/posthog/actions";
 import * as Effect from "effect/Effect";
 
-import type { ActionAttrs, ActionStepDef } from "./action.js";
+import type { ActionAttrs, ActionStepDef } from "./action";
 
-import { Project } from "../project.js";
-import { Action as ActionResource } from "./action.js";
+import { Project } from "../project";
+import { Action as ActionResource } from "./action";
 
 /**
  * Maps ActionStepDef props (camelCase) to API format (snake_case).

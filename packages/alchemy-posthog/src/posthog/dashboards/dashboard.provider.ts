@@ -1,10 +1,10 @@
 import * as PostHogDashboards from "@packages/posthog/dashboards";
 import * as Effect from "effect/Effect";
 
-import type { DashboardAttrs } from "./dashboard.js";
+import type { DashboardAttrs } from "./dashboard";
 
-import { Project } from "../project.js";
-import { Dashboard as DashboardResource } from "./dashboard.js";
+import { Project } from "../project";
+import { Dashboard as DashboardResource } from "./dashboard";
 
 /**
  * Maps a PostHog API response to DashboardAttrs.

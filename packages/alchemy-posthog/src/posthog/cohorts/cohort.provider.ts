@@ -1,10 +1,10 @@
 import * as PostHogCohorts from "@packages/posthog/cohorts";
 import * as Effect from "effect/Effect";
 
-import type { CohortAttrs } from "./cohort.js";
+import type { CohortAttrs } from "./cohort";
 
-import { Project } from "../project.js";
-import { Cohort as CohortResource } from "./cohort.js";
+import { Project } from "../project";
+import { Cohort as CohortResource } from "./cohort";
 
 /**
  * Maps a PostHog API response to CohortAttrs.

@@ -1,2 +1,2 @@
-export * from "./annotation.js";
-export * from "./annotation.provider.js";
+export * from "./annotation";
+export * from "./annotation.provider";

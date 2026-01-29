@@ -1,2 +1,2 @@
-export * from "./feature-flag.js";
-export * from "./feature-flag.provider.js";
+export * from "./feature-flag";
+export * from "./feature-flag.provider";

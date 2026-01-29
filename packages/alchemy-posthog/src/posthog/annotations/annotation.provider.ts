@@ -1,10 +1,10 @@
 import * as PostHogAnnotations from "@packages/posthog/annotations";
 import * as Effect from "effect/Effect";
 
-import type { AnnotationAttrs } from "./annotation.js";
+import type { AnnotationAttrs } from "./annotation";
 
-import { Project } from "../project.js";
-import { Annotation as AnnotationResource } from "./annotation.js";
+import { Project } from "../project";
+import { Annotation as AnnotationResource } from "./annotation";
 
 /**
  * Maps a PostHog API response to AnnotationAttrs.

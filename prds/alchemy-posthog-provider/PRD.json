@@ -1536,8 +1536,8 @@
       "verify": [
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Removed .js extensions from all relative imports across 17 source files (index.ts, 8 barrel files, 8 provider files). moduleResolution: Bundler makes .js extensions optional. Standardized to extensionless imports matching the @/ path alias convention. npx tsc --noEmit passes."
     },
     {
       "id": "CONFORM-036",

@@ -1,2 +1,2 @@
-export * from "./cohort.js";
-export * from "./cohort.provider.js";
+export * from "./cohort";
+export * from "./cohort.provider";

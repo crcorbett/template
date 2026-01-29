@@ -1,10 +1,10 @@
 import * as PostHogSurveys from "@packages/posthog/surveys";
 import * as Effect from "effect/Effect";
 
-import type { SurveyAttrs } from "./survey.js";
+import type { SurveyAttrs } from "./survey";
 
-import { Project } from "../project.js";
-import { Survey as SurveyResource } from "./survey.js";
+import { Project } from "../project";
+import { Survey as SurveyResource } from "./survey";
 
 /**
  * Maps a PostHog API response to SurveyAttrs.

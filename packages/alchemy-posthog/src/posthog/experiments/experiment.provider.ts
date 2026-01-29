@@ -1,10 +1,10 @@
 import * as PostHogExperiments from "@packages/posthog/experiments";
 import * as Effect from "effect/Effect";
 
-import type { ExperimentAttrs } from "./experiment.js";
+import type { ExperimentAttrs } from "./experiment";
 
-import { Project } from "../project.js";
-import { Experiment as ExperimentResource } from "./experiment.js";
+import { Project } from "../project";
+import { Experiment as ExperimentResource } from "./experiment";
 
 /**
  * Maps a PostHog API response to ExperimentAttrs.

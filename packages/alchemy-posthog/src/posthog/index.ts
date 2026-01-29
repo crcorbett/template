@@ -3,19 +3,19 @@ import { App } from "alchemy-effect";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import "./config.js";
-import * as Credentials from "./credentials.js";
-import * as Endpoint from "./endpoint.js";
-export { Project } from "./project.js";
-import * as Dashboards from "./dashboards/index.js";
-import * as Experiments from "./experiments/index.js";
-import * as FeatureFlags from "./feature-flags/index.js";
-import * as Project from "./project.js";
-import * as Actions from "./actions/index.js";
-import * as Cohorts from "./cohorts/index.js";
-import * as Annotations from "./annotations/index.js";
-import * as Insights from "./insights/index.js";
-import * as Surveys from "./surveys/index.js";
+import "./config";
+import * as Credentials from "./credentials";
+import * as Endpoint from "./endpoint";
+export { Project } from "./project";
+import * as Dashboards from "./dashboards/index";
+import * as Experiments from "./experiments/index";
+import * as FeatureFlags from "./feature-flags/index";
+import * as Project from "./project";
+import * as Actions from "./actions/index";
+import * as Cohorts from "./cohorts/index";
+import * as Annotations from "./annotations/index";
+import * as Insights from "./insights/index";
+import * as Surveys from "./surveys/index";
 export {
   Actions,
   Annotations,

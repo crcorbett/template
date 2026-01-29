@@ -1,2 +1,2 @@
-export * from "./insight.js";
-export * from "./insight.provider.js";
+export * from "./insight";
+export * from "./insight.provider";

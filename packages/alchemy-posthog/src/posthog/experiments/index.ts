@@ -1,3 +1,3 @@
 // Experiments barrel - providers will be added incrementally
-export * from "./experiment.js";
-export * from "./experiment.provider.js";
+export * from "./experiment";
+export * from "./experiment.provider";

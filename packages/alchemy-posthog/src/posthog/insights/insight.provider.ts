@@ -1,10 +1,10 @@
 import * as PostHogInsights from "@packages/posthog/insights";
 import * as Effect from "effect/Effect";
 
-import type { InsightAttrs } from "./insight.js";
+import type { InsightAttrs } from "./insight";
 
-import { Project } from "../project.js";
-import { Insight as InsightResource } from "./insight.js";
+import { Project } from "../project";
+import { Insight as InsightResource } from "./insight";
 
 /**
  * Maps a PostHog API response to InsightAttrs.

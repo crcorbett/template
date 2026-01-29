@@ -1,10 +1,10 @@
 import * as PostHogFeatureFlags from "@packages/posthog/feature-flags";
 import * as Effect from "effect/Effect";
 
-import type { FeatureFlagAttrs } from "./feature-flag.js";
+import type { FeatureFlagAttrs } from "./feature-flag";
 
-import { Project } from "../project.js";
-import { FeatureFlag as FeatureFlagResource } from "./feature-flag.js";
+import { Project } from "../project";
+import { FeatureFlag as FeatureFlagResource } from "./feature-flag";
 
 /**
  * Maps a PostHog API response to FeatureFlagAttrs.

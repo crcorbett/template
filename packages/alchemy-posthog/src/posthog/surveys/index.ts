@@ -1,2 +1,2 @@
-export * from "./survey.js";
-export * from "./survey.provider.js";
+export * from "./survey";
+export * from "./survey.provider";

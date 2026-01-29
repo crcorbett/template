@@ -378,3 +378,14 @@ Files updated:
 - test/posthog/test.ts (added timeout rationale comments at lines 210, 233, 245)
 
 Verification: `npx tsc --noEmit` passes.
+
+## CONFORM-035: Remove .js extensions from relative imports in source files
+
+Removed `.js` extensions from all relative imports across 17 source files in `src/posthog/`. With `moduleResolution: Bundler` in tsconfig.base.json, `.js` extensions are optional for relative imports. Standardized to extensionless imports to match the `@/` path alias convention used in test files.
+
+Files updated:
+- src/posthog/index.ts (13 imports)
+- 8 barrel index.ts files (2 imports each)
+- 8 provider .provider.ts files (3 imports each)
+
+Verification: `npx tsc --noEmit` passes. `grep '.js' src/` returns no `.js` extension imports.
