@@ -1199,8 +1199,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "test.state and test.defaultState are exported from test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added test.state() and test.defaultState() to the test namespace export in test/posthog/test.ts. Converted test.skip from a property assignment to a namespace export function (using `export namespace test { ... }` pattern matching the alchemy-effect reference). test.state() creates a Layer.effect reading App context for app-scoped in-memory state. test.defaultState() creates a Layer.succeed with hardcoded 'test-app'/'test-stage' keys. Both accept Record<string, State.ResourceState> parameters. Typecheck passes."
     },
     {
       "id": "CONFORM-020",

@@ -149,12 +149,60 @@ export function test(
   );
 }
 
-test.skip = function (
-  name: string,
-  ...args:
-    | [{ timeout?: number }, Effect.Effect<void, unknown, Provided>]
-    | [Effect.Effect<void, unknown, Provided>]
-) {
-  const [options = {}] = args.length === 1 ? [undefined] : args;
-  return it.skip(name, () => {}, options.timeout ?? 60_000);
-};
+export namespace test {
+  export function skip(
+    name: string,
+    options: { timeout?: number },
+    testCase: Effect.Effect<void, unknown, Provided>,
+  ): void;
+
+  export function skip(
+    name: string,
+    testCase: Effect.Effect<void, unknown, Provided>,
+  ): void;
+
+  export function skip(
+    name: string,
+    ...args:
+      | [{ timeout?: number }, Effect.Effect<void, unknown, Provided>]
+      | [Effect.Effect<void, unknown, Provided>]
+  ) {
+    const [options = {}] = args.length === 1 ? [undefined] : args;
+    return it.skip(name, () => {}, options.timeout ?? 60_000);
+  }
+
+  export const state = (
+    resources: Record<string, State.ResourceState> = {},
+  ) =>
+    Layer.effect(
+      State.State,
+      Effect.gen(function* () {
+        const app = yield* App;
+        return State.inMemoryService({
+          [app.name]: {
+            [app.stage]: resources,
+          },
+        });
+      }),
+    );
+
+  export const defaultState = (
+    resources: Record<string, State.ResourceState> = {},
+    other?: {
+      [stack: string]: {
+        [stage: string]: {
+          [resourceId: string]: State.ResourceState;
+        };
+      };
+    },
+  ) =>
+    Layer.succeed(
+      State.State,
+      State.inMemoryService({
+        ["test-app"]: {
+          ["test-stage"]: resources,
+        },
+        ...other,
+      }),
+    );
+}

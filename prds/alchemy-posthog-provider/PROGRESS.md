@@ -121,3 +121,15 @@ Changes to test/posthog/test.ts:
 - Composed via `Layer.provideMerge(posthog, Layer.provideMerge(alchemy, platform))`
 
 Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY env var (integration tests).
+
+## CONFORM-019: Add test.state() and test.defaultState() helpers
+
+Added `test.state()` and `test.defaultState()` to the test namespace in test/posthog/test.ts, matching the alchemy-effect reference pattern. Also converted `test.skip` from a property assignment to a proper namespace export function.
+
+Changes to test/posthog/test.ts:
+- Converted `test.skip = function(...)` to `export namespace test { export function skip(...) }` pattern
+- Added `test.state(resources?)` - creates a `Layer.effect(State.State, ...)` that reads App context for app-scoped in-memory state
+- Added `test.defaultState(resources?, other?)` - creates a `Layer.succeed(State.State, ...)` with hardcoded 'test-app'/'test-stage' keys
+- Both accept `Record<string, State.ResourceState>` parameters matching the reference
+
+Verification: `npx tsc --noEmit` passes.
