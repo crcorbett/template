@@ -1108,6 +1108,478 @@
       ],
       "passes": true,
       "notes": "Kept PostHogError code checks - necessary for real-world behavior. PostHog API returns varying error types (404, soft-delete flags) that require code-level checking beyond NotFoundError tag."
+    },
+
+    {
+      "id": "CONFORM-016",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Test app name does not include test file path — CONFORM-003 fix was incomplete",
+      "steps": [
+        "CONFORM-003 was marked as passing, but the fix only sanitizes the test name without incorporating the test file path.",
+        "Current implementation in test/posthog/test.ts:",
+        "  makeApp({ name: name.replace(/[^a-zA-Z0-9_]/g, '-'), ... })",
+        "Reference pattern in alchemy-effect test.ts:",
+        "  const testPath = expect.getState().testPath;",
+        "  const testPathWithoutExt = testPath.replace(/\\.[^.]+$/, '');",
+        "  App.of({ name: `${testPathWithoutExt}-${name}` })",
+        "The file path prefix is critical for preventing state collisions when two test files contain tests with the same name.",
+        "Update test/posthog/test.ts to derive the test file path from expect.getState().testPath (vitest provides this) and prepend it to the app name."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "App name includes test file path component (grep for testPath or expect.getState in test.ts)"
+      ],
+      "passes": true,
+      "notes": "Added test file path to app name using expect.getState().testPath, following alchemy-effect convention. Extracts relative path after /test/, strips extension, prepends to test name. Changed from makeApp() to Layer.succeed(App, App.of(...)) since the app name is computed synchronously."
+    },
+    {
+      "id": "CONFORM-017",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Test .env loading uses manual fs.exists check instead of direct PlatformConfigProvider.fromDotEnv",
+      "steps": [
+        "Current pattern in test/posthog/test.ts manually checks if .env exists before loading:",
+        "  const envExists = yield* fs.exists('../../.env');",
+        "  const configProvider = envExists ? ... : ConfigProvider.fromEnv();",
+        "Reference pattern in alchemy-effect test.ts loads .env directly:",
+        "  ConfigProvider.orElse(yield* PlatformConfigProvider.fromDotEnv('.env'), ConfigProvider.fromEnv)",
+        "The reference pattern is simpler and relies on PlatformConfigProvider.fromDotEnv to handle the case where the file doesn't exist.",
+        "Update test/posthog/test.ts to use the simpler direct pattern without the manual fs.exists guard."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "No fs.exists call for .env in test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-018",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Test Credentials and Endpoint provided inline instead of as proper layers in test infrastructure",
+      "steps": [
+        "Current pattern provides Credentials and Endpoint inline in the test runner:",
+        "  Effect.provide(Credentials.fromEnv()),",
+        "  Effect.provideService(Endpoint, 'https://us.posthog.com'),",
+        "Reference pattern in alchemy-effect test.ts provides credentials as a proper Layer:",
+        "  const awsCredentials = Layer.effect(Credentials, Credentials.fromEnv());",
+        "  // Then composed into the test Layer via Layer.provideMerge",
+        "Move Credentials and Endpoint provisioning into the test Layer composition (alongside State, CLI, DotAlchemy) instead of providing them inline in the test runner.",
+        "This makes the test infrastructure cleaner and ensures all dependencies are provided consistently."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "Credentials and Endpoint provided via Layer composition, not Effect.provide/Effect.provideService inline"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-019",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Missing test.state() and test.defaultState() helpers in test infrastructure",
+      "steps": [
+        "alchemy-effect test.ts exports test.state() and test.defaultState() helpers:",
+        "  test.state() - returns the current test's State instance for assertions",
+        "  test.defaultState() - returns a default State Layer for simple test cases",
+        "These helpers are used in tests to inspect state after apply/destroy operations.",
+        "Add test.state() and test.defaultState() to the test namespace export in test/posthog/test.ts."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "test.state and test.defaultState are exported from test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-020",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Missing test.skipIf() conditional skip helper",
+      "steps": [
+        "alchemy-effect test.ts exports test.skipIf() which conditionally skips tests based on environment:",
+        "  test.skipIf(condition)('test name', testCase)",
+        "This is used for skipping tests when required env vars are missing (e.g., skip PostHog tests when POSTHOG_API_KEY is not set).",
+        "Add test.skipIf() to the test namespace export in test/posthog/test.ts."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "test.skipIf is exported from test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-021",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "test.skip implemented as property assignment instead of namespace export pattern",
+      "steps": [
+        "Current pattern assigns skip as a property on the test function:",
+        "  test.skip = function(...) { ... };",
+        "Reference pattern in alchemy-effect test.ts uses a namespace export:",
+        "  export namespace test { export function skip(...) { ... } }",
+        "The namespace pattern provides better TypeScript type inference and is the canonical alchemy-effect convention.",
+        "Refactor test/posthog/test.ts to use namespace export for test.skip (and any other sub-functions like skipIf, state, defaultState)."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "test.skip uses namespace export pattern"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-022",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Provider diff method signature missing id and output parameters",
+      "steps": [
+        "Current diff signature only destructures { news, olds }:",
+        "  diff: Effect.fn(function* ({ news, olds }) { ... })",
+        "Reference pattern in alchemy-effect providers includes { id, news, olds, output }:",
+        "  diff: Effect.fn(function* ({ id, news, olds, output }) { ... })",
+        "While not all parameters may be used, the full signature documents the available context and matches the provider interface contract.",
+        "Update all 8 provider files to destructure the full diff parameter set."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "All provider diff methods include id and output in destructuring"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-023",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Provider read method lacks name-based fallback lookup (revisit CONFORM-012)",
+      "steps": [
+        "CONFORM-012 was marked as passing but was actually skipped/deferred.",
+        "In alchemy-effect, read methods handle missing output by falling back to name-based lookup:",
+        "  - Cloudflare KV: lists namespaces, finds by title",
+        "  - AWS Lambda: uses deterministic function name for lookup",
+        "PostHog providers return undefined when output is missing, losing the ability to recover from state loss.",
+        "Evaluate PostHog list APIs for each resource type. For resources that support list+filter (feature flags by key, dashboards by name, etc.), add a fallback lookup in the read method.",
+        "This is particularly important for FeatureFlag (list by key) and Dashboard (list by name).",
+        "Files to update: at minimum feature-flag.provider.ts and dashboard.provider.ts"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "read methods have fallback lookup for resources that support list APIs"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-024",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Provider create methods have no idempotency handling for state persistence failures",
+      "steps": [
+        "alchemy-effect AGENTS.md states: 'Create must be designed as idempotent because it is always possible for state persistence to fail after the create operation is called.'",
+        "Current PostHog create methods simply call the create API without checking if the resource already exists.",
+        "If state persistence fails after create, the next apply will try to create again, resulting in a duplicate resource.",
+        "For resources with unique keys (FeatureFlag.key), check for existing resource before creating.",
+        "For resources without unique keys, consider using a naming convention or tagging strategy to detect prior creation.",
+        "At minimum, implement idempotency for FeatureFlag (lookup by key before create).",
+        "Files to update: feature-flag.provider.ts (and others where feasible)"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "create methods check for existing resource before creating (at least for FeatureFlag)"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-025",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Provider delete methods missing session.note() progress logging",
+      "steps": [
+        "alchemy-effect convention uses session.note() for progress reporting in all lifecycle methods.",
+        "Current PostHog providers call session.note() in create and update, but NOT in delete.",
+        "Reference providers log deletion progress: yield* session.note('Deleted resource: ...')",
+        "Add session.note() calls to all 8 provider delete methods.",
+        "Files to update: all 8 *.provider.ts files"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "All delete methods include session.note() (grep for session.note in delete methods)"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-026",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "TEST_PROJECT_ID boilerplate repeated in every test file instead of being provided via test infrastructure",
+      "steps": [
+        "Every test file currently does: const projectId = yield* TEST_PROJECT_ID;",
+        "This is boilerplate that should be handled by the test infrastructure.",
+        "In alchemy-effect, shared context like AWS Account/Region is provided via the test Layer, not manually yielded in each test.",
+        "Move Project provision into the test.ts infrastructure so individual tests don't need to yield TEST_PROJECT_ID.",
+        "The Project context tag should be provided as part of the test Layer composition.",
+        "Files to update: test/posthog/test.ts and all 8 provider test files + smoke test"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "No TEST_PROJECT_ID boilerplate in individual test files"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-027",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "index.ts missing config() helper function for stage config composition",
+      "steps": [
+        "alchemy-effect cloud index files export a config() helper that returns configuration from stage config:",
+        "  export const config = () => Effect.gen(function* () { const app = yield* App; return app.config.posthog; });",
+        "This helper simplifies reading PostHog config in user code.",
+        "Add config() helper to src/posthog/index.ts that reads from the App's stage config."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "config() is exported from src/posthog/index.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-028",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "index.ts missing bareProviders() separation from providers()",
+      "steps": [
+        "alchemy-effect cloud index files separate resources() → bareProviders() → providers():",
+        "  resources() - just the resource provider layers",
+        "  bareProviders() - resources() + shared context (Project, Credentials, Endpoint)",
+        "  providers() - bareProviders() + HttpClient",
+        "Current alchemy-posthog only has resources() and providers(), missing the intermediate bareProviders().",
+        "This separation allows users to provide their own HttpClient while still getting all PostHog-specific layers.",
+        "Add bareProviders() to src/posthog/index.ts between resources() and providers()."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "bareProviders() is exported from src/posthog/index.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-029",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Resource Props interfaces not using Input<T> wrapper pattern for reference-able properties",
+      "steps": [
+        "alchemy-effect uses Input<T> wrapper for properties that may reference other resource outputs:",
+        "  import type { Input } from '../../input.ts';",
+        "  linkedFlagId?: Input<number>;",
+        "PostHog resources may reference other PostHog resource IDs (e.g., Survey.linkedFlagId references a FeatureFlag.id).",
+        "Evaluate which PostHog props should use Input<T> and update the Props interfaces.",
+        "At minimum: Survey.linkedFlagId, Annotation.dashboardItem, Insight.dashboards, Experiment.holdoutId"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "Props interfaces use Input<T> for cross-resource reference properties"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-030",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Resource Attrs interfaces not parameterized by Props type",
+      "steps": [
+        "alchemy-effect Attrs interfaces are parameterized by the Props type:",
+        "  export interface BucketAttrs<Props extends Input.Resolve<BucketProps>> { ... }",
+        "This enables type-safe relationships between Props and Attrs.",
+        "Current PostHog Attrs interfaces are standalone: export interface FeatureFlagAttrs { ... }",
+        "Update Attrs interfaces to accept a Props type parameter where applicable.",
+        "Files to update: all 8 resource *.ts files"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-031",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "assertDeleted helpers duplicated per test file instead of shared",
+      "steps": [
+        "Each test file defines its own assertDeleted helper with similar logic (retry schedule, error catching).",
+        "These helpers share a common pattern: call getResource, catch NotFoundError, retry with exponential backoff.",
+        "Extract a shared assertDeleted factory or generic helper into test/posthog/test.ts.",
+        "Individual test files would then use: const assertDeleted = makeAssertDeleted(API.getResource);",
+        "This reduces duplication and ensures consistent retry behavior."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "assertDeleted helpers use shared utility from test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-032",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Provider session.note() messages use inconsistent formats across providers",
+      "steps": [
+        "Some providers log: 'Created feature flag: ${result.key}'",
+        "Others log: 'Updated dashboard: ${result.name}'",
+        "Standardize session.note() message format across all providers.",
+        "Suggested format: '{Operation} {ResourceType}: {identifier}'",
+        "  e.g., 'Created FeatureFlag: test-flag'",
+        "  e.g., 'Updated Dashboard: My Dashboard'",
+        "  e.g., 'Deleted Experiment: 12345'",
+        "Files to update: all 8 provider files"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "session.note() messages follow consistent format across all providers"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-033",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "testCLI layer not exported from test.ts",
+      "steps": [
+        "alchemy-effect test.ts exports testCLI so it can be reused by other test modules:",
+        "  export const testCLI = Layer.succeed(CLI, CLI.of({ ... }));",
+        "Current PostHog test.ts defines testCLI as a module-private constant.",
+        "Export testCLI from test/posthog/test.ts for potential reuse."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "testCLI is exported from test.ts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-034",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Test timeout default (60s) differs from alchemy-effect convention",
+      "steps": [
+        "Current test/posthog/test.ts uses a default timeout of 60_000ms (60 seconds).",
+        "alchemy-effect test.ts does not set a default timeout (uses vitest default).",
+        "Evaluate whether 60s is necessary for PostHog API tests or if the default is sufficient.",
+        "If PostHog API is reliably fast enough, remove the explicit timeout to match the reference.",
+        "If 60s is needed, document why in a comment."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-035",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Source imports use .js extension with path alias imports",
+      "steps": [
+        "Some source files use .js extensions in relative imports:",
+        "  import { Project } from '../project.js';",
+        "While this is valid for ESM resolution, the alchemy-effect convention for @/ path alias imports omits extensions:",
+        "  import { Project } from '@/posthog/project';",
+        "Review whether .js extensions are needed given the project's module resolution settings.",
+        "If moduleResolution: Bundler is used, .js extensions in relative imports are optional.",
+        "Standardize import style across source files."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-036",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Provider delete methods missing session and olds destructuring in parameters",
+      "steps": [
+        "Current delete signature: delete: Effect.fn(function* ({ output }) { ... })",
+        "Reference pattern includes full context: delete: Effect.fn(function* ({ id, output, session, olds }) { ... })",
+        "Even if not all parameters are used immediately, destructuring them documents the available context.",
+        "This also enables CONFORM-025 (adding session.note to delete).",
+        "Update all 8 provider delete methods to destructure { id, output, session, olds }."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "All delete methods destructure full parameter set"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "CONFORM-037",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "net.setDefaultAutoSelectFamily(false) workaround is undocumented",
+      "steps": [
+        "test/posthog/test.ts includes net.setDefaultAutoSelectFamily(false) with a brief comment about Happy Eyeballs.",
+        "This workaround for Node.js 20+ should be documented with:",
+        "  - Which Node.js versions are affected",
+        "  - What symptoms occur without the workaround",
+        "  - When the workaround can be removed",
+        "  - Link to the relevant Node.js issue",
+        "Add a comprehensive JSDoc comment or move to a documented shared utility."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "net.setDefaultAutoSelectFamily workaround has comprehensive documentation"
+      ],
+      "passes": false,
+      "notes": ""
     }
   ]
 }

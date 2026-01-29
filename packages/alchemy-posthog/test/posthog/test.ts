@@ -2,7 +2,7 @@ import { FetchHttpClient, FileSystem, HttpClient } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import * as Path from "@effect/platform/Path";
 import * as PlatformConfigProvider from "@effect/platform/PlatformConfigProvider";
-import { it } from "@effect/vitest";
+import { expect, it } from "@effect/vitest";
 import { Endpoint } from "@packages/posthog";
 import { Credentials } from "@packages/posthog/Credentials";
 import {
@@ -10,7 +10,6 @@ import {
   DotAlchemy,
   dotAlchemy,
   State,
-  make as makeApp,
 } from "alchemy-effect";
 import { CLI } from "alchemy-effect/cli";
 import { Config, ConfigProvider, LogLevel } from "effect";
@@ -19,6 +18,7 @@ import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
 import * as Scope from "effect/Scope";
 import * as net from "node:net";
+import * as NodePath from "node:path";
 
 /**
  * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
@@ -91,17 +91,30 @@ export function test(
   const [options = {}, testCase] =
     args.length === 1 ? [undefined, args[0]] : args;
 
+  // Include test file path to prevent state collisions between tests with the same name
+  const testPath = expect.getState().testPath ?? "";
+  const testDir = testPath.includes("/test/")
+    ? (testPath.split("/test/").pop() ?? "")
+    : NodePath.basename(testPath);
+  const testPathWithoutExt = testDir.replace(/\.[^.]+$/, "");
+  const appName = `${testPathWithoutExt}-${name}`
+    .replaceAll(/[^a-zA-Z0-9_]/g, "-")
+    .replace(/-+/g, "-");
+
   // Create alchemy test infrastructure
   const alchemy = Layer.provideMerge(
     Layer.mergeAll(State.localFs, testCLI),
     Layer.mergeAll(
-      makeApp({
-        name: name.replace(/[^a-zA-Z0-9_]/g, "-"),
-        stage: "test",
-        config: {
-          adopt: true,
-        },
-      }),
+      Layer.succeed(
+        App,
+        App.of({
+          name: appName,
+          stage: "test",
+          config: {
+            adopt: true,
+          },
+        })
+      ),
       dotAlchemy
     )
   );

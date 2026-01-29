@@ -87,3 +87,14 @@ Marked as complete with notes:
 - CONFORM-015 (PostHogError code checks): Kept - necessary for real-world PostHog API behavior
 
 Verification: `npx tsc --noEmit` passes with 0 errors.
+
+## CONFORM-016: Test app name includes test file path
+
+Updated test/posthog/test.ts to derive the test file path from `expect.getState().testPath` and prepend it to the app name, following the alchemy-effect convention. This prevents state collisions when two test files contain tests with the same name.
+
+Changes:
+- Added `expect` import from `@effect/vitest` and `NodePath` from `node:path`
+- Replaced `makeApp()` with `Layer.succeed(App, App.of(...))` since app name is computed synchronously
+- App name now includes the relative test file path (e.g., `posthog/feature-flags/feature-flag-provider-test-create-update-delete-feature-flag`)
+
+Verification: `npx tsc --noEmit` passes, all 9 test files (11 tests) pass.
