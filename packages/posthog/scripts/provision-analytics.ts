@@ -10,7 +10,15 @@
 import { FetchHttpClient, FileSystem } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import * as PlatformConfigProvider from "@effect/platform/PlatformConfigProvider";
-import { ConfigProvider, Effect, Layer, LogLevel, Logger } from "effect";
+import {
+  Cause,
+  Config,
+  ConfigProvider,
+  Effect,
+  Layer,
+  LogLevel,
+  Logger,
+} from "effect";
 import * as net from "node:net";
 
 import { Credentials } from "../src/credentials.js";
@@ -27,29 +35,41 @@ import { createSurvey } from "../src/services/surveys.js";
 // Disable Happy Eyeballs (IPv6 issues)
 net.setDefaultAutoSelectFamily(false);
 
-const PROJECT_ID = process.env["POSTHOG_PROJECT_ID"] ?? "289739";
 const PREFIX = `acme-${Date.now()}`;
 
-const created = {
-  cohorts: [] as { id: number; name: string }[],
-  featureFlags: [] as { id: number; key: string }[],
-  insights: [] as { id: number; name: string }[],
-  dashboards: [] as { id: number; name: string }[],
-  surveys: [] as { id: string; name: string }[],
-  actions: [] as { id: number; name: string }[],
-  annotations: [] as { id: number; content: string }[],
-  experiments: [] as { id: number; name: string }[],
+interface CreatedResources {
+  cohorts: Array<{ id: number; name: string }>;
+  featureFlags: Array<{ id: number; key: string }>;
+  insights: Array<{ id: number; name: string }>;
+  dashboards: Array<{ id: number; name: string }>;
+  surveys: Array<{ id: string; name: string }>;
+  actions: Array<{ id: number; name: string }>;
+  annotations: Array<{ id: number; content: string }>;
+  experiments: Array<{ id: number; name: string }>;
+}
+
+const created: CreatedResources = {
+  cohorts: [],
+  featureFlags: [],
+  insights: [],
+  dashboards: [],
+  surveys: [],
+  actions: [],
+  annotations: [],
+  experiments: [],
 };
 
 const provision = Effect.gen(function* () {
-  console.log("\n🚀 Provisioning Acme Project Manager Analytics Stack\n");
-  console.log(`   Project ID: ${PROJECT_ID}`);
-  console.log(`   Prefix: ${PREFIX}\n`);
+  const PROJECT_ID = yield* Config.string("POSTHOG_PROJECT_ID");
+
+  yield* Effect.logInfo("Provisioning Acme Project Manager Analytics Stack").pipe(
+    Effect.annotateLogs({ projectId: PROJECT_ID, prefix: PREFIX })
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1: COHORTS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("📊 Phase 1: Creating Cohorts...");
+  yield* Effect.logInfo("Phase 1: Creating Cohorts");
 
   const powerUsers = yield* createCohort({
     project_id: PROJECT_ID,
@@ -79,8 +99,8 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: powerUsers.id, name: powerUsers.name });
-  console.log(`   ✓ ${powerUsers.name}`);
+  created.cohorts.push({ id: powerUsers.id, name: powerUsers.name ?? PREFIX });
+  yield* Effect.logInfo(`Created cohort: ${powerUsers.name}`);
 
   const trialUsers = yield* createCohort({
     project_id: PROJECT_ID,
@@ -106,8 +126,8 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: trialUsers.id, name: trialUsers.name });
-  console.log(`   ✓ ${trialUsers.name}`);
+  created.cohorts.push({ id: trialUsers.id, name: trialUsers.name ?? PREFIX });
+  yield* Effect.logInfo(`Created cohort: ${trialUsers.name}`);
 
   const atRiskUsers = yield* createCohort({
     project_id: PROJECT_ID,
@@ -136,8 +156,8 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: atRiskUsers.id, name: atRiskUsers.name });
-  console.log(`   ✓ ${atRiskUsers.name}`);
+  created.cohorts.push({ id: atRiskUsers.id, name: atRiskUsers.name ?? PREFIX });
+  yield* Effect.logInfo(`Created cohort: ${atRiskUsers.name}`);
 
   const enterpriseProspects = yield* createCohort({
     project_id: PROJECT_ID,
@@ -171,9 +191,9 @@ const provision = Effect.gen(function* () {
   });
   created.cohorts.push({
     id: enterpriseProspects.id,
-    name: enterpriseProspects.name,
+    name: enterpriseProspects.name ?? PREFIX,
   });
-  console.log(`   ✓ ${enterpriseProspects.name}`);
+  yield* Effect.logInfo(`Created cohort: ${enterpriseProspects.name}`);
 
   const newSignups = yield* createCohort({
     project_id: PROJECT_ID,
@@ -201,8 +221,8 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: newSignups.id, name: newSignups.name });
-  console.log(`   ✓ ${newSignups.name}`);
+  created.cohorts.push({ id: newSignups.id, name: newSignups.name ?? PREFIX });
+  yield* Effect.logInfo(`Created cohort: ${newSignups.name}`);
 
   const mobileUsers = yield* createCohort({
     project_id: PROJECT_ID,
@@ -228,8 +248,8 @@ const provision = Effect.gen(function* () {
       },
     },
   });
-  created.cohorts.push({ id: mobileUsers.id, name: mobileUsers.name });
-  console.log(`   ✓ ${mobileUsers.name}`);
+  created.cohorts.push({ id: mobileUsers.id, name: mobileUsers.name ?? PREFIX });
+  yield* Effect.logInfo(`Created cohort: ${mobileUsers.name}`);
 
   const integrationUsers = yield* createCohort({
     project_id: PROJECT_ID,
@@ -257,14 +277,14 @@ const provision = Effect.gen(function* () {
   });
   created.cohorts.push({
     id: integrationUsers.id,
-    name: integrationUsers.name,
+    name: integrationUsers.name ?? PREFIX,
   });
-  console.log(`   ✓ ${integrationUsers.name}`);
+  yield* Effect.logInfo(`Created cohort: ${integrationUsers.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 2: FEATURE FLAGS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n🚩 Phase 2: Creating Feature Flags...");
+  yield* Effect.logInfo("Phase 2: Creating Feature Flags");
 
   const onboardingFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -274,7 +294,7 @@ const provision = Effect.gen(function* () {
     active: true,
   });
   created.featureFlags.push({ id: onboardingFlag.id, key: onboardingFlag.key });
-  console.log(`   ✓ ${onboardingFlag.key} (50% rollout)`);
+  yield* Effect.logInfo(`Created flag: ${onboardingFlag.key} (50% rollout)`);
 
   const aiFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -298,7 +318,7 @@ const provision = Effect.gen(function* () {
     active: true,
   });
   created.featureFlags.push({ id: aiFlag.id, key: aiFlag.key });
-  console.log(`   ✓ ${aiFlag.key} (enterprise only)`);
+  yield* Effect.logInfo(`Created flag: ${aiFlag.key} (enterprise only)`);
 
   const darkModeFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -308,7 +328,7 @@ const provision = Effect.gen(function* () {
     active: true,
   });
   created.featureFlags.push({ id: darkModeFlag.id, key: darkModeFlag.key });
-  console.log(`   ✓ ${darkModeFlag.key} (100% rollout)`);
+  yield* Effect.logInfo(`Created flag: ${darkModeFlag.key} (100% rollout)`);
 
   const ganttFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -332,7 +352,7 @@ const provision = Effect.gen(function* () {
     active: true,
   });
   created.featureFlags.push({ id: ganttFlag.id, key: ganttFlag.key });
-  console.log(`   ✓ ${ganttFlag.key} (power users)`);
+  yield* Effect.logInfo(`Created flag: ${ganttFlag.key} (power users)`);
 
   const pricingFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -351,7 +371,7 @@ const provision = Effect.gen(function* () {
     active: true,
   });
   created.featureFlags.push({ id: pricingFlag.id, key: pricingFlag.key });
-  console.log(`   ✓ ${pricingFlag.key} (multivariate)`);
+  yield* Effect.logInfo(`Created flag: ${pricingFlag.key} (multivariate)`);
 
   const maintenanceFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -364,12 +384,12 @@ const provision = Effect.gen(function* () {
     id: maintenanceFlag.id,
     key: maintenanceFlag.key,
   });
-  console.log(`   ✓ ${maintenanceFlag.key} (kill switch)`);
+  yield* Effect.logInfo(`Created flag: ${maintenanceFlag.key} (kill switch)`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 3: INSIGHTS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n📈 Phase 3: Creating Insights...");
+  yield* Effect.logInfo("Phase 3: Creating Insights");
 
   const weeklySignups = yield* createInsight({
     project_id: PROJECT_ID,
@@ -384,13 +404,13 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-30d" },
     },
   });
-  created.insights.push({ id: weeklySignups.id, name: weeklySignups.name! });
-  console.log(`   ✓ ${weeklySignups.name}`);
+  created.insights.push({ id: weeklySignups.id, name: weeklySignups.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${weeklySignups.name}`);
 
   const activationFunnel = yield* createInsight({
     project_id: PROJECT_ID,
     name: `${PREFIX}-signup-to-activation-funnel`,
-    description: "Funnel: signup → project → invite → task",
+    description: "Funnel: signup -> project -> invite -> task",
     query: {
       kind: "FunnelsQuery",
       series: [
@@ -408,9 +428,9 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: activationFunnel.id,
-    name: activationFunnel.name!,
+    name: activationFunnel.name ?? PREFIX,
   });
-  console.log(`   ✓ ${activationFunnel.name}`);
+  yield* Effect.logInfo(`Created insight: ${activationFunnel.name}`);
 
   const activationBySource = yield* createInsight({
     project_id: PROJECT_ID,
@@ -431,9 +451,9 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: activationBySource.id,
-    name: activationBySource.name!,
+    name: activationBySource.name ?? PREFIX,
   });
-  console.log(`   ✓ ${activationBySource.name}`);
+  yield* Effect.logInfo(`Created insight: ${activationBySource.name}`);
 
   const onboardingFunnel = yield* createInsight({
     project_id: PROJECT_ID,
@@ -456,9 +476,9 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: onboardingFunnel.id,
-    name: onboardingFunnel.name!,
+    name: onboardingFunnel.name ?? PREFIX,
   });
-  console.log(`   ✓ ${onboardingFunnel.name}`);
+  yield* Effect.logInfo(`Created insight: ${onboardingFunnel.name}`);
 
   const dau = yield* createInsight({
     project_id: PROJECT_ID,
@@ -478,8 +498,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-30d" },
     },
   });
-  created.insights.push({ id: dau.id, name: dau.name! });
-  console.log(`   ✓ ${dau.name}`);
+  created.insights.push({ id: dau.id, name: dau.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${dau.name}`);
 
   const retention = yield* createInsight({
     project_id: PROJECT_ID,
@@ -497,8 +517,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-60d" },
     },
   });
-  created.insights.push({ id: retention.id, name: retention.name! });
-  console.log(`   ✓ ${retention.name}`);
+  created.insights.push({ id: retention.id, name: retention.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${retention.name}`);
 
   const featureUsage = yield* createInsight({
     project_id: PROJECT_ID,
@@ -516,8 +536,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-30d" },
     },
   });
-  created.insights.push({ id: featureUsage.id, name: featureUsage.name! });
-  console.log(`   ✓ ${featureUsage.name}`);
+  created.insights.push({ id: featureUsage.id, name: featureUsage.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${featureUsage.name}`);
 
   const sessionDuration = yield* createInsight({
     project_id: PROJECT_ID,
@@ -540,14 +560,14 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: sessionDuration.id,
-    name: sessionDuration.name!,
+    name: sessionDuration.name ?? PREFIX,
   });
-  console.log(`   ✓ ${sessionDuration.name}`);
+  yield* Effect.logInfo(`Created insight: ${sessionDuration.name}`);
 
   const trialToPaidFunnel = yield* createInsight({
     project_id: PROJECT_ID,
     name: `${PREFIX}-trial-to-paid-funnel`,
-    description: "Funnel: trial → pricing → checkout → paid",
+    description: "Funnel: trial -> pricing -> checkout -> paid",
     query: {
       kind: "FunnelsQuery",
       series: [
@@ -569,9 +589,9 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: trialToPaidFunnel.id,
-    name: trialToPaidFunnel.name!,
+    name: trialToPaidFunnel.name ?? PREFIX,
   });
-  console.log(`   ✓ ${trialToPaidFunnel.name}`);
+  yield* Effect.logInfo(`Created insight: ${trialToPaidFunnel.name}`);
 
   const upgradeFunnel = yield* createInsight({
     project_id: PROJECT_ID,
@@ -591,8 +611,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-30d" },
     },
   });
-  created.insights.push({ id: upgradeFunnel.id, name: upgradeFunnel.name! });
-  console.log(`   ✓ ${upgradeFunnel.name}`);
+  created.insights.push({ id: upgradeFunnel.id, name: upgradeFunnel.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${upgradeFunnel.name}`);
 
   const mrrByPlan = yield* createInsight({
     project_id: PROJECT_ID,
@@ -612,8 +632,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-180d" },
     },
   });
-  created.insights.push({ id: mrrByPlan.id, name: mrrByPlan.name! });
-  console.log(`   ✓ ${mrrByPlan.name}`);
+  created.insights.push({ id: mrrByPlan.id, name: mrrByPlan.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${mrrByPlan.name}`);
 
   const churnIndicators = yield* createInsight({
     project_id: PROJECT_ID,
@@ -639,9 +659,9 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: churnIndicators.id,
-    name: churnIndicators.name!,
+    name: churnIndicators.name ?? PREFIX,
   });
-  console.log(`   ✓ ${churnIndicators.name}`);
+  yield* Effect.logInfo(`Created insight: ${churnIndicators.name}`);
 
   const errorRate = yield* createInsight({
     project_id: PROJECT_ID,
@@ -655,8 +675,8 @@ const provision = Effect.gen(function* () {
       dateRange: { date_from: "-14d" },
     },
   });
-  created.insights.push({ id: errorRate.id, name: errorRate.name! });
-  console.log(`   ✓ ${errorRate.name}`);
+  created.insights.push({ id: errorRate.id, name: errorRate.name ?? PREFIX });
+  yield* Effect.logInfo(`Created insight: ${errorRate.name}`);
 
   const pagePerformance = yield* createInsight({
     project_id: PROJECT_ID,
@@ -679,14 +699,14 @@ const provision = Effect.gen(function* () {
   });
   created.insights.push({
     id: pagePerformance.id,
-    name: pagePerformance.name!,
+    name: pagePerformance.name ?? PREFIX,
   });
-  console.log(`   ✓ ${pagePerformance.name}`);
+  yield* Effect.logInfo(`Created insight: ${pagePerformance.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 4: DASHBOARDS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n📋 Phase 4: Creating Dashboards...");
+  yield* Effect.logInfo("Phase 4: Creating Dashboards");
 
   const execDashboard = yield* createDashboard({
     project_id: PROJECT_ID,
@@ -696,8 +716,8 @@ const provision = Effect.gen(function* () {
     pinned: true,
     tags: ["executive", "kpis"],
   });
-  created.dashboards.push({ id: execDashboard.id, name: execDashboard.name! });
-  console.log(`   ✓ ${execDashboard.name}`);
+  created.dashboards.push({ id: execDashboard.id, name: execDashboard.name ?? PREFIX });
+  yield* Effect.logInfo(`Created dashboard: ${execDashboard.name}`);
 
   const productDashboard = yield* createDashboard({
     project_id: PROJECT_ID,
@@ -708,9 +728,9 @@ const provision = Effect.gen(function* () {
   });
   created.dashboards.push({
     id: productDashboard.id,
-    name: productDashboard.name!,
+    name: productDashboard.name ?? PREFIX,
   });
-  console.log(`   ✓ ${productDashboard.name}`);
+  yield* Effect.logInfo(`Created dashboard: ${productDashboard.name}`);
 
   const growthDashboard = yield* createDashboard({
     project_id: PROJECT_ID,
@@ -721,14 +741,14 @@ const provision = Effect.gen(function* () {
   });
   created.dashboards.push({
     id: growthDashboard.id,
-    name: growthDashboard.name!,
+    name: growthDashboard.name ?? PREFIX,
   });
-  console.log(`   ✓ ${growthDashboard.name}`);
+  yield* Effect.logInfo(`Created dashboard: ${growthDashboard.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 5: SURVEYS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n📝 Phase 5: Creating Surveys...");
+  yield* Effect.logInfo("Phase 5: Creating Surveys");
 
   const npsSurvey = yield* createSurvey({
     project_id: PROJECT_ID,
@@ -753,7 +773,7 @@ const provision = Effect.gen(function* () {
     ],
   });
   created.surveys.push({ id: npsSurvey.id, name: npsSurvey.name });
-  console.log(`   ✓ ${npsSurvey.name}`);
+  yield* Effect.logInfo(`Created survey: ${npsSurvey.name}`);
 
   const featureFeedback = yield* createSurvey({
     project_id: PROJECT_ID,
@@ -777,7 +797,7 @@ const provision = Effect.gen(function* () {
     ],
   });
   created.surveys.push({ id: featureFeedback.id, name: featureFeedback.name });
-  console.log(`   ✓ ${featureFeedback.name}`);
+  yield* Effect.logInfo(`Created survey: ${featureFeedback.name}`);
 
   const churnSurvey = yield* createSurvey({
     project_id: PROJECT_ID,
@@ -805,12 +825,12 @@ const provision = Effect.gen(function* () {
     ],
   });
   created.surveys.push({ id: churnSurvey.id, name: churnSurvey.name });
-  console.log(`   ✓ ${churnSurvey.name}`);
+  yield* Effect.logInfo(`Created survey: ${churnSurvey.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 6: ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n⚡ Phase 6: Creating Actions...");
+  yield* Effect.logInfo("Phase 6: Creating Actions");
 
   const userActivatedAction = yield* createAction({
     project_id: PROJECT_ID,
@@ -825,9 +845,9 @@ const provision = Effect.gen(function* () {
   });
   created.actions.push({
     id: userActivatedAction.id,
-    name: userActivatedAction.name!,
+    name: userActivatedAction.name ?? PREFIX,
   });
-  console.log(`   ✓ ${userActivatedAction.name}`);
+  yield* Effect.logInfo(`Created action: ${userActivatedAction.name}`);
 
   const engagedSessionAction = yield* createAction({
     project_id: PROJECT_ID,
@@ -842,9 +862,9 @@ const provision = Effect.gen(function* () {
   });
   created.actions.push({
     id: engagedSessionAction.id,
-    name: engagedSessionAction.name!,
+    name: engagedSessionAction.name ?? PREFIX,
   });
-  console.log(`   ✓ ${engagedSessionAction.name}`);
+  yield* Effect.logInfo(`Created action: ${engagedSessionAction.name}`);
 
   const integrationSetupAction = yield* createAction({
     project_id: PROJECT_ID,
@@ -858,9 +878,9 @@ const provision = Effect.gen(function* () {
   });
   created.actions.push({
     id: integrationSetupAction.id,
-    name: integrationSetupAction.name!,
+    name: integrationSetupAction.name ?? PREFIX,
   });
-  console.log(`   ✓ ${integrationSetupAction.name}`);
+  yield* Effect.logInfo(`Created action: ${integrationSetupAction.name}`);
 
   const paymentFlowAction = yield* createAction({
     project_id: PROJECT_ID,
@@ -875,14 +895,14 @@ const provision = Effect.gen(function* () {
   });
   created.actions.push({
     id: paymentFlowAction.id,
-    name: paymentFlowAction.name!,
+    name: paymentFlowAction.name ?? PREFIX,
   });
-  console.log(`   ✓ ${paymentFlowAction.name}`);
+  yield* Effect.logInfo(`Created action: ${paymentFlowAction.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 7: ANNOTATIONS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n📌 Phase 7: Creating Annotations...");
+  yield* Effect.logInfo("Phase 7: Creating Annotations");
 
   const v2Launch = yield* createAnnotation({
     project_id: PROJECT_ID,
@@ -890,8 +910,8 @@ const provision = Effect.gen(function* () {
     date_marker: new Date().toISOString(),
     scope: "project",
   });
-  created.annotations.push({ id: v2Launch.id, content: v2Launch.content! });
-  console.log(`   ✓ ${v2Launch.content}`);
+  created.annotations.push({ id: v2Launch.id, content: v2Launch.content ?? PREFIX });
+  yield* Effect.logInfo(`Created annotation: ${v2Launch.content}`);
 
   const pricingChange = yield* createAnnotation({
     project_id: PROJECT_ID,
@@ -901,9 +921,9 @@ const provision = Effect.gen(function* () {
   });
   created.annotations.push({
     id: pricingChange.id,
-    content: pricingChange.content!,
+    content: pricingChange.content ?? PREFIX,
   });
-  console.log(`   ✓ ${pricingChange.content}`);
+  yield* Effect.logInfo(`Created annotation: ${pricingChange.content}`);
 
   const marketingCampaign = yield* createAnnotation({
     project_id: PROJECT_ID,
@@ -913,9 +933,9 @@ const provision = Effect.gen(function* () {
   });
   created.annotations.push({
     id: marketingCampaign.id,
-    content: marketingCampaign.content!,
+    content: marketingCampaign.content ?? PREFIX,
   });
-  console.log(`   ✓ ${marketingCampaign.content}`);
+  yield* Effect.logInfo(`Created annotation: ${marketingCampaign.content}`);
 
   const infraUpgrade = yield* createAnnotation({
     project_id: PROJECT_ID,
@@ -925,14 +945,14 @@ const provision = Effect.gen(function* () {
   });
   created.annotations.push({
     id: infraUpgrade.id,
-    content: infraUpgrade.content!,
+    content: infraUpgrade.content ?? PREFIX,
   });
-  console.log(`   ✓ ${infraUpgrade.content}`);
+  yield* Effect.logInfo(`Created annotation: ${infraUpgrade.content}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 8: EXPERIMENTS
   // ═══════════════════════════════════════════════════════════════════════════
-  console.log("\n🧪 Phase 8: Creating Experiments...");
+  yield* Effect.logInfo("Phase 8: Creating Experiments");
 
   const onboardingExpFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -961,7 +981,7 @@ const provision = Effect.gen(function* () {
     feature_flag_key: onboardingExpFlag.key,
   });
   created.experiments.push({ id: onboardingExp.id, name: onboardingExp.name });
-  console.log(`   ✓ ${onboardingExp.name}`);
+  yield* Effect.logInfo(`Created experiment: ${onboardingExp.name}`);
 
   const pricingExpFlag = yield* createFeatureFlag({
     project_id: PROJECT_ID,
@@ -988,7 +1008,7 @@ const provision = Effect.gen(function* () {
     feature_flag_key: pricingExpFlag.key,
   });
   created.experiments.push({ id: pricingExp.id, name: pricingExp.name });
-  console.log(`   ✓ ${pricingExp.name}`);
+  yield* Effect.logInfo(`Created experiment: ${pricingExp.name}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SUMMARY
@@ -1003,23 +1023,20 @@ const provision = Effect.gen(function* () {
     created.annotations.length +
     created.experiments.length;
 
-  console.log("\n" + "═".repeat(60));
-  console.log("✅ SaaS Analytics Setup Complete!");
-  console.log("═".repeat(60));
-  console.log(`
-   Cohorts:       ${created.cohorts.length}
-   Feature Flags: ${created.featureFlags.length}
-   Insights:      ${created.insights.length}
-   Dashboards:    ${created.dashboards.length}
-   Surveys:       ${created.surveys.length}
-   Actions:       ${created.actions.length}
-   Annotations:   ${created.annotations.length}
-   Experiments:   ${created.experiments.length}
-   ─────────────────────────
-   Total:         ${total} resources
-
-   View in PostHog: https://us.posthog.com/project/${PROJECT_ID}
-`);
+  yield* Effect.logInfo("SaaS Analytics Setup Complete").pipe(
+    Effect.annotateLogs({
+      cohorts: created.cohorts.length,
+      featureFlags: created.featureFlags.length,
+      insights: created.insights.length,
+      dashboards: created.dashboards.length,
+      surveys: created.surveys.length,
+      actions: created.actions.length,
+      annotations: created.annotations.length,
+      experiments: created.experiments.length,
+      total,
+      postHogUrl: `https://us.posthog.com/project/${PROJECT_ID}`,
+    })
+  );
 
   return created;
 });
@@ -1051,9 +1068,9 @@ Effect.runPromise(
   ).pipe(
     Effect.provide(platform),
     Effect.provideService(Endpoint, "https://us.posthog.com"),
+    Effect.tapErrorCause((cause) =>
+      Effect.logError("Provisioning failed", Cause.pretty(cause))
+    ),
     Logger.withMinimumLogLevel(LogLevel.Info)
   )
-).catch((e) => {
-  console.error("Provisioning failed:", e);
-  process.exit(1);
-});
+);

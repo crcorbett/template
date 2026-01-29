@@ -1,8 +1,19 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
 import * as S from "effect/Schema";
+import type * as Stream from "effect/Stream";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 // URL matching type for action steps
@@ -20,7 +31,7 @@ export class ActionStepProperty extends S.Class<ActionStepProperty>(
 
 export class ActionStep extends S.Class<ActionStep>("ActionStep")({
   event: S.optional(S.NullOr(S.String)),
-  properties: S.optional(S.NullOr(S.Array(S.Unknown))),
+  properties: S.optional(S.NullOr(S.Array(ActionStepProperty))),
   selector: S.optional(S.NullOr(S.String)),
   tag_name: S.optional(S.NullOr(S.String)),
   text: S.optional(S.NullOr(S.String)),
@@ -31,20 +42,13 @@ export class ActionStep extends S.Class<ActionStep>("ActionStep")({
   url_matching: S.optional(S.NullOr(UrlMatchingEnum)),
 }) {}
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
-}) {}
+export { UserBasic } from "../common.js";
 
 export class Action extends S.Class<Action>("Action")({
   id: S.Number,
   name: S.NullOr(S.String),
   description: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   post_to_slack: S.optional(S.Boolean),
   slack_message_format: S.optional(S.String),
   steps: S.optional(S.Array(ActionStep)),
@@ -62,7 +66,7 @@ export class ActionBasic extends S.Class<ActionBasic>("ActionBasic")({
   id: S.Number,
   name: S.NullOr(S.String),
   description: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   deleted: S.optional(S.Boolean),
   created_at: S.optional(S.String),
 }) {}
@@ -160,37 +164,61 @@ export class DeleteActionRequest extends S.Class<DeleteActionRequest>(
   id: S.Number,
 }) {}
 
-const listActionsOperation: Operation = {
+const listActionsOperation: PaginatedOperation = {
   input: ListActionsRequest,
   output: PaginatedActionList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getActionOperation: Operation = {
   input: GetActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createActionOperation: Operation = {
   input: CreateActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateActionOperation: Operation = {
   input: UpdateActionRequest,
   output: Action,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listActions = makeClient(listActionsOperation);
-export const getAction = makeClient(getActionOperation);
-export const createAction = makeClient(createActionOperation);
-export const updateAction = makeClient(updateActionOperation);
+/** Dependencies required by all action operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listActions: ((
+  input: ListActionsRequest
+) => Effect.Effect<PaginatedActionList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListActionsRequest
+  ) => Stream.Stream<PaginatedActionList, PostHogErrorType, Deps>;
+  items: (
+    input: ListActionsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listActionsOperation);
+
+export const getAction: (
+  input: GetActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getActionOperation);
+
+export const createAction: (
+  input: CreateActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createActionOperation);
+
+export const updateAction: (
+  input: UpdateActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateActionOperation);
 
 // Delete via soft-delete (marking as deleted: true)
-export const deleteAction = (input: DeleteActionRequest) =>
+export const deleteAction: (
+  input: DeleteActionRequest
+) => Effect.Effect<Action, PostHogErrorType, Deps> = (input) =>
   updateAction({
     project_id: input.project_id,
     id: input.id,

@@ -1,0 +1,100 @@
+{
+  "name": "@packages/alchemy-posthog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "@packages/source": "./src/posthog/index.ts",
+        "types": "./dist/src/posthog/index.d.ts",
+        "default": "./dist/src/posthog/index.js"
+      }
+    },
+    "./posthog": {
+      "import": {
+        "@packages/source": "./src/posthog/index.ts",
+        "types": "./dist/src/posthog/index.d.ts",
+        "default": "./dist/src/posthog/index.js"
+      }
+    },
+    "./posthog/feature-flags": {
+      "import": {
+        "@packages/source": "./src/posthog/feature-flags/index.ts",
+        "types": "./dist/src/posthog/feature-flags/index.d.ts",
+        "default": "./dist/src/posthog/feature-flags/index.js"
+      }
+    },
+    "./posthog/dashboards": {
+      "import": {
+        "@packages/source": "./src/posthog/dashboards/index.ts",
+        "types": "./dist/src/posthog/dashboards/index.d.ts",
+        "default": "./dist/src/posthog/dashboards/index.js"
+      }
+    },
+    "./posthog/experiments": {
+      "import": {
+        "@packages/source": "./src/posthog/experiments/index.ts",
+        "types": "./dist/src/posthog/experiments/index.d.ts",
+        "default": "./dist/src/posthog/experiments/index.js"
+      }
+    },
+    "./posthog/surveys": {
+      "import": {
+        "@packages/source": "./src/posthog/surveys/index.ts",
+        "types": "./dist/src/posthog/surveys/index.d.ts",
+        "default": "./dist/src/posthog/surveys/index.js"
+      }
+    },
+    "./posthog/cohorts": {
+      "import": {
+        "@packages/source": "./src/posthog/cohorts/index.ts",
+        "types": "./dist/src/posthog/cohorts/index.d.ts",
+        "default": "./dist/src/posthog/cohorts/index.js"
+      }
+    },
+    "./posthog/actions": {
+      "import": {
+        "@packages/source": "./src/posthog/actions/index.ts",
+        "types": "./dist/src/posthog/actions/index.d.ts",
+        "default": "./dist/src/posthog/actions/index.js"
+      }
+    },
+    "./posthog/annotations": {
+      "import": {
+        "@packages/source": "./src/posthog/annotations/index.ts",
+        "types": "./dist/src/posthog/annotations/index.d.ts",
+        "default": "./dist/src/posthog/annotations/index.js"
+      }
+    },
+    "./posthog/insights": {
+      "import": {
+        "@packages/source": "./src/posthog/insights/index.ts",
+        "types": "./dist/src/posthog/insights/index.d.ts",
+        "default": "./dist/src/posthog/insights/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "test": "bun --env-file=.env vitest run",
+    "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
+  },
+  "dependencies": {
+    "@packages/posthog": "workspace:*",
+    "alchemy-effect": "0.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.16.0",
+    "@effect/platform": "^0.82.0"
+  },
+  "devDependencies": {
+    "@effect/platform": "^0.82.0",
+    "@effect/platform-node": "^0.74.0",
+    "@effect/vitest": "^0.27.0",
+    "effect": "^3.16.0",
+    "typescript": "catalog:typescript",
+    "vitest": "^3.2.4"
+  }
+}

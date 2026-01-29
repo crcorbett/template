@@ -9,6 +9,7 @@
 
 import type * as AST from "effect/SchemaAST";
 
+import * as Match from "effect/Match";
 import * as S from "effect/Schema";
 
 /**
@@ -262,26 +263,22 @@ export const hasPropAnnotation = (
 export const hasAnnotation = (ast: AST.AST, symbol: symbol): boolean => {
   if (ast.annotations?.[symbol] !== undefined) return true;
 
-  if (ast._tag === "Suspend") {
-    return hasAnnotation(ast.f(), symbol);
-  }
-
-  if (ast._tag === "Union") {
-    const nonNullishTypes = ast.types.filter(
-      (t: AST.AST) =>
-        t._tag !== "UndefinedKeyword" &&
-        !(t._tag === "Literal" && t.literal === null)
-    );
-    return nonNullishTypes.some((t: AST.AST) => hasAnnotation(t, symbol));
-  }
-
-  if (ast._tag === "Transformation") {
-    if (ast.annotations?.[symbol] !== undefined) return true;
-    if (ast.to?.annotations?.[symbol] !== undefined) return true;
-    return hasAnnotation(ast.from, symbol);
-  }
-
-  return false;
+  return Match.value(ast).pipe(
+    Match.when({ _tag: "Suspend" }, (s) => hasAnnotation(s.f(), symbol)),
+    Match.when({ _tag: "Union" }, (u) => {
+      const nonNullishTypes = u.types.filter(
+        (t: AST.AST) =>
+          t._tag !== "UndefinedKeyword" &&
+          !(t._tag === "Literal" && t.literal === null)
+      );
+      return nonNullishTypes.some((t: AST.AST) => hasAnnotation(t, symbol));
+    }),
+    Match.when({ _tag: "Transformation" }, (t) => {
+      if (t.to?.annotations?.[symbol] !== undefined) return true;
+      return hasAnnotation(t.from, symbol);
+    }),
+    Match.orElse(() => false)
+  );
 };
 
 /**
@@ -294,30 +291,28 @@ export const getAnnotationUnwrap = <T>(
   const direct = ast.annotations?.[symbol] as T | undefined;
   if (direct !== undefined) return direct;
 
-  if (ast._tag === "Suspend") {
-    return getAnnotationUnwrap(ast.f(), symbol);
-  }
-
-  if (ast._tag === "Transformation") {
-    const toValue = ast.to?.annotations?.[symbol] as T | undefined;
-    if (toValue !== undefined) return toValue;
-
-    const fromValue = ast.from?.annotations?.[symbol] as T | undefined;
-    if (fromValue !== undefined) return fromValue;
-  }
-
-  if (ast._tag === "Union") {
-    const nonNullishTypes = ast.types.filter(
-      (t: AST.AST) =>
-        t._tag !== "UndefinedKeyword" &&
-        !(t._tag === "Literal" && t.literal === null)
-    );
-    if (nonNullishTypes.length === 1 && nonNullishTypes[0]) {
-      return getAnnotationUnwrap(nonNullishTypes[0], symbol);
-    }
-  }
-
-  return undefined;
+  return Match.value(ast).pipe(
+    Match.when({ _tag: "Suspend" }, (s) =>
+      getAnnotationUnwrap<T>(s.f(), symbol)
+    ),
+    Match.when({ _tag: "Transformation" }, (t) => {
+      const toValue = t.to?.annotations?.[symbol] as T | undefined;
+      if (toValue !== undefined) return toValue;
+      return t.from?.annotations?.[symbol] as T | undefined;
+    }),
+    Match.when({ _tag: "Union" }, (u) => {
+      const nonNullishTypes = u.types.filter(
+        (t: AST.AST) =>
+          t._tag !== "UndefinedKeyword" &&
+          !(t._tag === "Literal" && t.literal === null)
+      );
+      if (nonNullishTypes.length === 1 && nonNullishTypes[0]) {
+        return getAnnotationUnwrap<T>(nonNullishTypes[0], symbol);
+      }
+      return undefined;
+    }),
+    Match.orElse(() => undefined)
+  ) as T | undefined;
 };
 
 // =============================================================================
@@ -355,14 +350,10 @@ export const getPostHogService = (
  * Helper to get a value from an object using a dot-separated path.
  * Used for pagination traits where outputToken and items can be paths.
  */
-export const getPath = (obj: unknown, path: string): unknown => {
-  const parts = path.split(".");
-  let current: unknown = obj;
-  for (const part of parts) {
+export const getPath = (obj: unknown, path: string): unknown =>
+  path.split(".").reduce<unknown>((current, part) => {
     if (current == null || typeof current !== "object") {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-};
+    return (current as Record<string, unknown>)[part];
+  }, obj);

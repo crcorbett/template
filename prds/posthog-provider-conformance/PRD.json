@@ -1,0 +1,585 @@
+{
+  "feature": "PostHog Provider Conformance with alchemy-effect Patterns",
+  "version": "1.0.0",
+  "created": "2025-01-29",
+  "updated": "2025-01-29",
+  "buildCommands": {
+    "typeCheck": "bun tsc -b",
+    "test": "bun vitest run test/posthog/",
+    "testFile": "bun vitest run {file}",
+    "note": "All paths relative to packages/alchemy-posthog. Each task includes verification steps to ensure atomic completeness."
+  },
+  "tasks": [
+    {
+      "id": "CRIT-001",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Diff methods must destructure full parameter set from provider contract",
+      "context": "The alchemy-effect provider contract passes { id, olds, instanceId, news, output } to diff. All 8 PostHog providers only destructure { news, olds }. The output parameter is used by some alchemy-effect providers (e.g. Cloudflare R2 uses output in diff to compute conditional stables). The id parameter is useful for logging.",
+      "steps": [
+        "In all 8 provider files, update the diff method destructuring from { news, olds } to { id, news, olds, output }",
+        "Only destructure parameters that are actually referenced in the method body — but ensure the full set is acknowledged",
+        "If a provider's diff logic could benefit from output (e.g. to compute conditional stables), use it",
+        "Do NOT add instanceId unless needed — unused destructured params should remain omitted"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All diff methods destructure at minimum { news, olds } and optionally { id, output } where used"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "CRIT-002",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Diff methods must return undefined when no properties changed (not unconditional update)",
+      "context": "In alchemy-effect, diff returning undefined/void means 'no changes detected, defer to engine default.' FeatureFlag diff always returns { action: 'update' } even when nothing changed, causing unnecessary update calls. Experiment, Survey, Cohort have similar issues where the non-replacement path always returns update instead of checking whether any property actually differs.",
+      "steps": [
+        "FeatureFlag: After the key replacement check, compare all updateable properties (name, active, filters, rolloutPercentage, ensureExperienceContinuity). Return { action: 'update' } only if something differs. Return undefined if nothing changed.",
+        "Experiment: After the featureFlagKey replacement check, compare all updateable properties. Return undefined if nothing changed.",
+        "Survey: After the type replacement check, compare all updateable properties. Return undefined if nothing changed.",
+        "Cohort: After the isStatic replacement check, compare all updateable properties. Return undefined if nothing changed.",
+        "Dashboard, Action, Annotation, Insight already compare properties — verify they return undefined when nothing differs (not { action: 'update' })"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Each diff method returns undefined when all compared properties are equal",
+        "Each diff method returns { action: 'replace' } only for immutable property changes",
+        "Each diff method returns { action: 'update' } only when updateable properties differ"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "CRIT-003",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Read methods must destructure full parameter set from provider contract",
+      "context": "The alchemy-effect read signature is { id, instanceId, olds, output, bindings }. All PostHog providers destructure only { olds, output }. The id parameter is useful for diagnostic logging and could be used in fallback lookup strategies.",
+      "steps": [
+        "In all 8 provider files, update the read method destructuring to include id: { id, olds, output }",
+        "Only add parameters that are referenced — but id should be included for potential logging",
+        "Do NOT add instanceId or bindings unless they are actually used"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All read methods destructure at minimum { id, olds, output }"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "CRIT-004",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Create methods must destructure full parameter set from provider contract",
+      "context": "The alchemy-effect create signature is { id, instanceId, news, session, bindings }. All PostHog providers destructure only { news, session }. The id parameter is the logical resource identifier used by alchemy-effect for deterministic physical name generation and logging.",
+      "steps": [
+        "In all 8 provider files, update the create method destructuring to include id: { id, news, session }",
+        "Do NOT add instanceId or bindings unless they are actually used"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All create methods destructure at minimum { id, news, session }"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "CRIT-005",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Delete methods must destructure full parameter set from provider contract",
+      "context": "The alchemy-effect delete signature is { id, instanceId, olds, output, session, bindings }. PostHog providers destructure only { output, session }. The olds parameter could be valuable for soft-delete resources needing original props for cleanup.",
+      "steps": [
+        "In all 8 provider files, update the delete method destructuring to include olds: { olds, output, session }",
+        "Do NOT add id, instanceId, or bindings unless actually used"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All delete methods destructure at minimum { olds, output, session }"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "CRIT-006",
+      "category": "critical",
+      "package": "alchemy-posthog",
+      "description": "Update methods must destructure full parameter set from provider contract",
+      "context": "The alchemy-effect update signature is { id, instanceId, news, olds, output, session, bindings }. PostHog providers destructure only { news, output, session }. The olds parameter is used by some alchemy-effect update methods to determine which sub-updates to apply.",
+      "steps": [
+        "In all 8 provider files, update the update method destructuring to include olds: { olds, news, output, session }",
+        "Do NOT add id, instanceId, or bindings unless actually used"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All update methods destructure at minimum { olds, news, output, session }"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "HIGH-001",
+      "category": "high",
+      "package": "alchemy-posthog",
+      "description": "Remove redundant stables from diff return values — use top-level stables only",
+      "context": "PostHog providers declare stables at the top-level service object AND redundantly return stables inside every diff return. In alchemy-effect, the top-level stables is the primary declaration and diff only returns stables when it needs to conditionally override (e.g. Cloudflare R2 returns stables only when bucket name matches). PostHog providers always return the same stables array, making the diff-level declaration pure noise.",
+      "steps": [
+        "In all 8 provider files, remove the stables property from diff return values",
+        "Keep only the top-level stables declaration on the provider service object",
+        "Diff should return only { action: 'replace' } or { action: 'update' } or undefined"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "No diff method returns a stables property",
+        "Top-level stables declarations are unchanged"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "HIGH-002",
+      "category": "high",
+      "package": "alchemy-posthog",
+      "description": "Read fallback and create idempotency must catch only specific error tags, not broad PostHogError",
+      "context": "In alchemy-effect, read methods only catch specific error tags (e.g. 'NotFound', 'ResourceNotFoundException'). PostHog providers catch both 'NotFoundError' AND the broad 'PostHogError' catch-all. Catching PostHogError broadly could silently swallow auth errors, validation errors, or server errors, causing the provider to incorrectly assume a resource doesn't exist.",
+      "steps": [
+        "In all 8 provider files, remove Effect.catchTag('PostHogError', () => Effect.succeed(undefined)) from read fallback paths",
+        "In all 8 provider files, remove Effect.catchTag('PostHogError', () => Effect.succeed(undefined)) from create idempotency paths",
+        "Keep only Effect.catchTag('NotFoundError', ...) for not-found handling",
+        "Let other errors (auth, validation, server) propagate to the caller"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "grep for 'PostHogError' in provider files returns zero matches (only NotFoundError should be caught)",
+        "Auth errors and server errors will now propagate correctly instead of being silently swallowed"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "HIGH-003",
+      "category": "high",
+      "package": "alchemy-posthog",
+      "description": "Create idempotency should use targeted API lookup instead of list-all-then-filter",
+      "context": "Every PostHog provider's create method fetches the entire resource list to check for duplicates — an O(n) scan. If the PostHog API supports search/query parameters, those should be used. Otherwise, at minimum the lookup should be documented as a known limitation. alchemy-effect uses deterministic naming or tag-based adoption, not list-and-scan.",
+      "steps": [
+        "Research whether each PostHog list API supports search/filter query parameters (e.g. ?search=keyname)",
+        "If search params exist, use them to narrow the lookup: listFeatureFlags({ project_id, search: news.key })",
+        "If search params do not exist, add a code comment documenting this as a known limitation and noting that large projects may see degraded performance",
+        "Apply the same optimization to the read fallback path where it also does list-then-filter"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Where search params exist, they are used in the API call",
+        "Where search params don't exist, a comment documents the limitation"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "HIGH-004",
+      "category": "high",
+      "package": "alchemy-posthog",
+      "description": "List API calls must handle pagination instead of only reading the first page",
+      "context": "The read fallback and create idempotency checks call list APIs but only examine the first page of results. If the target resource is on page 2+, the lookup silently fails. The Cloudflare KV namespace provider in alchemy-effect handles pagination explicitly with a while loop.",
+      "steps": [
+        "In all 8 provider files, wrap list API calls in a pagination loop for both read fallback and create idempotency paths",
+        "Follow the Cloudflare KV pattern: increment page number, check for next page info, continue until match found or no more pages",
+        "If the PostHog list API response does not include pagination info (next/count fields), check the API response type and handle accordingly",
+        "Extract pagination into a shared helper if the pattern is identical across all providers"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "List API calls in read fallback handle pagination (loop through pages)",
+        "List API calls in create idempotency handle pagination"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "MED-001",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "bareProviders() should use config() internally instead of duplicating layer provision",
+      "context": "The config() helper composes Project, Credentials, Endpoint layers onto a caller-provided layer. But bareProviders() duplicates this logic by calling the three fromStageConfig() layers directly instead of using config(resources()). This violates DRY and means changes to config() won't be reflected in bareProviders().",
+      "steps": [
+        "In src/posthog/index.ts, change bareProviders() to use config():",
+        "  export const bareProviders = () => config(resources());",
+        "Remove the duplicated Layer.provideMerge calls from bareProviders()"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bareProviders() body is a single expression: config(resources())",
+        "config() function is unchanged"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/index.ts"
+      ]
+    },
+    {
+      "id": "MED-002",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "Remove unused generic type parameter _Props from mapResponseToAttrs functions",
+      "context": "All providers define mapResponseToAttrs with a generic _Props parameter that is never constrained or used to influence the return type. The function always returns the same fields regardless of _Props. In alchemy-effect, Attrs types are parameterized by Props for conditional types (e.g. BucketAttrs.bucketName resolves to the literal prop type). PostHog attrs don't use conditional types, so the generic is dead code.",
+      "steps": [
+        "In all 8 provider files, remove the generic type parameter from mapResponseToAttrs",
+        "Change from: function mapResponseToAttrs<_Props extends XProps = XProps>(result: X): XAttrs<_Props>",
+        "Change to: function mapResponseToAttrs(result: X): XAttrs",
+        "If the Attrs interface requires a type parameter, use the default (XAttrs without explicit parameter)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "No mapResponseToAttrs function has a generic type parameter"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "MED-003",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "Add Input<T> wrapper to Props interfaces for cross-resource reference fields",
+      "context": "alchemy-effect Props interfaces use Input<T> for properties that can reference other resources' outputs (e.g. tags?: Record<string, Input<string>>). PostHog Props use plain types everywhere. Some fields could benefit from Input<T>: Survey.linkedFlagId could reference a FeatureFlag output, Insight.dashboards could reference Dashboard outputs, Experiment.holdoutId, Annotation.dashboardItem.",
+      "steps": [
+        "Import Input from alchemy-effect in resource contract files that have cross-resource-referenceable fields",
+        "Wrap the following fields in Input<T>:",
+        "  - Survey: linkedFlagId?: Input<number | null>",
+        "  - Insight: dashboards?: Input<number>[]",
+        "  - Experiment: holdoutId?: Input<number | null>",
+        "  - Annotation: dashboardItem?: Input<number | null>",
+        "Update the Attrs interfaces to use Input.Resolve<Props> pattern where applicable",
+        "Update provider code to handle Input.Resolve if needed"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Cross-resource reference fields use Input<T> wrapper",
+        "Attrs interfaces use Input.Resolve where Props use Input<T>"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/surveys/survey.ts",
+        "src/posthog/insights/insight.ts",
+        "src/posthog/experiments/experiment.ts",
+        "src/posthog/annotations/annotation.ts"
+      ]
+    },
+    {
+      "id": "MED-004",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "Simplify resource type naming to two-level convention",
+      "context": "alchemy-effect uses two-level type names: 'AWS.S3.Bucket', 'Cloudflare.KV.Namespace'. PostHog uses three-level with service name repeated: 'PostHog.FeatureFlags.FeatureFlag', 'PostHog.Dashboards.Dashboard'. This creates redundancy. 'PostHog.FeatureFlag' or 'PostHog.Dashboard' would be consistent with how AWS names work (it's 'AWS.S3.Bucket' not 'AWS.S3Buckets.Bucket').",
+      "steps": [
+        "Rename all 8 resource type strings from three-level to two-level:",
+        "  - PostHog.FeatureFlags.FeatureFlag -> PostHog.FeatureFlag",
+        "  - PostHog.Dashboards.Dashboard -> PostHog.Dashboard",
+        "  - PostHog.Experiments.Experiment -> PostHog.Experiment",
+        "  - PostHog.Surveys.Survey -> PostHog.Survey",
+        "  - PostHog.Cohorts.Cohort -> PostHog.Cohort",
+        "  - PostHog.Actions.Action -> PostHog.Action",
+        "  - PostHog.Annotations.Annotation -> PostHog.Annotation",
+        "  - PostHog.Insights.Insight -> PostHog.Insight",
+        "Update the Resource() call and interface extends in each resource file",
+        "IMPORTANT: This is a breaking change for any existing state files. If state files reference the old type names, add a migration note."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All resource type strings follow two-level naming convention: PostHog.ResourceName",
+        "grep for 'PostHog\\.' in resource files shows only two-level names"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.ts",
+        "src/posthog/dashboards/dashboard.ts",
+        "src/posthog/experiments/experiment.ts",
+        "src/posthog/surveys/survey.ts",
+        "src/posthog/cohorts/cohort.ts",
+        "src/posthog/actions/action.ts",
+        "src/posthog/annotations/annotation.ts",
+        "src/posthog/insights/insight.ts"
+      ]
+    },
+    {
+      "id": "MED-005",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "Remove unnecessary | undefined from Attrs fields that are always present in API responses",
+      "context": "PostHog attrs declare most fields as T | undefined. In alchemy-effect, attrs represent the persisted output state and fields are generally non-optional — they're populated during create/update. If the PostHog API always returns these fields, they shouldn't be | undefined in attrs.",
+      "steps": [
+        "Review each Attrs interface field against the PostHog API response schema",
+        "For fields that are always present in API responses (e.g. name, active for FeatureFlag), remove | undefined",
+        "Keep | undefined only for fields that genuinely may be absent from API responses",
+        "Fields like createdAt that are always set server-side should NOT be | undefined",
+        "The id field is already non-optional (correct)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Attrs fields that are always present in API responses do not have | undefined",
+        "Only genuinely nullable fields retain | undefined"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.ts",
+        "src/posthog/dashboards/dashboard.ts",
+        "src/posthog/experiments/experiment.ts",
+        "src/posthog/surveys/survey.ts",
+        "src/posthog/cohorts/cohort.ts",
+        "src/posthog/actions/action.ts",
+        "src/posthog/annotations/annotation.ts",
+        "src/posthog/insights/insight.ts"
+      ]
+    },
+    {
+      "id": "MED-006",
+      "category": "medium",
+      "package": "alchemy-posthog",
+      "description": "Use Effect.fnUntraced for diff methods to reduce stack trace overhead",
+      "context": "alchemy-effect uses Effect.fnUntraced for diff and some read methods (e.g. Cloudflare R2 bucket) to avoid stack trace overhead in hot paths. All PostHog providers use Effect.fn everywhere. Diff methods are called during the plan phase for every resource, so reducing overhead matters.",
+      "steps": [
+        "In all 8 provider files, change diff methods from Effect.fn to Effect.fnUntraced",
+        "Only change diff methods — keep Effect.fn for create, update, delete, read where stack traces are valuable for debugging"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All diff methods use Effect.fnUntraced",
+        "All other lifecycle methods still use Effect.fn"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "LOW-001",
+      "category": "low",
+      "package": "alchemy-posthog",
+      "description": "Idempotency session notes should include the resource identifier",
+      "context": "Some session notes omit the concrete resource identifier: 'Idempotent FeatureFlag: found existing by key' (no key value). In alchemy-effect, session notes typically include the concrete resource name/identifier to aid debugging.",
+      "steps": [
+        "In all 8 provider files, update idempotency session notes to include the identifier:",
+        "  - FeatureFlag: `Idempotent FeatureFlag: found existing with key ${existing.key}`",
+        "  - Dashboard: `Idempotent Dashboard: found existing with name ${existing.name}`",
+        "  - Experiment: `Idempotent Experiment: found existing with feature flag key ${existing.feature_flag_key}`",
+        "  - Survey: `Idempotent Survey: found existing with name ${existing.name}`",
+        "  - Cohort: `Idempotent Cohort: found existing with name ${existing.name}`",
+        "  - Action: `Idempotent Action: found existing with name ${existing.name}`",
+        "  - Annotation: `Idempotent Annotation: found existing with id ${existing.id}`",
+        "  - Insight: `Idempotent Insight: found existing with name ${existing.name}`"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All idempotency session notes include the concrete resource identifier"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "LOW-002",
+      "category": "low",
+      "package": "alchemy-posthog",
+      "description": "Remove unnecessary 'as const' from diff return action strings",
+      "context": "PostHog providers use { action: 'replace' as const } and { action: 'update' as const }. The alchemy-effect Diff type already narrows the action field via the union type, so 'as const' is redundant. Some alchemy-effect providers do this too, but it's unnecessary noise.",
+      "steps": [
+        "In all 8 provider files, remove 'as const' from diff return action values",
+        "Change { action: 'replace' as const } to { action: 'replace' }",
+        "Change { action: 'update' as const, ... } to { action: 'update', ... }",
+        "If TypeScript requires the narrowing for type inference, keep 'as const' — but verify first"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "No diff return value uses 'as const' on the action string (unless required for type inference)"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/feature-flags/feature-flag.provider.ts",
+        "src/posthog/dashboards/dashboard.provider.ts",
+        "src/posthog/experiments/experiment.provider.ts",
+        "src/posthog/surveys/survey.provider.ts",
+        "src/posthog/cohorts/cohort.provider.ts",
+        "src/posthog/actions/action.provider.ts",
+        "src/posthog/annotations/annotation.provider.ts",
+        "src/posthog/insights/insight.provider.ts"
+      ]
+    },
+    {
+      "id": "LOW-003",
+      "category": "low",
+      "package": "alchemy-posthog",
+      "description": "Consider per-operation retry customization instead of uniform retryPolicy wrapper",
+      "context": "alchemy-effect providers use inline Effect.retry({ while, schedule }) on specific operations, allowing per-operation customization (e.g. more retries for create, fewer for read). PostHog wraps all API calls uniformly in retryPolicy(). The PostHog approach is DRY but prevents per-operation tuning.",
+      "steps": [
+        "Review whether any PostHog operations would benefit from different retry behavior:",
+        "  - Create operations that hit rate limits more often might need more retries",
+        "  - Delete operations that are idempotent might need fewer retries",
+        "  - Read operations used for fallback lookup might tolerate fewer retries",
+        "If no per-operation customization is needed, add a code comment to retryPolicy() documenting this decision",
+        "If customization is needed, add an optional parameter to retryPolicy() for overriding maxRetries or schedule"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "retryPolicy() has a documenting comment about the uniform retry decision"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/retry.ts"
+      ]
+    },
+    {
+      "id": "LOW-004",
+      "category": "low",
+      "package": "alchemy-posthog",
+      "description": "Document absence of precreate method as intentional design decision",
+      "context": "alchemy-effect supports an optional precreate method for circular dependency resolution (e.g. Lambda pre-creation with dummy code). None of the PostHog providers implement it. This is likely correct since PostHog resources don't have circular dependencies, but it should be documented.",
+      "steps": [
+        "Add a comment in the SPEC.md or in src/posthog/index.ts explaining that precreate is intentionally omitted because PostHog SaaS resources don't have circular dependency patterns",
+        "If any PostHog resource COULD have circular dependencies (e.g. Experiment references FeatureFlag which might reference Experiment), document this as a known limitation"
+      ],
+      "verify": [
+        "Documentation exists explaining the absence of precreate"
+      ],
+      "passes": true,
+      "files": [
+        "src/posthog/index.ts"
+      ]
+    },
+    {
+      "id": "LOW-005",
+      "category": "low",
+      "package": "alchemy-posthog",
+      "description": "Final type check and test verification after all conformance changes",
+      "context": "After applying all conformance changes, run full type check and test suite to ensure nothing is broken.",
+      "steps": [
+        "Run bun tsc -b and verify zero errors",
+        "Run bun vitest run test/posthog/ and verify all tests pass",
+        "Review git diff to ensure no unintended changes were introduced"
+      ],
+      "verify": [
+        "bun tsc -b passes with zero errors",
+        "bun vitest run test/posthog/ passes all tests",
+        "git diff shows only intended conformance changes"
+      ],
+      "passes": true,
+      "files": []
+    }
+  ]
+}

@@ -6,6 +6,14 @@
 
 import * as S from "effect/Schema";
 
+import {
+  withAuthError,
+  withNotFoundError,
+  withServerError,
+  withThrottlingError,
+  withValidationError,
+} from "./category.js";
+
 /**
  * Base error for unknown PostHog API errors.
  * Returned when the API returns an error code not in the operation's error list.
@@ -28,7 +36,7 @@ export class AuthenticationError extends S.TaggedError<AuthenticationError>()(
     message: S.optional(S.String),
     detail: S.optional(S.String),
   }
-) {}
+).pipe(withAuthError) {}
 
 /**
  * Authorization error - Valid API key but insufficient permissions
@@ -39,7 +47,7 @@ export class AuthorizationError extends S.TaggedError<AuthorizationError>()(
     message: S.optional(S.String),
     detail: S.optional(S.String),
   }
-) {}
+).pipe(withAuthError) {}
 
 /**
  * Not found error - Resource does not exist
@@ -50,7 +58,7 @@ export class NotFoundError extends S.TaggedError<NotFoundError>()(
     message: S.optional(S.String),
     detail: S.optional(S.String),
   }
-) {}
+).pipe(withNotFoundError) {}
 
 /**
  * Validation error - Invalid request data
@@ -62,7 +70,7 @@ export class ValidationError extends S.TaggedError<ValidationError>()(
     detail: S.optional(S.Unknown),
     errors: S.optional(S.Record({ key: S.String, value: S.Unknown })),
   }
-) {}
+).pipe(withValidationError) {}
 
 /**
  * Rate limit error - Too many requests
@@ -74,7 +82,7 @@ export class RateLimitError extends S.TaggedError<RateLimitError>()(
     detail: S.optional(S.String),
     retryAfter: S.optional(S.Number),
   }
-) {}
+).pipe(withThrottlingError) {}
 
 /**
  * Server error - Internal PostHog server error
@@ -82,18 +90,46 @@ export class RateLimitError extends S.TaggedError<RateLimitError>()(
 export class ServerError extends S.TaggedError<ServerError>()("ServerError", {
   message: S.optional(S.String),
   detail: S.optional(S.String),
-}) {}
+}).pipe(withServerError) {}
 
 /**
- * Common errors that can occur on any operation
+ * Missing HTTP trait error - Schema is missing required HTTP annotation
+ * This is an internal error indicating a programming mistake.
+ */
+export class MissingHttpTraitError extends S.TaggedError<MissingHttpTraitError>()(
+  "MissingHttpTraitError",
+  {
+    message: S.String,
+  }
+) {}
+
+/**
+ * Missing credentials error - Required environment variable is not set
+ */
+export class MissingCredentialsError extends S.TaggedError<MissingCredentialsError>()(
+  "MissingCredentialsError",
+  {
+    message: S.String,
+  }
+) {}
+
+/**
+ * Common errors that can occur on any operation (excluding NotFoundError for list/create operations)
  */
 export const COMMON_ERRORS = [
   AuthenticationError,
   AuthorizationError,
-  NotFoundError,
   ValidationError,
   RateLimitError,
   ServerError,
+] as const;
+
+/**
+ * Common errors for get/update/delete operations that can return 404
+ */
+export const COMMON_ERRORS_WITH_NOT_FOUND = [
+  ...COMMON_ERRORS,
+  NotFoundError,
 ] as const;
 
 /**
@@ -119,4 +155,6 @@ export type PostHogErrorType =
   | NotFoundError
   | ValidationError
   | RateLimitError
-  | ServerError;
+  | ServerError
+  | MissingHttpTraitError
+  | MissingCredentialsError;

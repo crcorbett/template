@@ -1,5 +1,5 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 
 import {
   createInsight,
@@ -8,21 +8,15 @@ import {
   listInsights,
   updateInsight,
 } from "../src/services/insights.js";
-import { test } from "./test.js";
-
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteInsight({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Insights Service", () => {
   describe("integration tests", () => {
     test("should list insights", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +27,9 @@ describe("PostHog Insights Service", () => {
 
     test("should list saved insights only", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           saved: true,
           limit: 10,
         });
@@ -44,8 +39,9 @@ describe("PostHog Insights Service", () => {
 
     test("should list insights with basic metadata only", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listInsights({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           basic: true,
           limit: 10,
         });
@@ -55,12 +51,12 @@ describe("PostHog Insights Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insightName = `test-insight-${Date.now()}`;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createInsight({
+            project_id: projectId,
             name: insightName,
             description: "Integration test insight",
             query: {
@@ -74,54 +70,54 @@ describe("PostHog Insights Service", () => {
               ],
             },
             saved: true,
-          });
-          createdId = created.id;
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.name).toBe(insightName);
+              expect(created.description).toBe("Integration test insight");
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.name).toBe(insightName);
-          expect(created.description).toBe("Integration test insight");
+              const fetched = yield* getInsight({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const fetched = yield* getInsight({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.name).toBe(insightName);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.name).toBe(insightName);
+              const updatedName = `${insightName}-updated`;
+              const updated = yield* updateInsight({
+                project_id: projectId,
+                id: created.id,
+                name: updatedName,
+                description: "Updated description",
+              });
 
-          const updatedName = `${insightName}-updated`;
-          const updated = yield* updateInsight({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-            name: updatedName,
-            description: "Updated description",
-          });
+              expect(updated.name).toBe(updatedName);
+              expect(updated.description).toBe("Updated description");
 
-          expect(updated.name).toBe(updatedName);
-          expect(updated.description).toBe("Updated description");
+              const deleted = yield* deleteInsight({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          const deleted = yield* deleteInsight({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-          });
-
-          expect(deleted.deleted).toBe(true);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+              expect(deleted.deleted).toBe(true);
+            }),
+          release: (created) =>
+            deleteInsight({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create trends insight", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createInsight({
+            project_id: projectId,
             name: `test-trends-${Date.now()}`,
             query: {
               kind: "TrendsQuery",
@@ -142,27 +138,25 @@ describe("PostHog Insights Service", () => {
               interval: "day",
             },
             saved: true,
-          });
-          createdId = created.id;
-
-          expect(created.query).toBeDefined();
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.query).toBeDefined();
+            }),
+          release: (created) =>
+            deleteInsight({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create funnel insight", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createInsight({
+            project_id: projectId,
             name: `test-funnel-${Date.now()}`,
             query: {
               kind: "FunnelsQuery",
@@ -180,27 +174,25 @@ describe("PostHog Insights Service", () => {
               ],
             },
             saved: true,
-          });
-          createdId = created.id;
-
-          expect(created.query).toBeDefined();
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.query).toBeDefined();
+            }),
+          release: (created) =>
+            deleteInsight({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create retention insight", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createInsight({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createInsight({
+            project_id: projectId,
             name: `test-retention-${Date.now()}`,
             query: {
               kind: "RetentionQuery",
@@ -218,28 +210,51 @@ describe("PostHog Insights Service", () => {
               },
             },
             saved: true,
-          });
-          createdId = created.id;
-
-          expect(created.query).toBeDefined();
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.query).toBeDefined();
+            }),
+          release: (created) =>
+            deleteInsight({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle insight not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages with listInsights.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const pages = yield* listInsights
+          .pages({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        expect(pages.length).toBeGreaterThanOrEqual(1);
+        for (const page of pages) {
+          expect(page.results).toBeDefined();
+          expect(Array.isArray(page.results)).toBe(true);
+        }
+      }));
+
+    test("should stream items with listInsights.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const items = yield* listInsights
+          .items({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(10), Stream.runCollect);
+
+        expect(items.length).toBeGreaterThanOrEqual(0);
       }));
   });
 });

@@ -8,16 +8,31 @@ import {
   it,
   type TestContext,
 } from "@effect/vitest";
-import { ConfigProvider, LogLevel } from "effect";
+import { Config, ConfigProvider, LogLevel, pipe } from "effect";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
+import * as Schedule from "effect/Schedule";
 import * as Scope from "effect/Scope";
 import * as net from "node:net";
 
 import { Credentials } from "../src/credentials.js";
 import { Endpoint } from "../src/endpoint.js";
 import * as Retry from "../src/retry.js";
+
+/**
+ * The PostHog project ID used for integration tests.
+ * Resolved from POSTHOG_PROJECT_ID via the Effect Config system,
+ * which reads from `.env` at runtime.
+ */
+export const TEST_PROJECT_ID: Effect.Effect<string, Error> = Config.string(
+  "POSTHOG_PROJECT_ID"
+).pipe(
+  Effect.mapError(
+    () => new Error("POSTHOG_PROJECT_ID is required. Set it in your .env file.")
+  )
+);
 
 /**
  * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
@@ -61,6 +76,27 @@ const platform = Layer.mergeAll(
   Logger.pretty
 );
 
+const resolveConfigProvider = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  return (yield* fs.exists("../../.env"))
+    ? ConfigProvider.orElse(
+        yield* PlatformConfigProvider.fromDotEnv("../../.env"),
+        ConfigProvider.fromEnv
+      )
+    : ConfigProvider.fromEnv();
+});
+
+const withConfigAndCredentials = <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) =>
+  Effect.gen(function* () {
+    const configProvider = yield* resolveConfigProvider;
+    return yield* effect.pipe(
+      Effect.provide(Credentials.fromEnv()),
+      Effect.withConfigProvider(configProvider)
+    );
+  });
+
 type TestCase =
   | Effect.Effect<void, unknown, Provided>
   | ((ctx: TestContext) => Effect.Effect<void, unknown, Provided>);
@@ -84,22 +120,7 @@ export function test(
     name,
     (ctx) => {
       const effect = typeof testCase === "function" ? testCase(ctx) : testCase;
-      return provideTestEnv(
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem;
-          const configProvider = (yield* fs.exists("../../.env"))
-            ? ConfigProvider.orElse(
-                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-                ConfigProvider.fromEnv
-              )
-            : ConfigProvider.fromEnv();
-
-          return yield* effect.pipe(
-            Effect.provide(Credentials.fromEnv()),
-            Effect.withConfigProvider(configProvider)
-          );
-        })
-      );
+      return provideTestEnv(withConfigAndCredentials(effect));
     },
     options.timeout ?? 30_000
   );
@@ -117,24 +138,7 @@ export async function run<E>(
   effect: Effect.Effect<void, E, Provided>
 ): Promise<void> {
   await Effect.runPromise(
-    provideTestEnv(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem;
-          const configProvider = (yield* fs.exists("../../.env"))
-            ? ConfigProvider.orElse(
-                yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-                ConfigProvider.fromEnv
-              )
-            : ConfigProvider.fromEnv();
-
-          return yield* effect.pipe(
-            Effect.provide(Credentials.fromEnv()),
-            Effect.withConfigProvider(configProvider)
-          );
-        })
-      )
-    )
+    provideTestEnv(Effect.scoped(withConfigAndCredentials(effect)))
   );
 }
 
@@ -147,6 +151,26 @@ export const afterAll = (
   effect: Effect.Effect<void, unknown, Provided>,
   timeout?: number
 ) => _afterAll(() => run(effect), timeout ?? 30_000);
+
+/**
+ * Test helper that guarantees resource cleanup via Effect.acquireUseRelease.
+ *
+ * Replaces the broken `let createdId` + `Effect.ensuring` pattern where the
+ * ternary was eagerly evaluated at Effect construction time (before the
+ * resource was created), so cleanup never ran on test failure.
+ *
+ * @param acquire - Effect that creates the resource (e.g. createAction)
+ * @param use - Test body that receives the created resource
+ * @param release - Cleanup function called with the resource (always runs)
+ */
+export const withResource = <A, E, R>(options: {
+  readonly acquire: Effect.Effect<A, E, R>;
+  readonly use: (resource: A) => Effect.Effect<void, E, R>;
+  readonly release: (resource: A) => Effect.Effect<void, unknown, R>;
+}): Effect.Effect<void, E, R> =>
+  Effect.acquireUseRelease(options.acquire, options.use, (resource) =>
+    options.release(resource).pipe(Effect.catchAll(() => Effect.void))
+  );
 
 export const expectSnapshot = (
   ctx: TestContext,
@@ -172,6 +196,25 @@ export const expectSnapshot = (
   );
 };
 
+/**
+ * Test-specific retry policy with shorter backoff than production.
+ *
+ * Uses faster exponential backoff (200ms base, 2s cap, 3 retries) to avoid
+ * test timeouts while still respecting rate limits. Production uses 1s base,
+ * 5s cap, and more retries.
+ */
+const testRetryOptions: Retry.Options = {
+  while: Retry.isTransientError,
+  schedule: pipe(
+    Schedule.exponential(Duration.millis(200), 2),
+    Schedule.modifyDelay((d) =>
+      Duration.toMillis(d) > 2000 ? Duration.millis(2000) : d
+    ),
+    Schedule.intersect(Schedule.recurs(3)),
+    Schedule.jittered
+  ),
+};
+
 function provideTestEnv<A, E, R extends Provided>(
   effect: Effect.Effect<A, E, R>
 ) {
@@ -182,6 +225,6 @@ function provideTestEnv<A, E, R extends Provided>(
       process.env.DEBUG ? LogLevel.Debug : LogLevel.Info
     ),
     Effect.provide(NodeContext.layer),
-    Retry.transient
+    Retry.policy(testRetryOptions)
   );
 }

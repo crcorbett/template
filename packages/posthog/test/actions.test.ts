@@ -1,5 +1,5 @@
 import { describe, expect } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 
 import {
   createAction,
@@ -8,21 +8,15 @@ import {
   listActions,
   updateAction,
 } from "../src/services/actions.js";
-import { test } from "./test.js";
-
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
-
-const cleanup = (id: number) =>
-  deleteAction({ project_id: TEST_PROJECT_ID, id }).pipe(
-    Effect.catchAll(() => Effect.void)
-  );
+import { test, TEST_PROJECT_ID, withResource } from "./test.js";
 
 describe("PostHog Actions Service", () => {
   describe("integration tests", () => {
     test("should list actions", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* listActions({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 10,
         });
 
@@ -33,8 +27,9 @@ describe("PostHog Actions Service", () => {
 
     test("should list actions with pagination", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const firstPage = yield* listActions({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           limit: 5,
           offset: 0,
         });
@@ -44,7 +39,7 @@ describe("PostHog Actions Service", () => {
 
         if (firstPage.next) {
           const secondPage = yield* listActions({
-            project_id: TEST_PROJECT_ID,
+            project_id: projectId,
             limit: 5,
             offset: 5,
           });
@@ -54,69 +49,64 @@ describe("PostHog Actions Service", () => {
 
     test("should perform full CRUD lifecycle", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const actionName = `test-action-${Date.now()}`;
-        let createdId: number | undefined;
 
-        yield* Effect.gen(function* () {
-          // Create
-          const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createAction({
+            project_id: projectId,
             name: actionName,
             description: "Integration test action",
-            steps: [
-              {
-                event: "user_signed_up",
-              },
-            ],
-          });
-          createdId = created.id;
+            steps: [{ event: "user_signed_up" }],
+          }),
+          use: (created) =>
+            Effect.gen(function* () {
+              expect(created).toBeDefined();
+              expect(created.id).toBeDefined();
+              expect(created.name).toBe(actionName);
+              expect(created.description).toBe("Integration test action");
 
-          expect(created).toBeDefined();
-          expect(created.id).toBeDefined();
-          expect(created.name).toBe(actionName);
-          expect(created.description).toBe("Integration test action");
+              // Read
+              const fetched = yield* getAction({
+                project_id: projectId,
+                id: created.id,
+              });
 
-          // Read
-          const fetched = yield* getAction({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-          });
+              expect(fetched.id).toBe(created.id);
+              expect(fetched.name).toBe(actionName);
 
-          expect(fetched.id).toBe(created.id);
-          expect(fetched.name).toBe(actionName);
+              // Update
+              const updatedName = `${actionName}-updated`;
+              const updated = yield* updateAction({
+                project_id: projectId,
+                id: created.id,
+                name: updatedName,
+                description: "Updated description",
+              });
 
-          // Update
-          const updatedName = `${actionName}-updated`;
-          const updated = yield* updateAction({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-            name: updatedName,
-            description: "Updated description",
-          });
+              expect(updated.name).toBe(updatedName);
+              expect(updated.description).toBe("Updated description");
 
-          expect(updated.name).toBe(updatedName);
-          expect(updated.description).toBe("Updated description");
-
-          // Delete (soft delete)
-          yield* deleteAction({
-            project_id: TEST_PROJECT_ID,
-            id: created.id,
-          }).pipe(Effect.catchAll(() => Effect.void));
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+              // Delete (soft delete)
+              yield* deleteAction({
+                project_id: projectId,
+                id: created.id,
+              }).pipe(Effect.catchAll(() => Effect.void));
+            }),
+          release: (created) =>
+            deleteAction({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create action with URL matching", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createAction({
+            project_id: projectId,
             name: `test-url-action-${Date.now()}`,
             description: "Action with URL matching",
             steps: [
@@ -126,62 +116,52 @@ describe("PostHog Actions Service", () => {
                 url_matching: "contains",
               },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.steps).toBeDefined();
-          expect(created.steps?.length).toBe(1);
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.steps).toBeDefined();
+              expect(created.steps?.length).toBe(1);
+            }),
+          release: (created) =>
+            deleteAction({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create action with multiple steps", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createAction({
+            project_id: projectId,
             name: `test-multistep-action-${Date.now()}`,
             description: "Action with multiple steps",
             steps: [
-              {
-                event: "project_created",
-              },
-              {
-                event: "task_created",
-              },
-              {
-                event: "member_invited",
-              },
+              { event: "project_created" },
+              { event: "task_created" },
+              { event: "member_invited" },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.steps?.length).toBe(3);
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.steps?.length).toBe(3);
+            }),
+          release: (created) =>
+            deleteAction({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create action with element selector", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createAction({
+            project_id: projectId,
             name: `test-selector-action-${Date.now()}`,
             description: "Action with CSS selector",
             steps: [
@@ -192,57 +172,74 @@ describe("PostHog Actions Service", () => {
                 text: "Sign Up",
               },
             ],
-          });
-          createdId = created.id;
-
-          expect(created.steps).toBeDefined();
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.steps).toBeDefined();
+            }),
+          release: (created) =>
+            deleteAction({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should create action with tags", () =>
       Effect.gen(function* () {
-        let createdId: number | undefined;
+        const projectId = yield* TEST_PROJECT_ID;
 
-        yield* Effect.gen(function* () {
-          const created = yield* createAction({
-            project_id: TEST_PROJECT_ID,
+        yield* withResource({
+          acquire: createAction({
+            project_id: projectId,
             name: `test-tagged-action-${Date.now()}`,
             description: "Action with tags",
             tags: ["conversion", "funnel"],
-            steps: [
-              {
-                event: "checkout_completed",
-              },
-            ],
-          });
-          createdId = created.id;
-
-          expect(created.tags).toBeDefined();
-
-          yield* cleanup(created.id);
-          createdId = undefined;
-        }).pipe(
-          Effect.ensuring(
-            createdId !== undefined ? cleanup(createdId) : Effect.void
-          )
-        );
+            steps: [{ event: "checkout_completed" }],
+          }),
+          use: (created) =>
+            Effect.sync(() => {
+              expect(created.tags).toBeDefined();
+            }),
+          release: (created) =>
+            deleteAction({ project_id: projectId, id: created.id }).pipe(
+              Effect.catchAll(() => Effect.void)
+            ),
+        });
       }));
 
     test("should handle action not found", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const result = yield* getAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           id: 999999999,
         }).pipe(Effect.either);
 
         expect(result._tag).toBe("Left");
+      }));
+
+    test("should stream pages via listActions.pages()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const pages = yield* listActions
+          .pages({ project_id: projectId, limit: 5 })
+          .pipe(Stream.take(2), Stream.runCollect);
+
+        expect(pages.length).toBeGreaterThanOrEqual(1);
+        for (const page of pages) {
+          expect(page.results).toBeDefined();
+          expect(Array.isArray(page.results)).toBe(true);
+        }
+      }));
+
+    test("should stream items via listActions.items()", () =>
+      Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
+        const items = yield* listActions
+          .items({ project_id: projectId, limit: 10 })
+          .pipe(Stream.take(5), Stream.runCollect);
+
+        expect(items.length).toBeGreaterThanOrEqual(0);
       }));
   });
 });

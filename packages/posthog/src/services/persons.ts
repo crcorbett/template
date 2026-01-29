@@ -1,15 +1,26 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
 export class Person extends S.Class<Person>("Person")({
   id: S.Number,
   name: S.optional(S.String),
   distinct_ids: S.Array(S.String),
-  properties: S.optional(S.Unknown),
+  /** Person properties as key-value pairs (e.g., email, name, custom properties). */
+  properties: S.optional(S.Record({ key: S.String, value: S.Unknown })),
   created_at: S.optional(S.String),
   uuid: S.String,
 }) {}
@@ -76,24 +87,43 @@ export class EmptyResponse extends S.Class<EmptyResponse>("EmptyResponse")(
   {}
 ) {}
 
-const listPersonsOperation: Operation = {
+const listPersonsOperation: PaginatedOperation = {
   input: ListPersonsRequest,
   output: PaginatedPersonList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getPersonOperation: Operation = {
   input: GetPersonRequest,
   output: Person,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const deletePersonOperation: Operation = {
   input: DeletePersonRequest,
   output: EmptyResponse,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listPersons = makeClient(listPersonsOperation);
-export const getPerson = makeClient(getPersonOperation);
-export const deletePerson = makeClient(deletePersonOperation);
+/** Dependencies required by all person operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+export const listPersons: ((
+  input: ListPersonsRequest
+) => Effect.Effect<PaginatedPersonList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListPersonsRequest
+  ) => Stream.Stream<PaginatedPersonList, PostHogErrorType, Deps>;
+  items: (
+    input: ListPersonsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listPersonsOperation);
+
+export const getPerson: (
+  input: GetPersonRequest
+) => Effect.Effect<Person, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getPersonOperation);
+
+export const deletePerson: (
+  input: DeletePersonRequest
+) => Effect.Effect<EmptyResponse, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(deletePersonOperation);

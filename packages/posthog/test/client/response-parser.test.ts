@@ -6,7 +6,17 @@ import type { Operation } from "../../src/client/operation.js";
 import type { Response } from "../../src/client/response.js";
 
 import { makeResponseParser } from "../../src/client/response-parser.js";
-import { PostHogError } from "../../src/errors.js";
+import { PostHogError, type PostHogErrorType } from "../../src/errors.js";
+
+/**
+ * Typed assertion helper that narrows PostHogErrorType to PostHogError
+ * using _tag discriminant — no type assertions needed.
+ */
+const assertPostHogError = (error: PostHogErrorType): PostHogError => {
+  expect(error._tag).toBe("PostHogError");
+  if (error._tag !== "PostHogError") throw new Error("Expected PostHogError");
+  return error;
+};
 
 const createMockResponse = (
   status: number,
@@ -126,11 +136,10 @@ describe("makeResponseParser", () => {
           detail: "Missing required field",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("400");
-        expect((error as PostHogError).message).toBe("Invalid request");
+        expect(error.code).toBe("400");
+        expect(error.message).toBe("Invalid request");
       })
     );
 
@@ -141,11 +150,10 @@ describe("makeResponseParser", () => {
           detail: "Authentication credentials were not provided.",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("401");
-        expect((error as PostHogError).message).toBe(
+        expect(error.code).toBe("401");
+        expect(error.message).toBe(
           "Authentication credentials were not provided."
         );
       })
@@ -158,10 +166,9 @@ describe("makeResponseParser", () => {
           message: "Permission denied",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("403");
+        expect(error.code).toBe("403");
       })
     );
 
@@ -172,11 +179,10 @@ describe("makeResponseParser", () => {
           detail: "Not found.",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("404");
-        expect((error as PostHogError).message).toBe("Not found.");
+        expect(error.code).toBe("404");
+        expect(error.message).toBe("Not found.");
       })
     );
 
@@ -187,11 +193,10 @@ describe("makeResponseParser", () => {
           error: "Rate limit exceeded",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("429");
-        expect((error as PostHogError).message).toBe("Rate limit exceeded");
+        expect(error.code).toBe("429");
+        expect(error.message).toBe("Rate limit exceeded");
       })
     );
 
@@ -202,10 +207,9 @@ describe("makeResponseParser", () => {
           error: "Internal server error",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("500");
+        expect(error.code).toBe("500");
       })
     );
   });
@@ -226,10 +230,8 @@ describe("makeResponseParser", () => {
           message: "Error from message field",
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe(
-          "Error from message field"
-        );
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Error from message field");
       })
     );
 
@@ -240,8 +242,8 @@ describe("makeResponseParser", () => {
           error: "Error from error field",
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Error from error field");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Error from error field");
       })
     );
 
@@ -252,8 +254,8 @@ describe("makeResponseParser", () => {
           detail: "Error from detail field",
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Error from detail field");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Error from detail field");
       })
     );
 
@@ -264,8 +266,8 @@ describe("makeResponseParser", () => {
           error: { message: "Nested error message" },
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Nested error message");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Nested error message");
       })
     );
 
@@ -274,8 +276,8 @@ describe("makeResponseParser", () => {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, {});
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Unknown error");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Unknown error");
       })
     );
   });
@@ -300,10 +302,9 @@ describe("makeResponseParser", () => {
           required_field: "value",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("PARSE_ERROR");
+        expect(error.code).toBe("PARSE_ERROR");
       })
     );
 
@@ -314,10 +315,9 @@ describe("makeResponseParser", () => {
           id: 123,
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).code).toBe("PARSE_ERROR");
+        expect(error.code).toBe("PARSE_ERROR");
       })
     );
   });
@@ -383,9 +383,9 @@ describe("makeResponseParser", () => {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, "not valid json {{{");
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
+        expect(error._tag).toBe("PostHogError");
       })
     );
 
@@ -394,10 +394,9 @@ describe("makeResponseParser", () => {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, "plain text error");
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).details).toHaveProperty("rawText");
+        expect(error.details).toHaveProperty("rawText");
       })
     );
   });
@@ -425,13 +424,9 @@ describe("makeResponseParser", () => {
           reason: "Invalid input",
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).details).toHaveProperty(
-          "_tag",
-          "CustomError"
-        );
+        expect(error.details).toHaveProperty("_tag", "CustomError");
       })
     );
 
@@ -442,10 +437,9 @@ describe("makeResponseParser", () => {
           unknown_format: true,
         });
 
-        const error = yield* Effect.flip(parser(response));
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
 
-        expect(error).toBeInstanceOf(PostHogError);
-        expect((error as PostHogError).message).toBe("Unknown error");
+        expect(error.message).toBe("Unknown error");
       })
     );
   });
@@ -466,10 +460,8 @@ describe("makeResponseParser", () => {
           details: "Error from details field",
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe(
-          "Error from details field"
-        );
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Error from details field");
       })
     );
 
@@ -480,8 +472,8 @@ describe("makeResponseParser", () => {
           error_description: "OAuth error description",
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("OAuth error description");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("OAuth error description");
       })
     );
 
@@ -490,8 +482,8 @@ describe("makeResponseParser", () => {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, null);
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Unknown error");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Unknown error");
       })
     );
 
@@ -521,8 +513,8 @@ describe("makeResponseParser", () => {
           }),
         };
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Direct string error");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Direct string error");
       })
     );
 
@@ -533,8 +525,8 @@ describe("makeResponseParser", () => {
           error: { code: "ERR_001" },
         });
 
-        const error = yield* Effect.flip(parser(response));
-        expect((error as PostHogError).message).toBe("Unknown error");
+        const error = assertPostHogError(yield* Effect.flip(parser(response)));
+        expect(error.message).toBe("Unknown error");
       })
     );
   });

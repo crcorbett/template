@@ -30,3 +30,7 @@
 	path = .context/distilled-aws
 	url = https://github.com/alchemy-run/distilled-aws.git
 	ignore = all
+[submodule ".context/alchemy-effect"]
+	path = .context/alchemy-effect
+	url = https://github.com/alchemy-run/alchemy-effect
+	ignore = all

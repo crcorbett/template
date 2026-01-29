@@ -1,0 +1,76 @@
+import { expect } from "@effect/vitest";
+import * as AnnotationsAPI from "@packages/posthog/annotations";
+import { apply, destroy } from "alchemy-effect";
+import * as Effect from "effect/Effect";
+
+import { Annotation } from "@/posthog/annotations/index.js";
+import * as PostHog from "@/posthog/index.js";
+import { Project } from "@/posthog/project.js";
+import { makeAssertDeleted, test } from "../test.js";
+
+const assertAnnotationDeleted = makeAssertDeleted(
+  "Annotation",
+  AnnotationsAPI.getAnnotation,
+  (annotation) => annotation.deleted === true,
+);
+
+test(
+  "create, update, delete annotation",
+  { timeout: 120_000 },
+  Effect.gen(function* () {
+    yield* destroy();
+
+    const projectId = yield* Project;
+
+    // Create an annotation
+    class TestAnnotation extends Annotation("TestAnnotation", {
+      content: "Test annotation",
+      dateMarker: new Date().toISOString(),
+      scope: "project" as const,
+    }) {}
+
+    const stack = yield* apply(TestAnnotation);
+
+    // Verify the created annotation
+    expect(stack.TestAnnotation.id).toBeDefined();
+    expect(typeof stack.TestAnnotation.id).toBe("number");
+    expect(stack.TestAnnotation.content).toBe(TestAnnotation.props.content);
+    expect(stack.TestAnnotation.scope).toBe("project");
+
+    // Verify via direct API call
+    const fetched = yield* AnnotationsAPI.getAnnotation({
+      project_id: projectId,
+      id: stack.TestAnnotation.id,
+    });
+    expect(fetched.content).toBe(TestAnnotation.props.content);
+    expect(fetched.scope).toBe("project");
+
+    // Update the annotation
+    class UpdatedAnnotation extends Annotation("TestAnnotation", {
+      content: "Updated annotation content",
+      dateMarker: TestAnnotation.props.dateMarker,
+      scope: "project" as const,
+    }) {}
+
+    const updated = yield* apply(UpdatedAnnotation);
+
+    // Verify the update
+    expect(updated.TestAnnotation.id).toBe(stack.TestAnnotation.id); // ID should be stable
+    expect(updated.TestAnnotation.content).toBe(
+      "Updated annotation content"
+    );
+
+    // Verify update via API
+    const fetchedUpdated = yield* AnnotationsAPI.getAnnotation({
+      project_id: projectId,
+      id: stack.TestAnnotation.id,
+    });
+    expect(fetchedUpdated.content).toBe("Updated annotation content");
+
+    // Destroy the annotation
+    yield* destroy();
+
+    // Verify deletion (hard delete)
+    yield* assertAnnotationDeleted(stack.TestAnnotation.id);
+  }).pipe(Effect.provide(PostHog.providers()))
+);

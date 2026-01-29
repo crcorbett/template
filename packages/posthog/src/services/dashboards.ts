@@ -1,25 +1,81 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import type * as Stream from "effect/Stream";
 import * as S from "effect/Schema";
 
-import type { Operation } from "../client/operation.js";
+import type { Operation, PaginatedOperation } from "../client/operation.js";
 
-import { makeClient } from "../client/api.js";
+import { makeClient, makePaginated } from "../client/api.js";
+import { UserBasic } from "../common.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import {
+  COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  type PostHogErrorType,
+} from "../errors.js";
 import * as T from "../traits.js";
 
-export class UserBasic extends S.Class<UserBasic>("UserBasic")({
-  id: S.Number,
-  uuid: S.String,
-  distinct_id: S.optional(S.String),
-  first_name: S.optional(S.String),
-  last_name: S.optional(S.String),
-  email: S.String,
+export { UserBasic } from "../common.js";
+
+// ---------------------------------------------------------------------------
+// Dashboard tile sub-schemas
+// ---------------------------------------------------------------------------
+
+/** Grid layout entry describing tile position/size at a given breakpoint. */
+export class LayoutEntry extends S.Class<LayoutEntry>("LayoutEntry")({
+  h: S.optional(S.Number),
+  w: S.optional(S.Number),
+  x: S.optional(S.Number),
+  y: S.optional(S.Number),
+  minH: S.optional(S.Number),
+  minW: S.optional(S.Number),
 }) {}
+
+/** Minimal insight reference embedded in a dashboard tile. */
+export class TileInsight extends S.Class<TileInsight>("TileInsight")({
+  id: S.Number,
+  short_id: S.optional(S.NullOr(S.String)),
+  name: S.optional(S.NullOr(S.String)),
+  derived_name: S.optional(S.NullOr(S.String)),
+  description: S.optional(S.NullOr(S.String)),
+  tags: S.optional(S.Array(S.String)),
+  favorited: S.optional(S.Boolean),
+  saved: S.optional(S.Boolean),
+}) {}
+
+/** Text content for a text-only dashboard tile. */
+export class TileText extends S.Class<TileText>("TileText")({
+  body: S.optional(S.NullOr(S.String)),
+  last_modified_at: S.optional(S.NullOr(S.String)),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Dashboard filter schema (from OpenAPI DashboardFilter)
+// ---------------------------------------------------------------------------
+
+/** Dashboard-level filter applied across all tiles. */
+export class DashboardFilter extends S.Class<DashboardFilter>(
+  "DashboardFilter"
+)({
+  date_from: S.optional(S.NullOr(S.String)),
+  date_to: S.optional(S.NullOr(S.String)),
+  explicitDate: S.optional(S.NullOr(S.Boolean)),
+  properties: S.optional(
+    S.NullOr(S.Array(S.Record({ key: S.String, value: S.Unknown })))
+  ),
+}) {}
+
+// ---------------------------------------------------------------------------
+// Core dashboard schemas
+// ---------------------------------------------------------------------------
 
 export class DashboardTile extends S.Class<DashboardTile>("DashboardTile")({
   id: S.Number,
-  layouts: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  layouts: S.optional(S.Record({ key: S.String, value: LayoutEntry })),
   color: S.optional(S.NullOr(S.String)),
-  insight: S.optional(S.NullOr(S.Unknown)),
-  text: S.optional(S.NullOr(S.Unknown)),
+  insight: S.optional(S.NullOr(TileInsight)),
+  text: S.optional(S.NullOr(TileText)),
 }) {}
 
 export class Dashboard extends S.Class<Dashboard>("Dashboard")({
@@ -32,9 +88,9 @@ export class Dashboard extends S.Class<Dashboard>("Dashboard")({
   is_shared: S.optional(S.Boolean),
   deleted: S.optional(S.Boolean),
   creation_mode: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
   tiles: S.optional(S.Array(DashboardTile)),
-  filters: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+  filters: S.optional(DashboardFilter),
   restriction_level: S.optional(S.Number),
   effective_restriction_level: S.optional(S.Number),
   effective_privilege_level: S.optional(S.Number),
@@ -50,7 +106,7 @@ export class DashboardBasic extends S.Class<DashboardBasic>("DashboardBasic")({
   is_shared: S.optional(S.Boolean),
   deleted: S.optional(S.Boolean),
   creation_mode: S.optional(S.String),
-  tags: S.optional(S.Array(S.Unknown)),
+  tags: S.optional(S.Array(S.String)),
 }) {}
 
 export class PaginatedDashboardList extends S.Class<PaginatedDashboardList>(
@@ -144,36 +200,60 @@ export class DeleteDashboardRequest extends S.Class<DeleteDashboardRequest>(
   id: S.Number,
 }) {}
 
-const listDashboardsOperation: Operation = {
+const listDashboardsOperation: PaginatedOperation = {
   input: ListDashboardsRequest,
   output: PaginatedDashboardList,
-  errors: [],
+  errors: [...COMMON_ERRORS],
+  pagination: { inputToken: "offset", outputToken: "next", items: "results", pageSize: "limit" },
 };
 
 const getDashboardOperation: Operation = {
   input: GetDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
 const createDashboardOperation: Operation = {
   input: CreateDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS],
 };
 
 const updateDashboardOperation: Operation = {
   input: UpdateDashboardRequest,
   output: Dashboard,
-  errors: [],
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
 };
 
-export const listDashboards = makeClient(listDashboardsOperation);
-export const getDashboard = makeClient(getDashboardOperation);
-export const createDashboard = makeClient(createDashboardOperation);
-export const updateDashboard = makeClient(updateDashboardOperation);
+/** Dependencies required by all dashboard operations. */
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
 
-export const deleteDashboard = (input: DeleteDashboardRequest) =>
+export const listDashboards: ((
+  input: ListDashboardsRequest
+) => Effect.Effect<PaginatedDashboardList, PostHogErrorType, Deps>) & {
+  pages: (
+    input: ListDashboardsRequest
+  ) => Stream.Stream<PaginatedDashboardList, PostHogErrorType, Deps>;
+  items: (
+    input: ListDashboardsRequest
+  ) => Stream.Stream<unknown, PostHogErrorType, Deps>;
+} = /*@__PURE__*/ /*#__PURE__*/ makePaginated(listDashboardsOperation);
+
+export const getDashboard: (
+  input: GetDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(getDashboardOperation);
+
+export const createDashboard: (
+  input: CreateDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(createDashboardOperation);
+
+export const updateDashboard: (
+  input: UpdateDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = /*@__PURE__*/ /*#__PURE__*/ makeClient(updateDashboardOperation);
+
+export const deleteDashboard: (
+  input: DeleteDashboardRequest
+) => Effect.Effect<Dashboard, PostHogErrorType, Deps> = (input) =>
   updateDashboard({
     project_id: input.project_id,
     id: input.id,

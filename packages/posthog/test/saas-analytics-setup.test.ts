@@ -38,63 +38,73 @@ import {
 } from "../src/services/feature-flags.js";
 import { createInsight, deleteInsight } from "../src/services/insights.js";
 import { createSurvey, deleteSurvey } from "../src/services/surveys.js";
-import { test, afterAll } from "./test.js";
-
-const TEST_PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? "289739";
+import { test, afterAll, TEST_PROJECT_ID } from "./test.js";
 const TEST_PREFIX = `acme-${Date.now()}`;
 
 // Track created resources for cleanup
-const created = {
-  cohorts: [] as number[],
-  featureFlags: [] as number[],
-  insights: [] as number[],
-  dashboards: [] as number[],
-  surveys: [] as string[],
-  actions: [] as number[],
-  annotations: [] as number[],
-  experiments: [] as number[],
+interface ResourceTracker {
+  cohorts: number[];
+  featureFlags: number[];
+  insights: number[];
+  dashboards: number[];
+  surveys: string[];
+  actions: number[];
+  annotations: number[];
+  experiments: number[];
+}
+
+const created: ResourceTracker = {
+  cohorts: [],
+  featureFlags: [],
+  insights: [],
+  dashboards: [],
+  surveys: [],
+  actions: [],
+  annotations: [],
+  experiments: [],
 };
 
 // Cleanup function to remove all created resources
 const cleanupAll = Effect.gen(function* () {
+  const projectId = yield* TEST_PROJECT_ID;
   // Delete in reverse order of dependencies
   for (const id of created.experiments) {
-    yield* deleteExperiment({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteExperiment({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.annotations) {
-    yield* deleteAnnotation({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteAnnotation({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.actions) {
-    yield* deleteAction({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteAction({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.surveys) {
-    yield* deleteSurvey({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteSurvey({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.dashboards) {
-    yield* deleteDashboard({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteDashboard({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.insights) {
-    yield* deleteInsight({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteInsight({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.featureFlags) {
-    yield* deleteFeatureFlag({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteFeatureFlag({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
   for (const id of created.cohorts) {
-    yield* deleteCohort({ project_id: TEST_PROJECT_ID, id }).pipe(
+    yield* deleteCohort({ project_id: projectId, id }).pipe(
       Effect.catchAll(() => Effect.void)
     );
   }
@@ -107,8 +117,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 1: User Cohorts", () => {
     test("creates power-users cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-power-users`,
           description: "Users with high engagement (10+ events/week)",
           is_static: false,
@@ -141,8 +152,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates trial-users cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-trial-users`,
           description: "Users currently on trial plan",
           is_static: false,
@@ -171,8 +183,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates at-risk-users cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-at-risk-users`,
           description: "Users active 30d ago but not in last 14d",
           is_static: false,
@@ -204,8 +217,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates enterprise-prospects cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-enterprise-prospects`,
           description: "Users with team_size > 20 or on pro plan",
           is_static: false,
@@ -245,8 +259,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates new-signups-7d cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-new-signups-7d`,
           description: "Users who signed up in the last 7 days",
           is_static: false,
@@ -277,8 +292,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates mobile-users cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-mobile-users`,
           description: "Users accessing from mobile devices",
           is_static: false,
@@ -307,8 +323,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates integration-users cohort", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const cohort = yield* createCohort({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-integration-users`,
           description: "Users who have connected integrations",
           is_static: false,
@@ -339,8 +356,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 2: Feature Flags", () => {
     test("creates new-onboarding-flow flag (50% rollout)", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-new-onboarding-flow`,
           name: "New Onboarding Flow",
           filters: {
@@ -359,8 +377,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates ai-task-suggestions flag (enterprise only)", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-ai-task-suggestions`,
           name: "AI Task Suggestions",
           filters: {
@@ -386,8 +405,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates dark-mode flag (100% rollout)", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-dark-mode`,
           name: "Dark Mode",
           filters: {
@@ -406,8 +426,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates beta-gantt-chart flag (power users)", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-beta-gantt-chart`,
           name: "Beta Gantt Chart",
           filters: {
@@ -433,8 +454,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates pricing-experiment-v2 multivariate flag", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-pricing-experiment-v2`,
           name: "Pricing Experiment V2",
           filters: {
@@ -460,8 +482,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates maintenance-mode kill switch (0%)", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-maintenance-mode`,
           name: "Maintenance Mode (Kill Switch)",
           filters: {
@@ -483,8 +506,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
     // Acquisition & Activation
     test("creates weekly-signups trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-weekly-signups`,
           description: "Track user signups by day",
           query: {
@@ -506,8 +530,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates signup-to-activation funnel", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-signup-to-activation-funnel`,
           description: "Funnel: signup → project → invite → task",
           query: {
@@ -539,8 +564,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates activation-rate-by-source trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-activation-rate-by-source`,
           description: "Activation rate by UTM source",
           query: {
@@ -566,8 +592,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates onboarding-completion funnel", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-onboarding-completion`,
           description: "Onboarding steps completion funnel",
           query: {
@@ -604,8 +631,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
     // Engagement & Retention
     test("creates daily-active-users trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-daily-active-users`,
           description: "Unique users per day",
           query: {
@@ -628,8 +656,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates weekly-retention analysis", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-weekly-retention`,
           description: "8-week retention cohort analysis",
           query: {
@@ -656,8 +685,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates feature-usage-breakdown trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-feature-usage-breakdown`,
           description: "Key feature usage stacked by feature",
           query: {
@@ -686,8 +716,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates power-user-actions trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-power-user-actions`,
           description: "Event trends from power users",
           query: {
@@ -725,8 +756,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates session-duration trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-session-duration`,
           description: "Average session time trend",
           query: {
@@ -751,8 +783,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
     // Conversion & Revenue
     test("creates trial-to-paid funnel", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-trial-to-paid-funnel`,
           description: "Funnel: trial → pricing → checkout → paid",
           query: {
@@ -788,8 +821,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates upgrade-funnel", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-upgrade-funnel`,
           description: "Upgrade prompt to completion",
           query: {
@@ -820,8 +854,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates mrr-by-plan trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-mrr-by-plan`,
           description: "Subscriptions broken down by plan",
           query: {
@@ -847,8 +882,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates churn-indicators trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-churn-indicators`,
           description: "At-risk user activity tracking",
           query: {
@@ -876,8 +912,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
     // Product Health
     test("creates error-rate trend", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const insight = yield* createInsight({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-error-rate`,
           description: "Error events tracking",
           query: {
@@ -905,8 +942,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 4: Dashboards", () => {
     test("creates Executive Dashboard", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const dashboard = yield* createDashboard({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-executive-dashboard`,
           description:
             "High-level metrics for leadership: MAU, MRR, conversion, churn",
@@ -919,8 +957,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates Product Dashboard", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const dashboard = yield* createDashboard({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-product-dashboard`,
           description:
             "Feature usage, activation, retention, and error tracking",
@@ -933,8 +972,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates Growth Dashboard", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const dashboard = yield* createDashboard({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-growth-dashboard`,
           description: "Acquisition funnels, signup sources, conversion rates",
           pinned: false,
@@ -948,8 +988,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 5: Surveys", () => {
     test("creates NPS survey", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const survey = yield* createSurvey({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-nps-survey`,
           description: "NPS survey shown 30 days after signup",
           type: "popover",
@@ -976,8 +1017,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates feature feedback survey", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const survey = yield* createSurvey({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-feature-feedback`,
           description: "Feedback survey after using new features",
           type: "popover",
@@ -1003,8 +1045,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates churn survey", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const survey = yield* createSurvey({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-churn-survey`,
           description: "Survey shown when user cancels subscription",
           type: "api",
@@ -1036,8 +1079,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 6: Actions (Composite Events)", () => {
     test("creates user-activated action", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const action = yield* createAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-user-activated`,
           description:
             "Composite: user has created project + task + invited member",
@@ -1054,8 +1098,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates engaged-session action", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const action = yield* createAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-engaged-session`,
           description: "Composite: 5+ meaningful events in one session",
           steps: [
@@ -1071,8 +1116,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates integration-setup action", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const action = yield* createAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-integration-setup`,
           description: "Any integration connection event",
           steps: [
@@ -1087,8 +1133,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates payment-flow action", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const action = yield* createAction({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-payment-flow`,
           description: "Payment flow from pricing to completion",
           steps: [
@@ -1106,8 +1153,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 7: Annotations", () => {
     test("creates v2-launch annotation", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const annotation = yield* createAnnotation({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           content: `${TEST_PREFIX}: v2.0.0 Major Release`,
           date_marker: new Date().toISOString(),
           scope: "project",
@@ -1118,8 +1166,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates pricing-change annotation", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const annotation = yield* createAnnotation({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           content: `${TEST_PREFIX}: Pricing tier update`,
           date_marker: new Date().toISOString(),
           scope: "project",
@@ -1130,8 +1179,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates marketing-campaign annotation", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const annotation = yield* createAnnotation({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           content: `${TEST_PREFIX}: Q1 Marketing Campaign Start`,
           date_marker: new Date().toISOString(),
           scope: "project",
@@ -1142,8 +1192,9 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates infrastructure-upgrade annotation", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         const annotation = yield* createAnnotation({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           content: `${TEST_PREFIX}: Infrastructure performance upgrade`,
           date_marker: new Date().toISOString(),
           scope: "project",
@@ -1156,9 +1207,10 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
   describe("Phase 8: A/B Experiments", () => {
     test("creates onboarding-experiment", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         // Create the experiment flag first
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-onboarding-exp-flag`,
           name: "Onboarding Experiment Flag",
           filters: {
@@ -1175,7 +1227,7 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
         created.featureFlags.push(flag.id);
 
         const experiment = yield* createExperiment({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-onboarding-experiment`,
           description: "Test new onboarding flow vs control",
           feature_flag_key: flag.key,
@@ -1186,9 +1238,10 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
 
     test("creates pricing-experiment", () =>
       Effect.gen(function* () {
+        const projectId = yield* TEST_PROJECT_ID;
         // Create the experiment flag first
         const flag = yield* createFeatureFlag({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           key: `${TEST_PREFIX}-pricing-exp-flag`,
           name: "Pricing Experiment Flag",
           filters: {
@@ -1206,7 +1259,7 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
         created.featureFlags.push(flag.id);
 
         const experiment = yield* createExperiment({
-          project_id: TEST_PROJECT_ID,
+          project_id: projectId,
           name: `${TEST_PREFIX}-pricing-experiment`,
           description: "Test 3 pricing page variants",
           feature_flag_key: flag.key,
@@ -1241,16 +1294,19 @@ describe("SaaS Analytics Setup for Acme Project Manager", () => {
           created.annotations.length +
           created.experiments.length;
 
-        console.log(`\nSaaS Analytics Setup Complete!`);
-        console.log(`   - Cohorts: ${created.cohorts.length}`);
-        console.log(`   - Feature Flags: ${created.featureFlags.length}`);
-        console.log(`   - Insights: ${created.insights.length}`);
-        console.log(`   - Dashboards: ${created.dashboards.length}`);
-        console.log(`   - Surveys: ${created.surveys.length}`);
-        console.log(`   - Actions: ${created.actions.length}`);
-        console.log(`   - Annotations: ${created.annotations.length}`);
-        console.log(`   - Experiments: ${created.experiments.length}`);
-        console.log(`   - Total Resources: ${total}`);
+        yield* Effect.logInfo("SaaS Analytics Setup Complete!").pipe(
+          Effect.annotateLogs({
+            cohorts: created.cohorts.length,
+            featureFlags: created.featureFlags.length,
+            insights: created.insights.length,
+            dashboards: created.dashboards.length,
+            surveys: created.surveys.length,
+            actions: created.actions.length,
+            annotations: created.annotations.length,
+            experiments: created.experiments.length,
+            totalResources: total,
+          }),
+        );
       }));
   });
 });

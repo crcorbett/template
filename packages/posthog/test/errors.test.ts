@@ -5,6 +5,7 @@ import {
   AuthenticationError,
   AuthorizationError,
   COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
   NotFoundError,
   PostHogError,
   RateLimitError,
@@ -171,13 +172,12 @@ describe("Error Schemas", () => {
   });
 
   describe("COMMON_ERRORS", () => {
-    it("should contain all common error types", () => {
-      expect(COMMON_ERRORS).toHaveLength(6);
+    it("should contain all common error types (excluding NotFoundError for list/create operations)", () => {
+      expect(COMMON_ERRORS).toHaveLength(5);
 
       const errorClasses = [
         AuthenticationError,
         AuthorizationError,
-        NotFoundError,
         ValidationError,
         RateLimitError,
         ServerError,
@@ -186,10 +186,47 @@ describe("Error Schemas", () => {
       for (const errorClass of errorClasses) {
         expect(COMMON_ERRORS).toContain(errorClass);
       }
+
+      // NotFoundError is NOT in COMMON_ERRORS - it's only for get/update/delete
+      expect(COMMON_ERRORS).not.toContain(NotFoundError);
     });
 
     it("should be usable for error matching", () => {
       const errors = COMMON_ERRORS.map((ErrorClass) => {
+        const instance = new ErrorClass({ message: "test" });
+        return instance._tag;
+      });
+
+      expect(errors).toContain("AuthenticationError");
+      expect(errors).toContain("AuthorizationError");
+      expect(errors).toContain("ValidationError");
+      expect(errors).toContain("RateLimitError");
+      expect(errors).toContain("ServerError");
+      // NotFoundError is NOT in COMMON_ERRORS
+      expect(errors).not.toContain("NotFoundError");
+    });
+  });
+
+  describe("COMMON_ERRORS_WITH_NOT_FOUND", () => {
+    it("should contain all error types including NotFoundError", () => {
+      expect(COMMON_ERRORS_WITH_NOT_FOUND).toHaveLength(6);
+
+      const errorClasses = [
+        AuthenticationError,
+        AuthorizationError,
+        ValidationError,
+        RateLimitError,
+        ServerError,
+        NotFoundError,
+      ];
+
+      for (const errorClass of errorClasses) {
+        expect(COMMON_ERRORS_WITH_NOT_FOUND).toContain(errorClass);
+      }
+    });
+
+    it("should be usable for error matching", () => {
+      const errors = COMMON_ERRORS_WITH_NOT_FOUND.map((ErrorClass) => {
         const instance = new ErrorClass({ message: "test" });
         return instance._tag;
       });

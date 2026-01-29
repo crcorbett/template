@@ -6,7 +6,6 @@
  * Usage: bun run scripts/generate-clients.ts
  */
 
-import * as YAML from "js-yaml";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -105,6 +104,20 @@ interface SecurityScheme {
 type SecurityRequirement = Record<string, string[]>;
 
 // =============================================================================
+// Type Guards
+// =============================================================================
+
+function isOpenAPISpec(
+  value: unknown
+): value is OpenAPISpec {
+  if (typeof value !== "object" || value === null) return false;
+  if (!("openapi" in value) || !("paths" in value)) return false;
+  // After `in` narrowing, access via index signature
+  const v = value as Record<string, unknown>;
+  return typeof v["openapi"] === "string" && typeof v["paths"] === "object" && v["paths"] !== null;
+}
+
+// =============================================================================
 // Code Generation Helpers
 // =============================================================================
 
@@ -168,7 +181,7 @@ function typeToSchema(
     return required ? name : `S.optional(${name})`;
   }
 
-  const obj = schema as SchemaObject;
+  const obj = schema;
 
   // Handle nullable
   const nullable = obj.nullable === true;
@@ -297,12 +310,15 @@ function groupOperationsByTag(spec: OpenAPISpec): Map<
       if (!groups.has(tag)) {
         groups.set(tag, []);
       }
-      groups.get(tag)!.push({
-        operationId,
-        method: method.toUpperCase(),
-        path: pathStr,
-        operation,
-      });
+      const group = groups.get(tag);
+      if (group) {
+        group.push({
+          operationId,
+          method: method.toUpperCase(),
+          path: pathStr,
+          operation,
+        });
+      }
     }
   }
 
@@ -500,7 +516,7 @@ function collectSchemaRefs(
     return;
   }
 
-  const obj = schema as SchemaObject;
+  const obj = schema;
 
   if (obj.allOf) {
     for (const item of obj.allOf) {
@@ -537,28 +553,42 @@ function collectSchemaRefs(
 // Main Generator
 // =============================================================================
 
+const SCHEMA_URL = "https://app.posthog.com/api/schema/";
+const SCHEMA_CACHE = path.resolve(__dirname, "../../../schema.json");
+
+async function loadSpec(): Promise<OpenAPISpec> {
+  // Use cached JSON if available, otherwise fetch from PostHog
+  let raw: string;
+  if (fs.existsSync(SCHEMA_CACHE)) {
+    raw = fs.readFileSync(SCHEMA_CACHE, "utf-8");
+  } else {
+    console.log(`Fetching OpenAPI spec from ${SCHEMA_URL} ...`);
+    const res = await fetch(SCHEMA_URL, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch schema: ${res.status} ${res.statusText}`);
+    }
+    raw = await res.text();
+    fs.writeFileSync(SCHEMA_CACHE, raw);
+    console.log(`Cached schema to ${SCHEMA_CACHE}`);
+  }
+
+  const parsed: unknown = JSON.parse(raw);
+  if (!isOpenAPISpec(parsed)) {
+    throw new Error("Invalid OpenAPI spec: missing required 'openapi' or 'paths' fields");
+  }
+  return parsed;
+}
+
 async function main() {
-  // Load the OpenAPI spec
-  const schemaPath = path.resolve(__dirname, "../../../schema.yaml");
-  let schemaContent = fs.readFileSync(schemaPath, "utf-8");
-
-  // Fix YAML issues: replace all backticks with single quotes
-  // The PostHog schema has markdown with backticks in description fields
-  // which causes YAML parsing errors
-  schemaContent = schemaContent.replace(/`/g, "'");
-
-  // Use js-yaml to parse
-  const spec = YAML.load(schemaContent) as OpenAPISpec;
+  const spec = await loadSpec();
 
   console.log(`Loaded OpenAPI spec: ${spec.info.title} v${spec.info.version}`);
-  console.log(`Found ${Object.keys(spec.paths).length} paths`);
-  console.log(
-    `Found ${Object.keys(spec.components?.schemas || {}).length} schemas`
-  );
+  console.log(`Found ${Object.keys(spec.paths).length} paths, ${Object.keys(spec.components?.schemas || {}).length} schemas`);
 
   // Group operations by tag
   const groups = groupOperationsByTag(spec);
-  console.log(`\nGrouped into ${groups.size} services:`);
 
   // Filter to key services we want to generate
   const targetServices = [
@@ -588,7 +618,7 @@ async function main() {
     console.log(`    Generated: ${filePath}`);
   }
 
-  console.log("\nDone!");
+  console.log("Done!");
 }
 
 main().catch(console.error);

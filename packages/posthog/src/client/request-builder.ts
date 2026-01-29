@@ -12,6 +12,7 @@ import * as Effect from "effect/Effect";
 import type { Operation } from "./operation.js";
 import type { Request } from "./request.js";
 
+import { MissingHttpTraitError } from "../errors.js";
 import {
   getHttpHeader,
   getHttpQuery,
@@ -24,7 +25,9 @@ import {
 /**
  * Get property signatures from an AST TypeLiteral or Struct
  */
-function getPropertySignatures(ast: AST.AST): AST.PropertySignature[] {
+function getPropertySignatures(
+  ast: AST.AST
+): ReadonlyArray<AST.PropertySignature> {
   // Handle Transformation (decode side)
   if (ast._tag === "Transformation") {
     return getPropertySignatures(ast.from);
@@ -32,7 +35,7 @@ function getPropertySignatures(ast: AST.AST): AST.PropertySignature[] {
 
   // Handle TypeLiteral (struct)
   if (ast._tag === "TypeLiteral") {
-    return ast.propertySignatures as AST.PropertySignature[];
+    return ast.propertySignatures;
   }
 
   // Handle Suspend
@@ -84,24 +87,20 @@ function buildPath(
   input: Record<string, unknown>,
   labelProps: Map<string, AST.PropertySignature>
 ): string {
-  let path = uriTemplate;
+  // Handle greedy labels like {Key+} and simple labels like {Key}
+  return Array.from(labelProps).reduce((path, [propName]) => {
+    const value = input[propName];
+    if (value === undefined) return path;
 
-  // Handle greedy labels like {Key+}
-  for (const [propName, _prop] of labelProps) {
+    const stringValue = String(value);
     const greedyPattern = new RegExp(`\\{${propName}\\+\\}`, "g");
     const simplePattern = new RegExp(`\\{${propName}\\}`, "g");
 
-    const value = input[propName];
-    if (value !== undefined) {
-      const stringValue = String(value);
-      // Greedy labels don't encode slashes
-      path = path.replace(greedyPattern, stringValue);
-      // Simple labels encode the value
-      path = path.replace(simplePattern, encodeURIComponent(stringValue));
-    }
-  }
-
-  return path;
+    // Greedy labels don't encode slashes, simple labels encode the value
+    return path
+      .replace(greedyPattern, stringValue)
+      .replace(simplePattern, encodeURIComponent(stringValue));
+  }, uriTemplate);
 }
 
 export interface RequestBuilderOptions {
@@ -114,19 +113,26 @@ export interface RequestBuilderOptions {
  *
  * @param operation - The operation (with input/output schemas)
  * @param options - Optional overrides
- * @returns A function that builds requests from input values
+ * @returns An Effect that resolves to a function that builds requests from input values
  */
 export const makeRequestBuilder = (
   operation: Operation,
   _options?: RequestBuilderOptions
-) => {
+): Effect.Effect<
+  (input: Record<string, unknown>) => Effect.Effect<Request>,
+  MissingHttpTraitError
+> => {
   const inputSchema = operation.input;
   const inputAst = inputSchema.ast;
 
   // Get HTTP trait from schema annotations
   const httpTrait = _options?.httpTrait ?? getHttpTrait(inputAst);
   if (!httpTrait) {
-    throw new Error("No HTTP trait found on input schema");
+    return Effect.fail(
+      new MissingHttpTraitError({
+        message: "No HTTP trait found on input schema",
+      })
+    );
   }
 
   // Get property signatures from input schema
@@ -142,9 +148,6 @@ export const makeRequestBuilder = (
     string,
     { headerName: string; prop: AST.PropertySignature }
   >();
-  let payloadProp:
-    | { propName: string; prop: AST.PropertySignature }
-    | undefined;
   const bodyProps: Array<{ propName: string; prop: AST.PropertySignature }> =
     [];
 
@@ -153,24 +156,32 @@ export const makeRequestBuilder = (
 
     if (hasHttpLabel(prop)) {
       labelProps.set(propName, prop);
-    } else if (getHttpQuery(prop)) {
-      queryProps.set(propName, { queryName: getHttpQuery(prop)!, prop });
-    } else if (getHttpHeader(prop)) {
-      headerProps.set(propName, { headerName: getHttpHeader(prop)!, prop });
-    } else if (hasHttpPayload(prop)) {
-      payloadProp = { propName, prop };
     } else {
-      // Default: goes in JSON body
-      bodyProps.push({ propName, prop });
+      const queryName = getHttpQuery(prop);
+      const headerName = getHttpHeader(prop);
+      if (queryName !== undefined) {
+        queryProps.set(propName, { queryName, prop });
+      } else if (headerName !== undefined) {
+        headerProps.set(propName, { headerName, prop });
+      } else if (!hasHttpPayload(prop)) {
+        // Default: goes in JSON body
+        bodyProps.push({ propName, prop });
+      }
     }
   }
 
+  // Find the single payload property (if any)
+  const payloadProp = props
+    .filter((prop) => hasHttpPayload(prop))
+    .map((prop) => ({ propName: String(prop.name), prop }))[0];
+
   // Return a function that builds requests synchronously wrapped in Effect.succeed
-  return (input: unknown): Effect.Effect<Request> => {
-    const inputObj = input as Record<string, unknown>;
+  const requestBuilder = (
+    input: Record<string, unknown>
+  ): Effect.Effect<Request> => {
 
     // Build the path with label substitutions
-    const basePath = buildPath(httpTrait.uri, inputObj, labelProps);
+    const basePath = buildPath(httpTrait.uri, input, labelProps);
 
     // Strip query string from URI template (query params come from annotations)
     const path = basePath.split("?")[0] ?? basePath;
@@ -178,7 +189,7 @@ export const makeRequestBuilder = (
     // Build query parameters
     const query: Record<string, string | string[] | undefined> = {};
     for (const [propName, { queryName }] of queryProps) {
-      const value = inputObj[propName];
+      const value = input[propName];
       if (value !== undefined) {
         if (Array.isArray(value)) {
           query[queryName] = value.map(String);
@@ -193,7 +204,7 @@ export const makeRequestBuilder = (
       "Content-Type": "application/json",
     };
     for (const [propName, { headerName }] of headerProps) {
-      const value = inputObj[propName];
+      const value = input[propName];
       if (value !== undefined) {
         if (value instanceof Date) {
           headers[headerName] = value.toISOString();
@@ -204,36 +215,51 @@ export const makeRequestBuilder = (
     }
 
     // Build body
-    let body: string | undefined;
-
-    if (payloadProp) {
-      // Single field becomes the entire body
-      const payloadValue = inputObj[payloadProp.propName];
-      if (payloadValue !== undefined) {
-        body = JSON.stringify(encodeJsonValue(payloadValue));
+    const buildBody = (): string | undefined => {
+      // Don't send body for GET/HEAD/DELETE without explicit payload
+      if (
+        (httpTrait.method === "GET" ||
+          httpTrait.method === "HEAD" ||
+          httpTrait.method === "DELETE") &&
+        !payloadProp
+      ) {
+        return undefined;
       }
-    } else if (bodyProps.length > 0) {
-      // Collect all body properties into a JSON object
-      const bodyObj: Record<string, unknown> = {};
-      for (const { propName } of bodyProps) {
-        const value = inputObj[propName];
-        if (value !== undefined) {
-          bodyObj[propName] = encodeJsonValue(value);
+
+      if (payloadProp) {
+        // Single field becomes the entire body
+        const payloadValue = input[payloadProp.propName];
+        return payloadValue !== undefined
+          ? JSON.stringify(encodeJsonValue(payloadValue))
+          : undefined;
+      }
+
+      if (bodyProps.length > 0) {
+        // Collect all body properties into a JSON object
+        const bodyObj: Record<string, unknown> = {};
+        for (const { propName } of bodyProps) {
+          const value = input[propName];
+          if (value !== undefined) {
+            bodyObj[propName] = encodeJsonValue(value);
+          }
         }
+        return Object.keys(bodyObj).length > 0
+          ? JSON.stringify(bodyObj)
+          : undefined;
       }
-      if (Object.keys(bodyObj).length > 0) {
-        body = JSON.stringify(bodyObj);
-      }
-    }
 
-    // Don't send body for GET/HEAD/DELETE without explicit payload
+      return undefined;
+    };
+
+    const body = buildBody();
+
+    // Don't send Content-Type for bodyless requests
     if (
+      body === undefined &&
       (httpTrait.method === "GET" ||
         httpTrait.method === "HEAD" ||
-        httpTrait.method === "DELETE") &&
-      !payloadProp
+        httpTrait.method === "DELETE")
     ) {
-      body = undefined;
       delete headers["Content-Type"];
     }
 
@@ -247,4 +273,6 @@ export const makeRequestBuilder = (
 
     return Effect.succeed(request);
   };
+
+  return Effect.succeed(requestBuilder);
 };

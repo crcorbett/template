@@ -6,19 +6,28 @@
 
 // Core exports
 export { Credentials, type PostHogCredentials } from "./credentials.js";
+export { UserBasic } from "./common.js";
 export { Endpoint } from "./endpoint.js";
+
+// Client utilities
+export { makePaginated } from "./client/api.js";
 
 // Error types
 export {
   AuthenticationError,
   AuthorizationError,
   COMMON_ERRORS,
+  COMMON_ERRORS_WITH_NOT_FOUND,
+  MissingCredentialsError,
   NotFoundError,
   RateLimitError,
   ServerError,
   UnknownPostHogError,
   ValidationError,
 } from "./errors.js";
+
+// Error categories
+export * as Category from "./category.js";
 
 // Retry policies
 export * as Retry from "./retry.js";
