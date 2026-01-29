@@ -16,7 +16,7 @@ Orchestrate subagents to complete all tasks in a PRD sequentially until completi
 
 ---
 
-You are orchestrating subagents to complete all tasks in a PRD. Your role is to delegate tasks to subagents and manage the execution flow until all tasks are complete.
+You are orchestrating Task subagents to complete all tasks in a PRD. Your role is to delegate tasks to Task subagents and manage the execution flow until all tasks are complete.
 
 ## Your Mission
 
@@ -35,9 +35,9 @@ You are orchestrating subagents to complete all tasks in a PRD. Your role is to 
 - **Failure handling** - If a task fails, research/adjust PRD.json, then spawn a new subagent
 - **Completion check** - Only stop when subagent returns `COMPLETE` signal
 
-## Subagent Prompt Template
+## Task Subagent Prompt Template
 
-When spawning a subagent, use this exact format:
+When spawning a Task subagent, use this exact format:
 
 ```
 /task @<prd-file-path>
@@ -48,7 +48,7 @@ When spawning a subagent, use this exact format:
 /task @prds/posthog-effect-remediation
 ```
 
-The subagent prompt must include **only** the `/task` command with the PRD file path.
+The Task subagent prompt must include **only** the `/task` command with the PRD file path.
 
 ## Execution Flow
 
