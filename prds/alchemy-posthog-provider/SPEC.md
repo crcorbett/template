@@ -626,7 +626,98 @@ Each resource test file covers:
 
 ---
 
-## 8. Appendix
+## 8. Conformance Issues
+
+The following issues were identified during a conformance audit comparing the alchemy-posthog provider implementation against canonical alchemy-effect providers. Issues are grouped by severity and tracked as CONFORM-001 through CONFORM-015 in PRD.json.
+
+### 8.1 High Severity
+
+#### CONFORM-001: Effect.fn for lifecycle methods
+
+All provider lifecycle methods (create, update, delete, read) must use `Effect.fn` instead of arrow functions returning `Effect.gen`. This is the canonical pattern across all alchemy-effect providers.
+
+```typescript
+// Correct (alchemy-effect pattern)
+create: Effect.fn(function* ({ id, news, session }) {
+  // ...
+})
+
+// Incorrect (current alchemy-posthog pattern)
+create: (ctx) => Effect.gen(function* () {
+  // ...
+})
+```
+
+**Affected files:** All 8 `*.provider.ts` files.
+
+#### CONFORM-002: Effect.fn for diff methods
+
+The `diff` lifecycle method must use `Effect.fn` instead of `Effect.sync`. Even for simple synchronous logic, `Effect.fn` is the standard.
+
+```typescript
+// Correct
+diff: Effect.fn(function* (news, olds) {
+  if (news.key !== olds.key) return { action: "replace" as const };
+})
+
+// Incorrect
+diff: (news, olds) => Effect.sync(() => {
+  if (news.key !== olds.key) return { action: "replace" as const };
+})
+```
+
+**Affected files:** Providers with replacement logic (feature-flag, experiment, survey, cohort).
+
+#### CONFORM-003: Test app name must include file path
+
+The test infrastructure must include the test file path in the app name to prevent state collisions between test files with identically-named tests.
+
+```typescript
+// Correct (alchemy-effect)
+App.of({ name: `${testPathWithoutExt}-${name}` })
+
+// Incorrect (current)
+App.of({ name: `test-${name}` })
+```
+
+**Affected file:** `test/posthog/test.ts`
+
+### 8.2 Medium Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-004 | Remove `describe` blocks; use flat test structure | All test files |
+| CONFORM-005 | Replace relative `../src/` imports with `@/` path aliases | All test files |
+| CONFORM-006 | Use `CLI.of()` constructor instead of raw `Layer.succeed(CLI, {...})` | `test/posthog/test.ts` |
+| CONFORM-007 | Add `DotAlchemy` layer to test infrastructure | `test/posthog/test.ts` |
+| CONFORM-008 | Refactor `assertDeleted` helpers to use `Effect.fn` | All test files |
+
+### 8.3 Low Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-009 | Use `Schedule.intersect` instead of `Schedule.compose` for retries | All test files |
+| CONFORM-010 | Yield `Project` once at provider level, not per lifecycle method | All provider files |
+| CONFORM-011 | Add explicit return type annotations to provider functions | All provider files |
+| CONFORM-012 | Add name-based fallback lookup in `read` when output is missing | Provider files where list API is available |
+| CONFORM-013 | Verify DotAlchemy requirement in `providers()` Layer composition | `src/posthog/index.ts` |
+| CONFORM-014 | Align `.env` path resolution with alchemy-effect convention | `test/posthog/test.ts` |
+| CONFORM-015 | Replace `PostHogError` code checks with typed `NotFoundError` tags | Test assertDeleted helpers |
+
+### 8.4 Priority Order
+
+1. **CONFORM-001** + **CONFORM-002** — Effect.fn migration (foundational, affects all providers)
+2. **CONFORM-003** — App name collision fix (data integrity risk)
+3. **CONFORM-010** — Provider-level context (simplifies CONFORM-001 migration)
+4. **CONFORM-004** + **CONFORM-005** — Test structure cleanup
+5. **CONFORM-006** + **CONFORM-007** — Test infrastructure alignment
+6. **CONFORM-008** + **CONFORM-009** + **CONFORM-015** — assertDeleted cleanup
+7. **CONFORM-012** — Read fallback (resilience improvement)
+8. **CONFORM-011** + **CONFORM-013** + **CONFORM-014** — Minor polish
+
+---
+
+## 9. Appendix
 
 ### A. File Manifest
 
