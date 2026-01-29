@@ -98,3 +98,14 @@ Changes:
 - App name now includes the relative test file path (e.g., `posthog/feature-flags/feature-flag-provider-test-create-update-delete-feature-flag`)
 
 Verification: `npx tsc --noEmit` passes, all 9 test files (11 tests) pass.
+
+## CONFORM-017: Replace manual fs.exists .env check with direct PlatformConfigProvider.fromDotEnv
+
+Simplified .env loading in test/posthog/test.ts to match the alchemy-effect reference pattern. Removed the manual `fs.exists("../../.env")` guard and replaced it with a direct `PlatformConfigProvider.fromDotEnv(".env")` call wrapped in `ConfigProvider.orElse`. Also fixed the .env path from `../../.env` to `.env` since vitest CWD is the repo root where .env resides.
+
+Changes:
+- Removed `const fs = yield* FileSystem.FileSystem` and `const envExists = yield* fs.exists(...)` guard
+- Changed path from `../../.env` to `.env` (correct for repo root CWD)
+- Now uses: `ConfigProvider.orElse(yield* PlatformConfigProvider.fromDotEnv(".env"), ConfigProvider.fromEnv)`
+
+Verification: `npx tsc --noEmit` passes, no `fs.exists` call in test.ts, all 9 test files (11 tests) pass.

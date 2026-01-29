@@ -123,14 +123,10 @@ export function test(
     name,
     () =>
       Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const envExists = yield* fs.exists("../../.env");
-        const configProvider = envExists
-          ? ConfigProvider.orElse(
-              yield* PlatformConfigProvider.fromDotEnv("../../.env"),
-              ConfigProvider.fromEnv
-            )
-          : ConfigProvider.fromEnv();
+        const configProvider = ConfigProvider.orElse(
+          yield* PlatformConfigProvider.fromDotEnv(".env"),
+          ConfigProvider.fromEnv,
+        );
 
         return yield* testCase.pipe(
           Effect.provide(Credentials.fromEnv()),

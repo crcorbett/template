@@ -1155,8 +1155,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "No fs.exists call for .env in test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Replaced manual fs.exists('../../.env') guard with direct PlatformConfigProvider.fromDotEnv('.env') pattern matching alchemy-effect reference. Also fixed .env path from '../../.env' to '.env' since vitest CWD is the repo root where .env lives. ConfigProvider.orElse handles fallback to env vars when .env values are missing."
     },
     {
       "id": "CONFORM-018",
