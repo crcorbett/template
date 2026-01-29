@@ -4,13 +4,14 @@ import * as Effect from "effect/Effect";
 import type { ActionAttrs, ActionStepDef } from "./action";
 
 import { Project } from "../project";
+import { retryPolicy } from "../retry";
 import { Action as ActionResource } from "./action";
 
 /**
  * Maps ActionStepDef props (camelCase) to API format (snake_case).
  */
 function mapSteps(
-  steps: ActionStepDef[] | undefined
+  steps: ActionStepDef[] | undefined,
 ): PostHogActions.ActionStep[] | undefined {
   if (!steps) return undefined;
   return steps.map((step) => ({
@@ -30,7 +31,9 @@ function mapSteps(
 /**
  * Maps a PostHog API response to ActionAttrs.
  */
-function mapResponseToAttrs(result: PostHogActions.Action): ActionAttrs {
+function mapResponseToAttrs(
+  result: PostHogActions.Action,
+): ActionAttrs {
   return {
     id: result.id,
     name: result.name,
@@ -52,17 +55,30 @@ export const actionProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: Effect.fn(function* ({ id: _id, news: _news, olds: _olds, output: _output }) {
+        diff: Effect.fnUntraced(function* ({ news, olds }) {
+          if (
+            news.name !== olds.name ||
+            news.description !== olds.description ||
+            JSON.stringify(news.tags) !== JSON.stringify(olds.tags) ||
+            news.postToSlack !== olds.postToSlack ||
+            news.slackMessageFormat !== olds.slackMessageFormat ||
+            JSON.stringify(news.steps) !== JSON.stringify(olds.steps)
+          ) {
+            return { action: "update" };
+          }
           return undefined;
         }),
 
+        // olds may be undefined when read is called before the resource exists (initial sync)
         read: Effect.fn(function* ({ olds, output }) {
           if (output?.id) {
-            const result = yield* PostHogActions.getAction({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            const result = yield* retryPolicy(
+              PostHogActions.getAction({
+                project_id: projectId,
+                id: output.id,
+              }),
+            ).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined)),
             );
 
             if (result) {
@@ -71,19 +87,36 @@ export const actionProvider = () =>
           }
 
           // Fallback: search by name using list API to recover from state loss
+          // NOTE: Action list API does not support search params; full scan required.
+          // Large projects may see degraded performance during fallback lookup.
           if (olds?.name) {
-            const page = yield* PostHogActions.listActions({
-              project_id: projectId,
-            }).pipe(
-              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-            );
+            let offset = 0;
+            const limit = 100;
+            while (true) {
+              const page = yield* retryPolicy(
+                PostHogActions.listActions({
+                  project_id: projectId,
+                  limit,
+                  offset,
+                }),
+              ).pipe(
+                Effect.catchTag("NotFoundError", () =>
+                  Effect.succeed(undefined),
+                ),
+              );
 
-            const match = page?.results?.find(
-              (a) => a.name === olds.name && !a.deleted
-            );
+              if (!page?.results?.length) break;
 
-            if (match) {
-              return mapResponseToAttrs(match);
+              const match = page.results.find(
+                (a) => a.name === olds.name && !a.deleted,
+              );
+
+              if (match) {
+                return mapResponseToAttrs(match);
+              }
+
+              if (!page.next) break;
+              offset += limit;
             }
           }
 
@@ -92,33 +125,50 @@ export const actionProvider = () =>
 
         create: Effect.fn(function* ({ news, session }) {
           // Idempotency: check if an action with this name already exists.
-          // State persistence can fail after create, so a retry would call create
-          // again. Name is not strictly unique, but serves as best-effort detection.
-          const existing = yield* PostHogActions.listActions({
-            project_id: projectId,
-          }).pipe(
-            Effect.map((page) =>
-              page.results?.find((a) => a.name === news.name && !a.deleted)
-            ),
-            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-          );
-
-          if (existing) {
-            yield* session.note(
-              `Idempotent Action: ${existing.name}`
+          // NOTE: Action list API does not support search params; full scan required.
+          let offset = 0;
+          const limit = 100;
+          while (true) {
+            const page = yield* retryPolicy(
+              PostHogActions.listActions({
+                project_id: projectId,
+                limit,
+                offset,
+              }),
+            ).pipe(
+              Effect.catchTag("NotFoundError", () =>
+                Effect.succeed(undefined),
+              ),
             );
-            return mapResponseToAttrs(existing);
+
+            if (!page?.results?.length) break;
+
+            const existing = page.results.find(
+              (a) => a.name === news.name && !a.deleted,
+            );
+
+            if (existing) {
+              yield* session.note(
+                `Idempotent Action: found existing with name ${existing.name}`,
+              );
+              return mapResponseToAttrs(existing);
+            }
+
+            if (!page.next) break;
+            offset += limit;
           }
 
-          const result = yield* PostHogActions.createAction({
-            project_id: projectId,
-            name: news.name,
-            description: news.description,
-            tags: news.tags,
-            post_to_slack: news.postToSlack,
-            slack_message_format: news.slackMessageFormat,
-            steps: mapSteps(news.steps),
-          });
+          const result = yield* retryPolicy(
+            PostHogActions.createAction({
+              project_id: projectId,
+              name: news.name,
+              description: news.description,
+              tags: news.tags,
+              post_to_slack: news.postToSlack,
+              slack_message_format: news.slackMessageFormat,
+              steps: mapSteps(news.steps),
+            }),
+          );
 
           yield* session.note(`Created Action: ${result.name}`);
 
@@ -126,30 +176,36 @@ export const actionProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const result = yield* PostHogActions.updateAction({
-            project_id: projectId,
-            id: output.id,
-            name: news.name,
-            description: news.description,
-            tags: news.tags,
-            post_to_slack: news.postToSlack,
-            slack_message_format: news.slackMessageFormat,
-            steps: mapSteps(news.steps),
-          });
+          const result = yield* retryPolicy(
+            PostHogActions.updateAction({
+              project_id: projectId,
+              id: output.id,
+              name: news.name,
+              description: news.description,
+              tags: news.tags,
+              post_to_slack: news.postToSlack,
+              slack_message_format: news.slackMessageFormat,
+              steps: mapSteps(news.steps),
+            }),
+          );
 
           yield* session.note(`Updated Action: ${result.name}`);
 
-          return mapResponseToAttrs(result);
+          return { ...output, ...mapResponseToAttrs(result) };
         }),
 
-        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
-          yield* PostHogActions.deleteAction({
-            project_id: projectId,
-            id: output.id,
-          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+        delete: Effect.fn(function* ({ output, session }) {
+          yield* retryPolicy(
+            PostHogActions.deleteAction({
+              project_id: projectId,
+              id: output.id,
+            }),
+          ).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.void),
+          );
 
           yield* session.note(`Deleted Action: ${output.name}`);
         }),
       };
-    })
+    }),
   );

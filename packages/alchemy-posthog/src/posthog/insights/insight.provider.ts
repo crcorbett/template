@@ -4,12 +4,15 @@ import * as Effect from "effect/Effect";
 import type { InsightAttrs } from "./insight";
 
 import { Project } from "../project";
+import { retryPolicy } from "../retry";
 import { Insight as InsightResource } from "./insight";
 
 /**
  * Maps a PostHog API response to InsightAttrs.
  */
-function mapResponseToAttrs(result: PostHogInsights.Insight): InsightAttrs {
+function mapResponseToAttrs(
+  result: PostHogInsights.Insight,
+): InsightAttrs {
   return {
     id: result.id,
     shortId: result.short_id,
@@ -32,17 +35,30 @@ export const insightProvider = () =>
       return {
         stables: ["id", "shortId"] as const,
 
-        diff: Effect.fn(function* ({ id: _id, news: _news, olds: _olds, output: _output }) {
+        diff: Effect.fnUntraced(function* ({ news, olds }) {
+          if (
+            news.name !== olds.name ||
+            news.description !== olds.description ||
+            JSON.stringify(news.query) !== JSON.stringify(olds.query) ||
+            JSON.stringify(news.filters) !== JSON.stringify(olds.filters) ||
+            JSON.stringify(news.dashboards) !== JSON.stringify(olds.dashboards) ||
+            news.saved !== olds.saved
+          ) {
+            return { action: "update" };
+          }
           return undefined;
         }),
 
+        // olds may be undefined when read is called before the resource exists (initial sync)
         read: Effect.fn(function* ({ olds, output }) {
           if (output?.id) {
-            const result = yield* PostHogInsights.getInsight({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            const result = yield* retryPolicy(
+              PostHogInsights.getInsight({
+                project_id: projectId,
+                id: output.id,
+              }),
+            ).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined)),
             );
 
             if (result) {
@@ -51,19 +67,36 @@ export const insightProvider = () =>
           }
 
           // Fallback: search by name using list API to recover from state loss
+          // NOTE: Insight list API does not support search params; full scan required.
+          // Large projects may see degraded performance during fallback lookup.
           if (olds?.name) {
-            const page = yield* PostHogInsights.listInsights({
-              project_id: projectId,
-            }).pipe(
-              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-            );
+            let offset = 0;
+            const limit = 100;
+            while (true) {
+              const page = yield* retryPolicy(
+                PostHogInsights.listInsights({
+                  project_id: projectId,
+                  limit,
+                  offset,
+                }),
+              ).pipe(
+                Effect.catchTag("NotFoundError", () =>
+                  Effect.succeed(undefined),
+                ),
+              );
 
-            const match = page?.results?.find(
-              (i) => i.name === olds.name && !i.deleted
-            );
+              if (!page?.results?.length) break;
 
-            if (match) {
-              return mapResponseToAttrs(match);
+              const match = page.results.find(
+                (i) => i.name === olds.name && !i.deleted,
+              );
+
+              if (match) {
+                return mapResponseToAttrs(match);
+              }
+
+              if (!page.next) break;
+              offset += limit;
             }
           }
 
@@ -72,33 +105,52 @@ export const insightProvider = () =>
 
         create: Effect.fn(function* ({ news, session }) {
           // Idempotency: check if an insight with this name already exists.
-          // State persistence can fail after create, so a retry would call create
-          // again. Name is not strictly unique, but serves as best-effort detection.
+          // Name is optional for insights; when absent, skip idempotency check
+          // since there is no reliable unique identifier to match on.
+          // NOTE: Insight list API does not support search params; full scan required.
           if (news.name) {
-            const existing = yield* PostHogInsights.listInsights({
-              project_id: projectId,
-            }).pipe(
-              Effect.map((page) =>
-                page.results?.find((i) => i.name === news.name && !i.deleted)
-              ),
-              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-            );
-
-            if (existing) {
-              yield* session.note(
-                `Idempotent Insight: ${existing.id}`
+            let offset = 0;
+            const limit = 100;
+            while (true) {
+              const page = yield* retryPolicy(
+                PostHogInsights.listInsights({
+                  project_id: projectId,
+                  limit,
+                  offset,
+                }),
+              ).pipe(
+                Effect.catchTag("NotFoundError", () =>
+                  Effect.succeed(undefined),
+                ),
               );
-              return mapResponseToAttrs(existing);
+
+              if (!page?.results?.length) break;
+
+              const existing = page.results.find(
+                (i) => i.name === news.name && !i.deleted,
+              );
+
+              if (existing) {
+                yield* session.note(
+                  `Idempotent Insight: found existing with name ${existing.name}`,
+                );
+                return mapResponseToAttrs(existing);
+              }
+
+              if (!page.next) break;
+              offset += limit;
             }
           }
 
-          const result = yield* PostHogInsights.createInsight({
-            project_id: projectId,
-            name: news.name,
-            description: news.description,
-            query: news.query,
-            saved: news.saved,
-          });
+          const result = yield* retryPolicy(
+            PostHogInsights.createInsight({
+              project_id: projectId,
+              name: news.name,
+              description: news.description,
+              query: news.query,
+              saved: news.saved,
+            }),
+          );
 
           yield* session.note(`Created Insight: ${result.id}`);
 
@@ -106,32 +158,35 @@ export const insightProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const result = yield* PostHogInsights.updateInsight({
-            project_id: projectId,
-            id: output.id,
-            name: news.name,
-            description: news.description,
-            query: news.query,
-            saved: news.saved,
-          });
+          const result = yield* retryPolicy(
+            PostHogInsights.updateInsight({
+              project_id: projectId,
+              id: output.id,
+              name: news.name,
+              description: news.description,
+              query: news.query,
+              saved: news.saved,
+            }),
+          );
 
           yield* session.note(`Updated Insight: ${result.id}`);
 
-          return mapResponseToAttrs(result);
+          return { ...output, ...mapResponseToAttrs(result) };
         }),
 
-        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
+        delete: Effect.fn(function* ({ output, session }) {
           // Insight uses soft delete (PATCH deleted: true)
-          yield* PostHogInsights.deleteInsight({
-            project_id: projectId,
-            id: output.id,
-          }).pipe(
+          yield* retryPolicy(
+            PostHogInsights.deleteInsight({
+              project_id: projectId,
+              id: output.id,
+            }),
+          ).pipe(
             Effect.catchTag("NotFoundError", () => Effect.void),
-            Effect.catchTag("PostHogError", () => Effect.void)
           );
 
           yield* session.note(`Deleted Insight: ${output.id}`);
         }),
       };
-    })
+    }),
   );

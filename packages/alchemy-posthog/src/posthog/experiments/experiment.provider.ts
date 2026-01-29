@@ -4,13 +4,14 @@ import * as Effect from "effect/Effect";
 import type { ExperimentAttrs } from "./experiment";
 
 import { Project } from "../project";
+import { retryPolicy } from "../retry";
 import { Experiment as ExperimentResource } from "./experiment";
 
 /**
  * Maps a PostHog API response to ExperimentAttrs.
  */
 function mapResponseToAttrs(
-  result: PostHogExperiments.Experiment
+  result: PostHogExperiments.Experiment,
 ): ExperimentAttrs {
   return {
     id: result.id,
@@ -35,22 +36,39 @@ export const experimentProvider = () =>
       return {
         stables: ["id", "featureFlagKey"] as const,
 
-        diff: Effect.fn(function* ({ id: _id, news, olds, output: _output }) {
+        diff: Effect.fnUntraced(function* ({ news, olds }) {
           // If featureFlagKey changes, the experiment must be replaced
           if (news.featureFlagKey !== olds.featureFlagKey) {
-            return { action: "replace" as const };
+            return { action: "replace" };
           }
-          // Otherwise, update in place
+          // Check if any updateable properties differ
+          if (
+            news.name !== olds.name ||
+            news.description !== olds.description ||
+            news.startDate !== olds.startDate ||
+            news.endDate !== olds.endDate ||
+            JSON.stringify(news.parameters) !== JSON.stringify(olds.parameters) ||
+            JSON.stringify(news.filters) !== JSON.stringify(olds.filters) ||
+            news.holdoutId !== olds.holdoutId ||
+            news.type !== olds.type ||
+            JSON.stringify(news.metrics) !== JSON.stringify(olds.metrics) ||
+            JSON.stringify(news.metricsSecondary) !== JSON.stringify(olds.metricsSecondary)
+          ) {
+            return { action: "update" };
+          }
           return undefined;
         }),
 
+        // olds may be undefined when read is called before the resource exists (initial sync)
         read: Effect.fn(function* ({ olds, output }) {
           if (output?.id) {
-            const result = yield* PostHogExperiments.getExperiment({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+            const result = yield* retryPolicy(
+              PostHogExperiments.getExperiment({
+                project_id: projectId,
+                id: output.id,
+              }),
+            ).pipe(
+              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined)),
             );
 
             if (result) {
@@ -59,19 +77,36 @@ export const experimentProvider = () =>
           }
 
           // Fallback: search by featureFlagKey using list API to recover from state loss
+          // NOTE: Experiment list API does not support search params; full scan required.
+          // Large projects may see degraded performance during fallback lookup.
           if (olds?.featureFlagKey) {
-            const page = yield* PostHogExperiments.listExperiments({
-              project_id: projectId,
-            }).pipe(
-              Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-            );
+            let offset = 0;
+            const limit = 100;
+            while (true) {
+              const page = yield* retryPolicy(
+                PostHogExperiments.listExperiments({
+                  project_id: projectId,
+                  limit,
+                  offset,
+                }),
+              ).pipe(
+                Effect.catchTag("NotFoundError", () =>
+                  Effect.succeed(undefined),
+                ),
+              );
 
-            const match = page?.results?.find(
-              (e) => e.feature_flag_key === olds.featureFlagKey && !e.archived
-            );
+              if (!page?.results?.length) break;
 
-            if (match) {
-              return mapResponseToAttrs(match);
+              const match = page.results.find(
+                (e) => e.feature_flag_key === olds.featureFlagKey && !e.archived,
+              );
+
+              if (match) {
+                return mapResponseToAttrs(match);
+              }
+
+              if (!page.next) break;
+              offset += limit;
             }
           }
 
@@ -80,41 +115,56 @@ export const experimentProvider = () =>
 
         create: Effect.fn(function* ({ news, session }) {
           // Idempotency: check if an experiment with this featureFlagKey already exists.
-          // State persistence can fail after create, so a retry would call create
-          // again. Since featureFlagKey is unique, we look it up to avoid duplicates.
-          const existing = yield* PostHogExperiments.listExperiments({
-            project_id: projectId,
-          }).pipe(
-            Effect.map((page) =>
-              page.results?.find(
-                (e) =>
-                  e.feature_flag_key === news.featureFlagKey && !e.archived
-              )
-            ),
-            Effect.catchTag("PostHogError", () => Effect.succeed(undefined))
-          );
-
-          if (existing) {
-            yield* session.note(
-              `Idempotent Experiment: ${existing.name}`
+          // NOTE: Experiment list API does not support search params; full scan required.
+          let offset = 0;
+          const limit = 100;
+          while (true) {
+            const page = yield* retryPolicy(
+              PostHogExperiments.listExperiments({
+                project_id: projectId,
+                limit,
+                offset,
+              }),
+            ).pipe(
+              Effect.catchTag("NotFoundError", () =>
+                Effect.succeed(undefined),
+              ),
             );
-            return mapResponseToAttrs(existing);
+
+            if (!page?.results?.length) break;
+
+            const existing = page.results.find(
+              (e) =>
+                e.feature_flag_key === news.featureFlagKey && !e.archived,
+            );
+
+            if (existing) {
+              yield* session.note(
+                `Idempotent Experiment: found existing with feature flag key ${existing.feature_flag_key}`,
+              );
+              return mapResponseToAttrs(existing);
+            }
+
+            if (!page.next) break;
+            offset += limit;
           }
 
-          const result = yield* PostHogExperiments.createExperiment({
-            project_id: projectId,
-            name: news.name,
-            description: news.description,
-            feature_flag_key: news.featureFlagKey,
-            start_date: news.startDate,
-            end_date: news.endDate,
-            parameters: news.parameters,
-            filters: news.filters,
-            holdout_id: news.holdoutId,
-            type: news.type,
-            metrics: news.metrics,
-            metrics_secondary: news.metricsSecondary,
-          });
+          const result = yield* retryPolicy(
+            PostHogExperiments.createExperiment({
+              project_id: projectId,
+              name: news.name,
+              description: news.description,
+              feature_flag_key: news.featureFlagKey,
+              start_date: news.startDate,
+              end_date: news.endDate,
+              parameters: news.parameters,
+              filters: news.filters,
+              holdout_id: news.holdoutId,
+              type: news.type,
+              metrics: news.metrics,
+              metrics_secondary: news.metricsSecondary,
+            }),
+          );
 
           yield* session.note(`Created Experiment: ${result.name}`);
 
@@ -122,36 +172,42 @@ export const experimentProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const result = yield* PostHogExperiments.updateExperiment({
-            project_id: projectId,
-            id: output.id,
-            name: news.name,
-            description: news.description,
-            start_date: news.startDate,
-            end_date: news.endDate,
-            parameters: news.parameters,
-            filters: news.filters,
-            holdout_id: news.holdoutId,
-            metrics: news.metrics,
-            metrics_secondary: news.metricsSecondary,
-          });
+          const result = yield* retryPolicy(
+            PostHogExperiments.updateExperiment({
+              project_id: projectId,
+              id: output.id,
+              name: news.name,
+              description: news.description,
+              start_date: news.startDate,
+              end_date: news.endDate,
+              parameters: news.parameters,
+              filters: news.filters,
+              holdout_id: news.holdoutId,
+              metrics: news.metrics,
+              metrics_secondary: news.metricsSecondary,
+            }),
+          );
 
           yield* session.note(`Updated Experiment: ${result.name}`);
 
-          return mapResponseToAttrs(result);
+          return { ...output, ...mapResponseToAttrs(result) };
         }),
 
-        delete: Effect.fn(function* ({ id: _id, output, session, olds: _olds }) {
+        delete: Effect.fn(function* ({ output, session }) {
           // PostHog experiments don't support HTTP DELETE (returns 405).
           // Soft-delete by archiving the experiment instead.
-          yield* PostHogExperiments.updateExperiment({
-            project_id: projectId,
-            id: output.id,
-            archived: true,
-          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+          yield* retryPolicy(
+            PostHogExperiments.updateExperiment({
+              project_id: projectId,
+              id: output.id,
+              archived: true,
+            }),
+          ).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.void),
+          );
 
           yield* session.note(`Deleted Experiment: ${output.name}`);
         }),
       };
-    })
+    }),
   );
