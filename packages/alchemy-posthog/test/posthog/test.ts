@@ -20,21 +20,12 @@ import * as Scope from "effect/Scope";
 import * as net from "node:net";
 import * as NodePath from "node:path";
 
+import { Project } from "@/posthog/project.js";
+
 /**
  * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
  */
 net.setDefaultAutoSelectFamily(false);
-
-/**
- * The PostHog project ID used for integration tests.
- */
-export const TEST_PROJECT_ID: Effect.Effect<string, Error> = Config.string(
-  "POSTHOG_PROJECT_ID"
-).pipe(
-  Effect.mapError(
-    () => new Error("POSTHOG_PROJECT_ID is required. Set it in your .env file.")
-  )
-);
 
 const testCLI = Layer.succeed(
   CLI,
@@ -61,6 +52,7 @@ type Provided =
   | Path.Path
   | Credentials
   | Endpoint
+  | Project
   | DotAlchemy
   | App
   | State.State;
@@ -74,6 +66,16 @@ const platform = Layer.mergeAll(
 const posthog = Layer.mergeAll(
   Credentials.fromEnv(),
   Layer.succeed(Endpoint, "https://us.posthog.com"),
+  Layer.effect(
+    Project,
+    Config.string("POSTHOG_PROJECT_ID").pipe(
+      Effect.catchAll(() =>
+        Effect.dieMessage(
+          "POSTHOG_PROJECT_ID is required. Set it in your .env file."
+        )
+      )
+    )
+  ),
 );
 
 export function test(

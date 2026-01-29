@@ -7,7 +7,8 @@ import * as Schedule from "effect/Schedule";
 
 import { Action } from "@/posthog/actions/index.js";
 import * as PostHog from "@/posthog/index.js";
-import { test, TEST_PROJECT_ID } from "../test.js";
+import { Project } from "@/posthog/project.js";
+import { test } from "../test.js";
 
 /**
  * Error thrown when an action still exists when it should have been deleted.
@@ -24,7 +25,7 @@ class ActionNotDeletedError extends Data.TaggedError(
  * Retries the check up to 5 times with exponential backoff.
  */
 const assertActionDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* ActionsAPI.getAction({
     project_id: projectId,
     id,
@@ -54,7 +55,7 @@ test(
   Effect.gen(function* () {
     yield* destroy();
 
-    const projectId = yield* TEST_PROJECT_ID;
+    const projectId = yield* Project;
 
     // Create an action
     class TestAction extends Action("TestAction", {

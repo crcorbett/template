@@ -226,3 +226,31 @@ Files updated:
 - src/posthog/insights/insight.provider.ts
 
 Verification: `npx tsc --noEmit` passes. All 8 delete methods confirmed via grep. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-026: Move TEST_PROJECT_ID boilerplate into test infrastructure
+
+Removed the `TEST_PROJECT_ID` export from test/posthog/test.ts and replaced it with a proper `Project` context tag provided via the test infrastructure Layer. This eliminates boilerplate `const projectId = yield* TEST_PROJECT_ID` from all test files.
+
+Changes to test/posthog/test.ts:
+- Removed `TEST_PROJECT_ID` export (Config.string effect)
+- Added `import { Project } from "@/posthog/project.js"`
+- Added `Project` to the `Provided` type union
+- Added `Layer.effect(Project, Config.string("POSTHOG_PROJECT_ID").pipe(...))` to the `posthog` Layer
+
+Changes to all 9 test files (8 provider tests + 1 smoke test):
+- Replaced `import { test, TEST_PROJECT_ID } from "../test.js"` with `import { test } from "../test.js"` + `import { Project } from "@/posthog/project.js"`
+- Replaced all `const projectId = yield* TEST_PROJECT_ID` with `const projectId = yield* Project`
+
+Files updated:
+- test/posthog/test.ts
+- test/posthog/feature-flags/feature-flag.provider.test.ts
+- test/posthog/dashboards/dashboard.provider.test.ts
+- test/posthog/experiments/experiment.provider.test.ts
+- test/posthog/surveys/survey.provider.test.ts
+- test/posthog/cohorts/cohort.provider.test.ts
+- test/posthog/actions/action.provider.test.ts
+- test/posthog/annotations/annotation.provider.test.ts
+- test/posthog/insights/insight.provider.test.ts
+- test/posthog/posthog.smoke.test.ts
+
+Verification: `npx tsc --noEmit` passes. No TEST_PROJECT_ID references remain in codebase. Tests require POSTHOG_API_KEY (integration tests).

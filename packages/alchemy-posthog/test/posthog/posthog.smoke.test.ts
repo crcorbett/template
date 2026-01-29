@@ -11,7 +11,8 @@ import { Annotation } from "@/posthog/annotations/index.js";
 import { Dashboard } from "@/posthog/dashboards/index.js";
 import { FeatureFlag } from "@/posthog/feature-flags/index.js";
 import * as PostHog from "@/posthog/index.js";
-import { test, TEST_PROJECT_ID } from "./test.js";
+import { Project } from "@/posthog/project.js";
+import { test } from "./test.js";
 
 class FeatureFlagNotDeletedError extends Data.TaggedError(
   "FeatureFlagNotDeletedError"
@@ -32,7 +33,7 @@ class AnnotationNotDeletedError extends Data.TaggedError(
 }> {}
 
 const assertFeatureFlagDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* FeatureFlagsAPI.getFeatureFlag({
     project_id: projectId,
     id,
@@ -51,7 +52,7 @@ const assertFeatureFlagDeleted = Effect.fn(function* (id: number) {
 });
 
 const assertDashboardDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* DashboardsAPI.getDashboard({
     project_id: projectId,
     id,
@@ -76,7 +77,7 @@ const assertDashboardDeleted = Effect.fn(function* (id: number) {
 });
 
 const assertAnnotationDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* AnnotationsAPI.getAnnotation({
     project_id: projectId,
     id,
@@ -106,7 +107,7 @@ test(
   Effect.gen(function* () {
     yield* destroy();
 
-    const projectId = yield* TEST_PROJECT_ID;
+    const projectId = yield* Project;
 
     // Create a FeatureFlag
     class SmokeFlag extends FeatureFlag("SmokeFlag", {

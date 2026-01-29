@@ -7,7 +7,8 @@ import * as Schedule from "effect/Schedule";
 
 import { Dashboard } from "@/posthog/dashboards/index.js";
 import * as PostHog from "@/posthog/index.js";
-import { test, TEST_PROJECT_ID } from "../test.js";
+import { Project } from "@/posthog/project.js";
+import { test } from "../test.js";
 
 /**
  * Error thrown when a dashboard still exists when it should have been deleted.
@@ -24,7 +25,7 @@ class DashboardNotDeletedError extends Data.TaggedError(
  * Retries the check up to 5 times with exponential backoff.
  */
 const assertDashboardDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* DashboardsAPI.getDashboard({
     project_id: projectId,
     id,
@@ -57,7 +58,7 @@ test(
   Effect.gen(function* () {
     yield* destroy();
 
-    const projectId = yield* TEST_PROJECT_ID;
+    const projectId = yield* Project;
 
     // Create a dashboard
     class TestDashboard extends Dashboard("TestDashboard", {

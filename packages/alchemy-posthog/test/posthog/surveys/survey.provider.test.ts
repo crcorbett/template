@@ -6,15 +6,16 @@ import * as Effect from "effect/Effect";
 import * as Schedule from "effect/Schedule";
 
 import * as PostHog from "@/posthog/index.js";
+import { Project } from "@/posthog/project.js";
 import { Survey } from "@/posthog/surveys/index.js";
-import { test, TEST_PROJECT_ID } from "../test.js";
+import { test } from "../test.js";
 
 class SurveyNotDeletedError extends Data.TaggedError("SurveyNotDeletedError")<{
   readonly id: string;
 }> {}
 
 const assertSurveyDeleted = Effect.fn(function* (id: string) {
-  const projectId = yield* TEST_PROJECT_ID;
+  const projectId = yield* Project;
   yield* SurveysAPI.getSurvey({
     project_id: projectId,
     id,
@@ -44,7 +45,7 @@ test(
   Effect.gen(function* () {
     yield* destroy();
 
-    const projectId = yield* TEST_PROJECT_ID;
+    const projectId = yield* Project;
 
     class TestSurvey extends Survey("TestSurvey", {
       name: "Test Survey",

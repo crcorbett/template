@@ -1351,8 +1351,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "No TEST_PROJECT_ID boilerplate in individual test files"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Removed TEST_PROJECT_ID export from test.ts. Added Project context tag to the test infrastructure's posthog Layer (reads POSTHOG_PROJECT_ID from Config, dies with message if missing). Added Project to Provided type union. Updated all 8 provider test files + smoke test to import { Project } from '@/posthog/project.js' and use 'yield* Project' instead of 'yield* TEST_PROJECT_ID'. No TEST_PROJECT_ID references remain in the codebase. Typecheck passes."
     },
     {
       "id": "CONFORM-027",
