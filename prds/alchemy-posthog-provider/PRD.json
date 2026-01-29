@@ -1515,8 +1515,8 @@
       "verify": [
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "60s timeout is justified for PostHog integration tests that make real external HTTP API calls with retry logic. Added documenting comment in test() and inline references in test.skip and test.skipIf. Vitest's default 5s is insufficient for external API round-trips."
     },
     {
       "id": "CONFORM-035",

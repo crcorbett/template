@@ -369,3 +369,12 @@ Verification: `npx tsc --noEmit` passes. All 32 session.note() calls follow cons
 Already resolved. `testCLI` is already exported from `test/posthog/test.ts` (line 90: `export const testCLI = Layer.succeed(...)`). This was addressed during CONFORM-031 which extracted shared helpers and exported testCLI as part of the refactor. No code changes needed.
 
 Verification: `npx tsc --noEmit` passes. `grep 'export const testCLI' test/posthog/test.ts` confirms export.
+
+## CONFORM-034: Document 60s test timeout default
+
+Evaluated the 60s default timeout in test/posthog/test.ts. PostHog integration tests make real external HTTP API calls with retry logic (create/update/delete cycles), so vitest's default 5s is insufficient. Kept the 60s timeout and added a documenting comment in the main `test()` function explaining the rationale, plus inline references in `test.skip` and `test.skipIf`.
+
+Files updated:
+- test/posthog/test.ts (added timeout rationale comments at lines 210, 233, 245)
+
+Verification: `npx tsc --noEmit` passes.

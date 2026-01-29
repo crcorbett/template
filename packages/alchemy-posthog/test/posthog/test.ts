@@ -207,6 +207,9 @@ export function test(
         ),
         Effect.provide(NodeContext.layer)
       ),
+    // PostHog integration tests make real HTTP API calls that can be slow
+    // (especially create/update/delete cycles with retry logic).
+    // 60s is necessary; vitest's default 5s is insufficient for external API round-trips.
     options.timeout ?? 60_000
   );
 }
@@ -230,7 +233,7 @@ export namespace test {
       | [Effect.Effect<void, unknown, Provided>]
   ) {
     const [options = {}] = args.length === 1 ? [undefined] : args;
-    return it.skip(name, () => {}, options.timeout ?? 60_000);
+    return it.skip(name, () => {}, options.timeout ?? 60_000); // see timeout rationale in test()
   }
 
   export function skipIf(condition: boolean) {
@@ -242,7 +245,7 @@ export namespace test {
     ) {
       if (condition) {
         const [options = {}] = args.length === 1 ? [undefined] : args;
-        it.skip(name, () => {}, options.timeout ?? 60_000);
+        it.skip(name, () => {}, options.timeout ?? 60_000); // see timeout rationale in test()
       } else {
         test(name, ...(args as [Effect.Effect<void, unknown, Provided>]));
       }
