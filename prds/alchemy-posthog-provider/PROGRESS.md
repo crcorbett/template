@@ -342,3 +342,24 @@ Files updated:
 - test/posthog/posthog.smoke.test.ts
 
 Verification: `npx tsc --noEmit` passes. All 9 test files (11 tests) collect and run. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-032: Standardize session.note() message format across all providers
+
+Standardized all `session.note()` messages across all 8 provider files to use a consistent format: `{Operation} {ResourceType}: {identifier}`.
+
+**Before (inconsistent):**
+- `Created feature flag: ${result.key}`
+- `Dashboard already exists (idempotent create): ${full.name}`
+- `Deleted annotation: ${output.id}`
+
+**After (standardized):**
+- `Created FeatureFlag: ${result.key}`
+- `Idempotent Dashboard: ${full.name}`
+- `Deleted Annotation: ${output.id}`
+
+Operations: Created, Updated, Deleted, Idempotent
+Resource types (PascalCase): FeatureFlag, Dashboard, Experiment, Survey, Cohort, Action, Annotation, Insight
+
+Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
+
+Verification: `npx tsc --noEmit` passes. All 32 session.note() calls follow consistent format.

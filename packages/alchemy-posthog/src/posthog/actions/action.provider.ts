@@ -105,7 +105,7 @@ export const actionProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Action already exists (idempotent create): ${existing.name}`
+              `Idempotent Action: ${existing.name}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -120,7 +120,7 @@ export const actionProvider = () =>
             steps: mapSteps(news.steps),
           });
 
-          yield* session.note(`Created action: ${result.name}`);
+          yield* session.note(`Created Action: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -137,7 +137,7 @@ export const actionProvider = () =>
             steps: mapSteps(news.steps),
           });
 
-          yield* session.note(`Updated action: ${result.name}`);
+          yield* session.note(`Updated Action: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -148,7 +148,7 @@ export const actionProvider = () =>
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted action: ${output.name}`);
+          yield* session.note(`Deleted Action: ${output.name}`);
         }),
       };
     })

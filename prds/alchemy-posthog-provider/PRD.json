@@ -1477,8 +1477,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "session.note() messages follow consistent format across all providers"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Standardized all session.note() messages across 8 providers to use consistent format: '{Operation} {ResourceType}: {identifier}'. Operations are: Created, Updated, Deleted, Idempotent. Resource types use PascalCase: FeatureFlag, Dashboard, Experiment, Survey, Cohort, Action, Annotation, Insight. Identifiers use the most meaningful field per resource (key for FeatureFlag, name for Dashboard/Experiment/Survey/Cohort/Action, id for Annotation/Insight)."
     },
     {
       "id": "CONFORM-033",

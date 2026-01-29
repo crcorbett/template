@@ -88,7 +88,7 @@ export const cohortProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Cohort already exists (idempotent create): ${existing.name}`
+              `Idempotent Cohort: ${existing.name}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -102,7 +102,7 @@ export const cohortProvider = () =>
             is_static: news.isStatic,
           });
 
-          yield* session.note(`Created cohort: ${result.name}`);
+          yield* session.note(`Created Cohort: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -117,7 +117,7 @@ export const cohortProvider = () =>
             filters: news.filters,
           });
 
-          yield* session.note(`Updated cohort: ${result.name}`);
+          yield* session.note(`Updated Cohort: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -128,7 +128,7 @@ export const cohortProvider = () =>
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted cohort: ${output.name}`);
+          yield* session.note(`Deleted Cohort: ${output.name}`);
         }),
       };
     })

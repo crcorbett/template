@@ -94,7 +94,7 @@ export const annotationProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Annotation already exists (idempotent create): ${existing.id}`
+              `Idempotent Annotation: ${existing.id}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -108,7 +108,7 @@ export const annotationProvider = () =>
             scope: news.scope,
           });
 
-          yield* session.note(`Created annotation: ${result.id}`);
+          yield* session.note(`Created Annotation: ${result.id}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -122,7 +122,7 @@ export const annotationProvider = () =>
             scope: news.scope,
           });
 
-          yield* session.note(`Updated annotation: ${result.id}`);
+          yield* session.note(`Updated Annotation: ${result.id}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -139,7 +139,7 @@ export const annotationProvider = () =>
             Effect.catchTag("PostHogError", () => Effect.void)
           );
 
-          yield* session.note(`Deleted annotation: ${output.id}`);
+          yield* session.note(`Deleted Annotation: ${output.id}`);
         }),
       };
     })

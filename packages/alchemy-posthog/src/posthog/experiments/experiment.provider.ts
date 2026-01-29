@@ -96,7 +96,7 @@ export const experimentProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Experiment already exists (idempotent create): ${existing.name}`
+              `Idempotent Experiment: ${existing.name}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -116,7 +116,7 @@ export const experimentProvider = () =>
             metrics_secondary: news.metricsSecondary,
           });
 
-          yield* session.note(`Created experiment: ${result.name}`);
+          yield* session.note(`Created Experiment: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -136,7 +136,7 @@ export const experimentProvider = () =>
             metrics_secondary: news.metricsSecondary,
           });
 
-          yield* session.note(`Updated experiment: ${result.name}`);
+          yield* session.note(`Updated Experiment: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -150,7 +150,7 @@ export const experimentProvider = () =>
             archived: true,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted experiment: ${output.name}`);
+          yield* session.note(`Deleted Experiment: ${output.name}`);
         }),
       };
     })

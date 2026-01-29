@@ -86,7 +86,7 @@ export const insightProvider = () =>
 
             if (existing) {
               yield* session.note(
-                `Insight already exists (idempotent create): ${existing.id}`
+                `Idempotent Insight: ${existing.id}`
               );
               return mapResponseToAttrs(existing);
             }
@@ -100,7 +100,7 @@ export const insightProvider = () =>
             saved: news.saved,
           });
 
-          yield* session.note(`Created insight: ${result.id}`);
+          yield* session.note(`Created Insight: ${result.id}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -115,7 +115,7 @@ export const insightProvider = () =>
             saved: news.saved,
           });
 
-          yield* session.note(`Updated insight: ${result.id}`);
+          yield* session.note(`Updated Insight: ${result.id}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -130,7 +130,7 @@ export const insightProvider = () =>
             Effect.catchTag("PostHogError", () => Effect.void)
           );
 
-          yield* session.note(`Deleted insight: ${output.id}`);
+          yield* session.note(`Deleted Insight: ${output.id}`);
         }),
       };
     })

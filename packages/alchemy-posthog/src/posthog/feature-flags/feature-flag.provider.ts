@@ -92,7 +92,7 @@ export const featureFlagProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Feature flag already exists (idempotent create): ${existing.key}`
+              `Idempotent FeatureFlag: ${existing.key}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -107,7 +107,7 @@ export const featureFlagProvider = () =>
             ensure_experience_continuity: news.ensureExperienceContinuity,
           });
 
-          yield* session.note(`Created feature flag: ${result.key}`);
+          yield* session.note(`Created FeatureFlag: ${result.key}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -124,7 +124,7 @@ export const featureFlagProvider = () =>
             ensure_experience_continuity: news.ensureExperienceContinuity,
           });
 
-          yield* session.note(`Updated feature flag: ${result.key}`);
+          yield* session.note(`Updated FeatureFlag: ${result.key}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -135,7 +135,7 @@ export const featureFlagProvider = () =>
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted feature flag: ${output.key}`);
+          yield* session.note(`Deleted FeatureFlag: ${output.key}`);
         }),
       };
     })

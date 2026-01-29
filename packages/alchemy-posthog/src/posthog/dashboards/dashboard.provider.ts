@@ -108,7 +108,7 @@ export const dashboardProvider = () =>
 
             if (full) {
               yield* session.note(
-                `Dashboard already exists (idempotent create): ${full.name}`
+                `Idempotent Dashboard: ${full.name}`
               );
               return mapResponseToAttrs(full);
             }
@@ -123,7 +123,7 @@ export const dashboardProvider = () =>
             restriction_level: news.restrictionLevel,
           });
 
-          yield* session.note(`Created dashboard: ${result.name}`);
+          yield* session.note(`Created Dashboard: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -139,7 +139,7 @@ export const dashboardProvider = () =>
             restriction_level: news.restrictionLevel,
           });
 
-          yield* session.note(`Updated dashboard: ${result.name}`);
+          yield* session.note(`Updated Dashboard: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -150,7 +150,7 @@ export const dashboardProvider = () =>
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted dashboard: ${output.name}`);
+          yield* session.note(`Deleted Dashboard: ${output.name}`);
         }),
       };
     })

@@ -89,7 +89,7 @@ export const surveyProvider = () =>
 
           if (existing) {
             yield* session.note(
-              `Survey already exists (idempotent create): ${existing.name}`
+              `Idempotent Survey: ${existing.name}`
             );
             return mapResponseToAttrs(existing);
           }
@@ -107,7 +107,7 @@ export const surveyProvider = () =>
             linked_flag_id: news.linkedFlagId,
           });
 
-          yield* session.note(`Created survey: ${result.name}`);
+          yield* session.note(`Created Survey: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -126,7 +126,7 @@ export const surveyProvider = () =>
             responses_limit: news.responsesLimit,
           });
 
-          yield* session.note(`Updated survey: ${result.name}`);
+          yield* session.note(`Updated Survey: ${result.name}`);
 
           return mapResponseToAttrs(result);
         }),
@@ -137,7 +137,7 @@ export const surveyProvider = () =>
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
 
-          yield* session.note(`Deleted survey: ${output.name}`);
+          yield* session.note(`Deleted Survey: ${output.name}`);
         }),
       };
     })
