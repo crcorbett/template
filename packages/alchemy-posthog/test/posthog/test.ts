@@ -197,15 +197,17 @@ export function test(
   const alchemy = Layer.provideMerge(
     Layer.mergeAll(State.localFs, testCLI),
     Layer.mergeAll(
-      Layer.succeed(
+      Layer.effect(
         App,
-        App.of({
-          name: appName,
-          stage: "test",
-          config: {
-            adopt: true,
-          },
-        })
+        Effect.gen(function* () {
+          return App.of({
+            name: appName,
+            stage: "test",
+            config: {
+              adopt: true,
+            },
+          });
+        }),
       ),
       dotAlchemy
     )
