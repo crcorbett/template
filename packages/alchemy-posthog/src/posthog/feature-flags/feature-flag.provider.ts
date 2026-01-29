@@ -34,7 +34,7 @@ export const featureFlagProvider = () =>
       return {
         stables: ["id", "key"] as const,
 
-        diff: Effect.fn(function* ({ news, olds }) {
+        diff: Effect.fn(function* ({ id: _id, news, olds, output: _output }) {
           // If key changes, the flag must be replaced
           if (news.key !== olds.key) {
             return { action: "replace" as const };

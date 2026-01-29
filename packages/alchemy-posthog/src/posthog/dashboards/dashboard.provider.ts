@@ -33,7 +33,7 @@ export const dashboardProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: Effect.fn(function* () {
+        diff: Effect.fn(function* ({ id: _id, news: _news, olds: _olds, output: _output }) {
           // All changes are updates, no replacement triggers for dashboards
           return undefined;
         }),

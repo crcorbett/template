@@ -33,7 +33,7 @@ export const surveyProvider = () =>
       return {
         stables: ["id", "type"] as const,
 
-        diff: Effect.fn(function* ({ news, olds }) {
+        diff: Effect.fn(function* ({ id: _id, news, olds, output: _output }) {
           if (news.type !== olds.type) {
             return { action: "replace" as const };
           }

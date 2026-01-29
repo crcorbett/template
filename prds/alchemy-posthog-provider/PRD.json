@@ -1261,8 +1261,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "All provider diff methods include id and output in destructuring"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Updated all 8 provider diff methods to destructure full parameter set { id, news, olds, output }. Unused parameters prefixed with underscore (e.g., id: _id, output: _output) to satisfy TypeScript noUnusedLocals. Files: feature-flag, cohort, survey, experiment (had { news, olds }), action, insight, annotation, dashboard (had empty params). Typecheck passes."
     },
     {
       "id": "CONFORM-023",

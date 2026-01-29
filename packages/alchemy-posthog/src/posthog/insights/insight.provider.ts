@@ -32,7 +32,7 @@ export const insightProvider = () =>
       return {
         stables: ["id", "shortId"] as const,
 
-        diff: Effect.fn(function* () {
+        diff: Effect.fn(function* ({ id: _id, news: _news, olds: _olds, output: _output }) {
           return undefined;
         }),
 

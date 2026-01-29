@@ -35,7 +35,7 @@ export const experimentProvider = () =>
       return {
         stables: ["id", "featureFlagKey"] as const,
 
-        diff: Effect.fn(function* ({ news, olds }) {
+        diff: Effect.fn(function* ({ id: _id, news, olds, output: _output }) {
           // If featureFlagKey changes, the experiment must be replaced
           if (news.featureFlagKey !== olds.featureFlagKey) {
             return { action: "replace" as const };

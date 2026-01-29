@@ -32,7 +32,7 @@ export const cohortProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: Effect.fn(function* ({ news, olds }) {
+        diff: Effect.fn(function* ({ id: _id, news, olds, output: _output }) {
           if (news.isStatic !== olds.isStatic) {
             return { action: "replace" as const };
           }

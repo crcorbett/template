@@ -150,3 +150,19 @@ Verification: `npx tsc --noEmit` passes. `test.skipIf` is exported from test.ts.
 Already implemented. The `test.ts` file already uses `export namespace test { export function skip(...) { ... } }` pattern (line 152) with skip, skipIf, state, and defaultState as namespace exports. No property assignment pattern (`test.skip = function(...)`) exists. This was addressed during CONFORM-019.
 
 Verification: `npx tsc --noEmit` passes. `grep 'export namespace test'` confirms namespace pattern in use.
+
+## CONFORM-022: Provider diff method signature includes full parameter set
+
+Updated all 8 provider diff methods to destructure the full `{ id, news, olds, output }` parameter set, matching the alchemy-effect reference pattern. Unused parameters are prefixed with underscore (e.g., `id: _id`, `output: _output`) to satisfy TypeScript's noUnusedLocals check.
+
+Files updated:
+- feature-flag.provider.ts: `{ news, olds }` -> `{ id: _id, news, olds, output: _output }`
+- cohort.provider.ts: `{ news, olds }` -> `{ id: _id, news, olds, output: _output }`
+- survey.provider.ts: `{ news, olds }` -> `{ id: _id, news, olds, output: _output }`
+- experiment.provider.ts: `{ news, olds }` -> `{ id: _id, news, olds, output: _output }`
+- action.provider.ts: `()` -> `{ id: _id, news: _news, olds: _olds, output: _output }`
+- dashboard.provider.ts: `()` -> `{ id: _id, news: _news, olds: _olds, output: _output }`
+- annotation.provider.ts: `()` -> `{ id: _id, news: _news, olds: _olds, output: _output }`
+- insight.provider.ts: `()` -> `{ id: _id, news: _news, olds: _olds, output: _output }`
+
+Verification: `npx tsc --noEmit` passes. All 8 diff methods include id and output in destructuring.
