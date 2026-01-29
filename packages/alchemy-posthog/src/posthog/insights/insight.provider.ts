@@ -30,78 +30,76 @@ export const insightProvider = () =>
       return {
         stables: ["id", "shortId"] as const,
 
-        diff: () => Effect.sync(() => undefined),
+        diff: Effect.fn(function* () {
+          return undefined;
+        }),
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
+            return undefined;
+          }
 
-            const projectId = yield* Project;
+          const projectId = yield* Project;
 
-            const result = yield* PostHogInsights.getInsight({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          const result = yield* PostHogInsights.getInsight({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            if (!result) {
-              return undefined;
-            }
+          if (!result) {
+            return undefined;
+          }
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogInsights.createInsight({
-              project_id: projectId,
-              name: news.name,
-              description: news.description,
-              query: news.query,
-              saved: news.saved,
-            });
+          const result = yield* PostHogInsights.createInsight({
+            project_id: projectId,
+            name: news.name,
+            description: news.description,
+            query: news.query,
+            saved: news.saved,
+          });
 
-            yield* session.note(`Created insight: ${result.id}`);
+          yield* session.note(`Created insight: ${result.id}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogInsights.updateInsight({
-              project_id: projectId,
-              id: output.id,
-              name: news.name,
-              description: news.description,
-              query: news.query,
-              saved: news.saved,
-            });
+          const result = yield* PostHogInsights.updateInsight({
+            project_id: projectId,
+            id: output.id,
+            name: news.name,
+            description: news.description,
+            query: news.query,
+            saved: news.saved,
+          });
 
-            yield* session.note(`Updated insight: ${result.id}`);
+          yield* session.note(`Updated insight: ${result.id}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-            // Insight uses soft delete (PATCH deleted: true)
-            yield* PostHogInsights.deleteInsight({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.void),
-              Effect.catchTag("PostHogError", () => Effect.void)
-            );
-          }),
+          // Insight uses soft delete (PATCH deleted: true)
+          yield* PostHogInsights.deleteInsight({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.void),
+            Effect.catchTag("PostHogError", () => Effect.void)
+          );
+        }),
       };
     })
   );

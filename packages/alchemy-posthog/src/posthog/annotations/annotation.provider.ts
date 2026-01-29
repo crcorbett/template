@@ -31,80 +31,78 @@ export const annotationProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: () => Effect.sync(() => undefined),
+        diff: Effect.fn(function* () {
+          return undefined;
+        }),
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
+            return undefined;
+          }
 
-            const projectId = yield* Project;
+          const projectId = yield* Project;
 
-            const result = yield* PostHogAnnotations.getAnnotation({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          const result = yield* PostHogAnnotations.getAnnotation({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            if (!result) {
-              return undefined;
-            }
+          if (!result) {
+            return undefined;
+          }
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogAnnotations.createAnnotation({
-              project_id: projectId,
-              content: news.content,
-              date_marker: news.dateMarker,
-              creation_type: news.creationType,
-              dashboard_item: news.dashboardItem,
-              scope: news.scope,
-            });
+          const result = yield* PostHogAnnotations.createAnnotation({
+            project_id: projectId,
+            content: news.content,
+            date_marker: news.dateMarker,
+            creation_type: news.creationType,
+            dashboard_item: news.dashboardItem,
+            scope: news.scope,
+          });
 
-            yield* session.note(`Created annotation: ${result.id}`);
+          yield* session.note(`Created annotation: ${result.id}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogAnnotations.updateAnnotation({
-              project_id: projectId,
-              id: output.id,
-              content: news.content,
-              date_marker: news.dateMarker,
-              scope: news.scope,
-            });
+          const result = yield* PostHogAnnotations.updateAnnotation({
+            project_id: projectId,
+            id: output.id,
+            content: news.content,
+            date_marker: news.dateMarker,
+            scope: news.scope,
+          });
 
-            yield* session.note(`Updated annotation: ${result.id}`);
+          yield* session.note(`Updated annotation: ${result.id}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-            // PostHog annotations don't reliably support HTTP DELETE.
-            // Soft-delete by patching deleted: true instead.
-            yield* PostHogAnnotations.updateAnnotation({
-              project_id: projectId,
-              id: output.id,
-              deleted: true,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.void),
-              Effect.catchTag("PostHogError", () => Effect.void)
-            );
-          }),
+          // PostHog annotations don't reliably support HTTP DELETE.
+          // Soft-delete by patching deleted: true instead.
+          yield* PostHogAnnotations.updateAnnotation({
+            project_id: projectId,
+            id: output.id,
+            deleted: true,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.void),
+            Effect.catchTag("PostHogError", () => Effect.void)
+          );
+        }),
       };
     })
   );

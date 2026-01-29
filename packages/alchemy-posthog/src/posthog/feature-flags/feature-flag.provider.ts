@@ -32,86 +32,81 @@ export const featureFlagProvider = () =>
       return {
         stables: ["id", "key"] as const,
 
-        diff: ({ news, olds }) =>
-          Effect.sync(() => {
-            // If key changes, the flag must be replaced
-            if (news.key !== olds.key) {
-              return { action: "replace" as const };
-            }
-            // Otherwise, update in place
+        diff: Effect.fn(function* ({ news, olds }) {
+          // If key changes, the flag must be replaced
+          if (news.key !== olds.key) {
+            return { action: "replace" as const };
+          }
+          // Otherwise, update in place
+          return undefined;
+        }),
+
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
             return undefined;
-          }),
+          }
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+          const projectId = yield* Project;
 
-            const projectId = yield* Project;
+          const result = yield* PostHogFeatureFlags.getFeatureFlag({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            const result = yield* PostHogFeatureFlags.getFeatureFlag({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          if (!result) {
+            return undefined;
+          }
 
-            if (!result) {
-              return undefined;
-            }
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogFeatureFlags.createFeatureFlag({
+            project_id: projectId,
+            key: news.key,
+            name: news.name,
+            active: news.active,
+            filters: news.filters as Record<string, unknown> | undefined,
+            rollout_percentage: news.rolloutPercentage,
+            ensure_experience_continuity: news.ensureExperienceContinuity,
+          });
 
-            const result = yield* PostHogFeatureFlags.createFeatureFlag({
-              project_id: projectId,
-              key: news.key,
-              name: news.name,
-              active: news.active,
-              filters: news.filters as Record<string, unknown> | undefined,
-              rollout_percentage: news.rolloutPercentage,
-              ensure_experience_continuity: news.ensureExperienceContinuity,
-            });
+          yield* session.note(`Created feature flag: ${result.key}`);
 
-            yield* session.note(`Created feature flag: ${result.key}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogFeatureFlags.updateFeatureFlag({
+            project_id: projectId,
+            id: output.id,
+            key: news.key,
+            name: news.name,
+            active: news.active,
+            filters: news.filters as Record<string, unknown> | undefined,
+            rollout_percentage: news.rolloutPercentage,
+            ensure_experience_continuity: news.ensureExperienceContinuity,
+          });
 
-            const result = yield* PostHogFeatureFlags.updateFeatureFlag({
-              project_id: projectId,
-              id: output.id,
-              key: news.key,
-              name: news.name,
-              active: news.active,
-              filters: news.filters as Record<string, unknown> | undefined,
-              rollout_percentage: news.rolloutPercentage,
-              ensure_experience_continuity: news.ensureExperienceContinuity,
-            });
+          yield* session.note(`Updated feature flag: ${result.key}`);
 
-            yield* session.note(`Updated feature flag: ${result.key}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
-
-            yield* PostHogFeatureFlags.deleteFeatureFlag({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
-          }),
+          yield* PostHogFeatureFlags.deleteFeatureFlag({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+        }),
       };
     })
   );

@@ -50,78 +50,76 @@ export const actionProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: () => Effect.sync(() => undefined),
+        diff: Effect.fn(function* () {
+          return undefined;
+        }),
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
+            return undefined;
+          }
 
-            const projectId = yield* Project;
+          const projectId = yield* Project;
 
-            const result = yield* PostHogActions.getAction({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          const result = yield* PostHogActions.getAction({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            if (!result) {
-              return undefined;
-            }
+          if (!result) {
+            return undefined;
+          }
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogActions.createAction({
-              project_id: projectId,
-              name: news.name,
-              description: news.description,
-              tags: news.tags,
-              post_to_slack: news.postToSlack,
-              slack_message_format: news.slackMessageFormat,
-              steps: mapSteps(news.steps),
-            });
+          const result = yield* PostHogActions.createAction({
+            project_id: projectId,
+            name: news.name,
+            description: news.description,
+            tags: news.tags,
+            post_to_slack: news.postToSlack,
+            slack_message_format: news.slackMessageFormat,
+            steps: mapSteps(news.steps),
+          });
 
-            yield* session.note(`Created action: ${result.name}`);
+          yield* session.note(`Created action: ${result.name}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-            const result = yield* PostHogActions.updateAction({
-              project_id: projectId,
-              id: output.id,
-              name: news.name,
-              description: news.description,
-              tags: news.tags,
-              post_to_slack: news.postToSlack,
-              slack_message_format: news.slackMessageFormat,
-              steps: mapSteps(news.steps),
-            });
+          const result = yield* PostHogActions.updateAction({
+            project_id: projectId,
+            id: output.id,
+            name: news.name,
+            description: news.description,
+            tags: news.tags,
+            post_to_slack: news.postToSlack,
+            slack_message_format: news.slackMessageFormat,
+            steps: mapSteps(news.steps),
+          });
 
-            yield* session.note(`Updated action: ${result.name}`);
+          yield* session.note(`Updated action: ${result.name}`);
 
-            return mapResponseToAttrs(result);
-          }),
+          return mapResponseToAttrs(result);
+        }),
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-            yield* PostHogActions.deleteAction({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
-          }),
+          yield* PostHogActions.deleteAction({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+        }),
       };
     })
   );

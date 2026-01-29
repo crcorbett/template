@@ -31,3 +31,24 @@ Changes:
 - insight: `Test Insight ${Date.now()}` -> `"Test Insight"`
 
 Verification: `bun tsc -b` passes, `grep -r 'Date.now()' test/posthog/` returns no results, all 10 tests pass.
+
+## CONFORM-001: Replace arrow + Effect.gen with Effect.fn in provider lifecycle methods
+
+Refactored all 8 provider files to use `Effect.fn` for all 5 lifecycle methods (diff, read, create, update, delete). This aligns with the alchemy-effect canonical pattern (see `cloudflare/kv/namespace.provider.ts`).
+
+**Before:** `create: ({ news, session }) => Effect.gen(function* () { ... })`
+**After:** `create: Effect.fn(function* ({ news, session }) { ... })`
+
+Also replaced `Effect.sync` in diff methods with `Effect.fn` (covers CONFORM-002 as well).
+
+Files updated:
+- src/posthog/feature-flags/feature-flag.provider.ts
+- src/posthog/dashboards/dashboard.provider.ts
+- src/posthog/experiments/experiment.provider.ts
+- src/posthog/surveys/survey.provider.ts
+- src/posthog/cohorts/cohort.provider.ts
+- src/posthog/actions/action.provider.ts
+- src/posthog/annotations/annotation.provider.ts
+- src/posthog/insights/insight.provider.ts
+
+Verification: `bun tsc -b` passes. 40 total `Effect.fn` calls across 8 files (5 per file). No `Effect.gen` or `Effect.sync` in lifecycle methods.

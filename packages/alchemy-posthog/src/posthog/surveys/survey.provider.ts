@@ -31,89 +31,84 @@ export const surveyProvider = () =>
       return {
         stables: ["id", "type"] as const,
 
-        diff: ({ news, olds }) =>
-          Effect.sync(() => {
-            if (news.type !== olds.type) {
-              return { action: "replace" as const };
-            }
+        diff: Effect.fn(function* ({ news, olds }) {
+          if (news.type !== olds.type) {
+            return { action: "replace" as const };
+          }
+          return undefined;
+        }),
+
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
             return undefined;
-          }),
+          }
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+          const projectId = yield* Project;
 
-            const projectId = yield* Project;
+          const result = yield* PostHogSurveys.getSurvey({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            const result = yield* PostHogSurveys.getSurvey({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          if (!result) {
+            return undefined;
+          }
 
-            if (!result) {
-              return undefined;
-            }
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogSurveys.createSurvey({
+            project_id: projectId,
+            name: news.name,
+            description: news.description,
+            type: news.type,
+            questions: news.questions,
+            appearance: news.appearance,
+            start_date: news.startDate,
+            end_date: news.endDate,
+            responses_limit: news.responsesLimit,
+            linked_flag_id: news.linkedFlagId,
+          });
 
-            const result = yield* PostHogSurveys.createSurvey({
-              project_id: projectId,
-              name: news.name,
-              description: news.description,
-              type: news.type,
-              questions: news.questions,
-              appearance: news.appearance,
-              start_date: news.startDate,
-              end_date: news.endDate,
-              responses_limit: news.responsesLimit,
-              linked_flag_id: news.linkedFlagId,
-            });
+          yield* session.note(`Created survey: ${result.name}`);
 
-            yield* session.note(`Created survey: ${result.name}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogSurveys.updateSurvey({
+            project_id: projectId,
+            id: output.id,
+            name: news.name,
+            description: news.description,
+            type: news.type,
+            questions: news.questions,
+            appearance: news.appearance,
+            start_date: news.startDate,
+            end_date: news.endDate,
+            responses_limit: news.responsesLimit,
+          });
 
-            const result = yield* PostHogSurveys.updateSurvey({
-              project_id: projectId,
-              id: output.id,
-              name: news.name,
-              description: news.description,
-              type: news.type,
-              questions: news.questions,
-              appearance: news.appearance,
-              start_date: news.startDate,
-              end_date: news.endDate,
-              responses_limit: news.responsesLimit,
-            });
+          yield* session.note(`Updated survey: ${result.name}`);
 
-            yield* session.note(`Updated survey: ${result.name}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
-
-            yield* PostHogSurveys.deleteSurvey({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
-          }),
+          yield* PostHogSurveys.deleteSurvey({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+        }),
       };
     })
   );

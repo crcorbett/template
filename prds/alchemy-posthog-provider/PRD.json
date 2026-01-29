@@ -775,6 +775,325 @@
       ],
       "passes": true,
       "notes": "Created posthog.smoke.test.ts with a single test that creates 3 related resources (FeatureFlag, Dashboard, Annotation) in a single apply() call, verifies all exist via direct API calls, destroys all, and verifies cleanup. All 11 tests across 9 test files pass (including smoke test). bun tsc -b passes."
+    },
+    {
+      "id": "CONFORM-001",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Provider lifecycle methods use arrow functions + Effect.gen instead of Effect.fn",
+      "steps": [
+        "In all 8 provider files (src/posthog/*//*.provider.ts), refactor lifecycle methods (create, update, delete, read) from arrow functions returning Effect.gen to use Effect.fn directly.",
+        "Current pattern (non-conformant):",
+        "  create: (ctx) => Effect.gen(function* () { ... })",
+        "Reference pattern (alchemy-effect):",
+        "  create: Effect.fn(function* ({ id, news, session }) { ... })",
+        "Effect.fn is the canonical pattern used by all alchemy-effect providers (see cloudflare/kv/namespace.provider.ts, aws/lambda/function.provider.ts, etc.).",
+        "Files to update:",
+        "  - src/posthog/feature-flags/feature-flag.provider.ts",
+        "  - src/posthog/dashboards/dashboard.provider.ts",
+        "  - src/posthog/experiments/experiment.provider.ts",
+        "  - src/posthog/surveys/survey.provider.ts",
+        "  - src/posthog/cohorts/cohort.provider.ts",
+        "  - src/posthog/actions/action.provider.ts",
+        "  - src/posthog/annotations/annotation.provider.ts",
+        "  - src/posthog/insights/insight.provider.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "grep -r 'Effect.gen' src/posthog/**/*.provider.ts returns no results (all replaced with Effect.fn)"
+      ],
+      "passes": true,
+      "notes": "Refactored all 8 provider files to use Effect.fn for all 5 lifecycle methods (diff, read, create, update, delete). Changed from arrow function + Effect.gen pattern to Effect.fn(function* (...) { ... }) pattern. Also replaced Effect.sync in diff methods with Effect.fn (covers CONFORM-002 as well). bun tsc -b passes. No Effect.gen or Effect.sync remains in lifecycle methods (40 total Effect.fn calls across 8 files)."
+    },
+    {
+      "id": "CONFORM-002",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "diff lifecycle method uses Effect.sync instead of Effect.fn",
+      "steps": [
+        "In all provider files that have a diff method with replacement logic, change from Effect.sync to Effect.fn.",
+        "Current pattern (non-conformant):",
+        "  diff: (news, olds) => Effect.sync(() => { if (news.key !== olds.key) return { action: 'replace' } })",
+        "Reference pattern (alchemy-effect):",
+        "  diff: Effect.fn(function* (news, olds) { if (news.key !== olds.key) return { action: 'replace' } })",
+        "Files affected: feature-flag.provider.ts, experiment.provider.ts, survey.provider.ts, cohort.provider.ts (any provider with replacement logic in diff)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "grep -r 'Effect.sync' src/posthog/**/*.provider.ts returns no results"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-003",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Test app name in test.ts does not include test file path - risk of state collision between tests",
+      "steps": [
+        "Update test/posthog/test.ts to include the test file path in the app name, following the alchemy-effect pattern.",
+        "Current pattern (non-conformant):",
+        "  App.of({ name: `test-${name}`, ... })",
+        "Reference pattern (alchemy-effect test.ts):",
+        "  const testPathWithoutExt = testPath.replace(/\\.[^.]+$/, '');",
+        "  App.of({ name: `${testPathWithoutExt}-${name}`, ... })",
+        "This ensures each test file gets a unique app name, preventing state file collisions when multiple test files have tests with the same name.",
+        "The test file path should be derived from import.meta.url or equivalent mechanism."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "App name includes test file path component"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-004",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Tests wrapped in unnecessary describe blocks - alchemy-effect uses flat test structure",
+      "steps": [
+        "Remove the outer describe('PostHog FeatureFlag Provider', ...) and inner describe('integration tests', ...) blocks from all test files.",
+        "alchemy-effect tests use a flat structure with test() at the top level (no describe blocks).",
+        "Reference: All alchemy-effect test files (e.g., dynamodb/table.provider.test.ts, sqs/queue.provider.test.ts) use flat test() calls without describe wrappers.",
+        "Files to update: all 8 provider test files + smoke test"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "grep -r 'describe(' test/posthog/ returns no results"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-005",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Test import paths use relative paths instead of @/ path aliases",
+      "steps": [
+        "Replace relative imports in test files with @/ path aliases.",
+        "Current pattern (non-conformant):",
+        "  import { FeatureFlag } from '../../../src/posthog/feature-flags/index.js'",
+        "  import * as PostHog from '../../../src/posthog/index.js'",
+        "Reference pattern (alchemy-effect):",
+        "  import { FeatureFlag } from '@/posthog/feature-flags'",
+        "  import * as PostHog from '@/posthog'",
+        "Ensure vitest.config.ts and tsconfig.json have the necessary path alias configuration.",
+        "Files to update: all 8 provider test files + smoke test + test/posthog/test.ts"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "No relative ../src/ imports remain in test/posthog/ files"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-006",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "CLI mock is hand-rolled instead of importing the real CLI service from alchemy-effect",
+      "steps": [
+        "Replace the hand-rolled CLI mock in test/posthog/test.ts with the real CLI service from alchemy-effect.",
+        "Current pattern (non-conformant):",
+        "  Layer.succeed(CLI, { note: Effect.fn(function*() {}) })",
+        "Reference pattern (alchemy-effect test.ts):",
+        "  CLI.of({ note: Effect.fn(function* () {}) })",
+        "The CLI.of() constructor provides proper type checking and ensures all required methods are implemented.",
+        "Update test/posthog/test.ts to use CLI.of() instead of Layer.succeed(CLI, ...)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "test.ts uses CLI.of() pattern"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-007",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Missing DotAlchemy layer in test infrastructure",
+      "steps": [
+        "Add the DotAlchemy layer to test/posthog/test.ts test infrastructure.",
+        "alchemy-effect's test.ts includes a dotAlchemy layer that persists state to a .alchemy directory for test isolation.",
+        "Reference: alchemy-effect test.ts provides Layer.mergeAll(appLayer, stateLayer, cliLayer, dotAlchemyLayer)",
+        "The DotAlchemy layer is important for proper state persistence during tests.",
+        "Import DotAlchemy from alchemy-effect and add it to the test layer composition."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "test.ts includes DotAlchemy layer in composition"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-008",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "assertDeleted helpers use non-standard pattern compared to alchemy-effect",
+      "steps": [
+        "Refactor assertDeleted helpers in test files to use Effect.fn instead of arrow functions returning Effect.gen.",
+        "Current pattern (non-conformant):",
+        "  const assertFeatureFlagDeleted = (id: number) => Effect.gen(function* () { ... })",
+        "Reference pattern (alchemy-effect):",
+        "  const assertDeleted = Effect.fn(function* (id: number) { ... })",
+        "Also standardize the retry schedule to use Schedule.intersect instead of Schedule.compose (see CONFORM-009).",
+        "Files to update: all 8 provider test files that have assertDeleted helpers"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "All assertDeleted helpers use Effect.fn pattern"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-009",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Retry schedule uses Schedule.compose instead of Schedule.intersect",
+      "steps": [
+        "In assertDeleted helpers and any retry logic, replace Schedule.compose with Schedule.intersect.",
+        "Current pattern (non-conformant):",
+        "  Schedule.compose(Schedule.recurs(5), Schedule.exponential('500 millis'))",
+        "Reference pattern (alchemy-effect):",
+        "  Schedule.intersect(Schedule.recurs(5), Schedule.exponential('100 millis'))",
+        "Schedule.intersect runs both schedules and takes the longer delay, while Schedule.compose chains them sequentially. The alchemy-effect convention uses intersect.",
+        "Files to update: all test files with retry schedules"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "grep -r 'Schedule.compose' test/posthog/ returns no results"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-010",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Provider does not yield shared context (Project) at provider level - yields inside each lifecycle method instead",
+      "steps": [
+        "In alchemy-effect, providers that need shared context (e.g., AWS Region, Account) yield it once at the provider level inside the Effect.gen block, then close over it in lifecycle methods.",
+        "Current pattern (non-conformant):",
+        "  Each lifecycle method (create, update, delete, read) independently calls: const projectId = yield* Project",
+        "Reference pattern (alchemy-effect):",
+        "  The provider's outer Effect.gen yields shared context once: const projectId = yield* Project",
+        "  Then lifecycle methods close over projectId from the outer scope.",
+        "This reduces boilerplate and makes the provider structure cleaner.",
+        "Files to update: all 8 provider files"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass",
+        "Project is yielded once per provider file, not once per lifecycle method"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-011",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "No explicit return type annotation on provider functions",
+      "steps": [
+        "Add explicit return type annotations to the exported provider functions (e.g., featureFlagProvider).",
+        "alchemy-effect provider functions typically have explicit Layer return types for clarity.",
+        "Files to update: all 8 provider files"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-012",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low-medium",
+      "description": "read method lacks name-based fallback lookup when output is missing",
+      "steps": [
+        "In alchemy-effect providers, the read method handles the case where output (previous state) is missing by falling back to a name-based lookup.",
+        "For example, Cloudflare KV namespace.provider.ts reads by ID first, and if output is undefined (state was lost), falls back to listing namespaces and finding by title.",
+        "PostHog providers currently only read by output.id and return undefined if output is missing.",
+        "For PostHog resources, this could be implemented by listing resources and matching by key/name.",
+        "This improves resilience to state persistence failures.",
+        "Evaluate which PostHog resources support list+filter operations and add name-based fallback where feasible.",
+        "Files to update: provider files where list-based lookup is practical"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-013",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Provided type (Layer composition) is missing DotAlchemy requirement",
+      "steps": [
+        "Review the Layer composition in providers() and resources() to ensure it includes DotAlchemy if required.",
+        "In alchemy-effect, providers that persist state require DotAlchemy in their dependency chain.",
+        "Verify whether the alchemy-effect engine automatically provides DotAlchemy or if it must be explicitly included.",
+        "If explicit, add it to the providers() composition in src/posthog/index.ts."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-014",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "test.ts handles .env path differently from alchemy-effect convention",
+      "steps": [
+        "Review how test/posthog/test.ts loads the .env file and align with the alchemy-effect test.ts approach.",
+        "alchemy-effect test.ts uses a specific .env path resolution relative to the workspace root.",
+        "Ensure the PostHog test infrastructure resolves .env consistently.",
+        "Update test/posthog/test.ts if the .env resolution differs."
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CONFORM-015",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Tests catch PostHogError with code string check instead of using typed error tags",
+      "steps": [
+        "Several assertDeleted helpers catch PostHogError and check error.code === '404' as a string comparison.",
+        "The alchemy-effect pattern uses Effect.catchTag with typed error classes (e.g., 'NotFoundError') for cleaner error handling.",
+        "Where possible, ensure the distilled-posthog SDK maps HTTP 404 responses to a tagged NotFoundError.",
+        "If NotFoundError is already available, replace PostHogError code checks with Effect.catchTag('NotFoundError', ...).",
+        "Files to update: all test files with assertDeleted helpers that check PostHogError codes"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "bun vitest run test/posthog/ -- all tests pass"
+      ],
+      "passes": false
     }
   ]
 }

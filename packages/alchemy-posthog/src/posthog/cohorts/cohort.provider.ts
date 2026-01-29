@@ -30,81 +30,76 @@ export const cohortProvider = () =>
       return {
         stables: ["id"] as const,
 
-        diff: ({ news, olds }) =>
-          Effect.sync(() => {
-            if (news.isStatic !== olds.isStatic) {
-              return { action: "replace" as const };
-            }
+        diff: Effect.fn(function* ({ news, olds }) {
+          if (news.isStatic !== olds.isStatic) {
+            return { action: "replace" as const };
+          }
+          return undefined;
+        }),
+
+        read: Effect.fn(function* ({ output }) {
+          if (!output?.id) {
             return undefined;
-          }),
+          }
 
-        read: ({ output }) =>
-          Effect.gen(function* () {
-            if (!output?.id) {
-              return undefined;
-            }
+          const projectId = yield* Project;
 
-            const projectId = yield* Project;
+          const result = yield* PostHogCohorts.getCohort({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(
+            Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
+          );
 
-            const result = yield* PostHogCohorts.getCohort({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(
-              Effect.catchTag("NotFoundError", () => Effect.succeed(undefined))
-            );
+          if (!result) {
+            return undefined;
+          }
 
-            if (!result) {
-              return undefined;
-            }
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        create: Effect.fn(function* ({ news, session }) {
+          const projectId = yield* Project;
 
-        create: ({ news, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogCohorts.createCohort({
+            project_id: projectId,
+            name: news.name,
+            description: news.description,
+            groups: news.groups,
+            filters: news.filters,
+            is_static: news.isStatic,
+          });
 
-            const result = yield* PostHogCohorts.createCohort({
-              project_id: projectId,
-              name: news.name,
-              description: news.description,
-              groups: news.groups,
-              filters: news.filters,
-              is_static: news.isStatic,
-            });
+          yield* session.note(`Created cohort: ${result.name}`);
 
-            yield* session.note(`Created cohort: ${result.name}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        update: Effect.fn(function* ({ news, output, session }) {
+          const projectId = yield* Project;
 
-        update: ({ news, output, session }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
+          const result = yield* PostHogCohorts.updateCohort({
+            project_id: projectId,
+            id: output.id,
+            name: news.name,
+            description: news.description,
+            groups: news.groups,
+            filters: news.filters,
+          });
 
-            const result = yield* PostHogCohorts.updateCohort({
-              project_id: projectId,
-              id: output.id,
-              name: news.name,
-              description: news.description,
-              groups: news.groups,
-              filters: news.filters,
-            });
+          yield* session.note(`Updated cohort: ${result.name}`);
 
-            yield* session.note(`Updated cohort: ${result.name}`);
+          return mapResponseToAttrs(result);
+        }),
 
-            return mapResponseToAttrs(result);
-          }),
+        delete: Effect.fn(function* ({ output }) {
+          const projectId = yield* Project;
 
-        delete: ({ output }) =>
-          Effect.gen(function* () {
-            const projectId = yield* Project;
-
-            yield* PostHogCohorts.deleteCohort({
-              project_id: projectId,
-              id: output.id,
-            }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
-          }),
+          yield* PostHogCohorts.deleteCohort({
+            project_id: projectId,
+            id: output.id,
+          }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+        }),
       };
     })
   );
