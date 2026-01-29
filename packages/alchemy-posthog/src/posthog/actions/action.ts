@@ -82,7 +82,31 @@ export interface ActionAttrs<_Props extends ActionProps = ActionProps> {
 }
 
 /**
- * PostHog Action resource.
+ * A PostHog Action for tracking composite user events.
+ *
+ * @section Creating Actions
+ * @example Page View Action
+ * ```typescript
+ * class SignupPageView extends Action("SignupPageView", {
+ *   name: "Viewed Signup Page",
+ *   steps: [{
+ *     event: "$pageview",
+ *     url: "/signup",
+ *     urlMatching: "contains",
+ *   }],
+ * }) {}
+ * ```
+ *
+ * @example Action with Tags
+ * ```typescript
+ * class PurchaseAction extends Action("PurchaseAction", {
+ *   name: "Completed Purchase",
+ *   tags: ["revenue", "conversion"],
+ *   steps: [{
+ *     event: "purchase_completed",
+ *   }],
+ * }) {}
+ * ```
  */
 export interface Action<
   ID extends string = string,

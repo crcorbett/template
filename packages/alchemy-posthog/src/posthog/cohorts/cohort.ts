@@ -66,7 +66,30 @@ export interface CohortAttrs<_Props extends CohortProps = CohortProps> {
 }
 
 /**
- * PostHog Cohort resource.
+ * A PostHog Cohort for grouping users by shared properties or behaviors.
+ *
+ * @section Creating Cohorts
+ * @example Dynamic Cohort
+ * ```typescript
+ * class PowerUsers extends Cohort("PowerUsers", {
+ *   name: "Power Users",
+ *   description: "Users with 10+ sessions",
+ *   filters: {
+ *     properties: {
+ *       type: "AND",
+ *       values: [{ type: "behavioral", value: "performed_event", event_type: "session_start", operator: "gte", property_value: 10 }],
+ *     },
+ *   },
+ * }) {}
+ * ```
+ *
+ * @example Static Cohort
+ * ```typescript
+ * class BetaTesters extends Cohort("BetaTesters", {
+ *   name: "Beta Testers",
+ *   isStatic: true,
+ * }) {}
+ * ```
  */
 export interface Cohort<
   ID extends string = string,

@@ -61,7 +61,25 @@ export interface DashboardAttrs<_Props extends DashboardProps = DashboardProps> 
 }
 
 /**
- * PostHog Dashboard resource.
+ * A PostHog Dashboard for organizing insights.
+ *
+ * @section Creating Dashboards
+ * @example Basic Dashboard
+ * ```typescript
+ * class MyDashboard extends Dashboard("MyDashboard", {
+ *   name: "Product Metrics",
+ *   description: "Key product health indicators",
+ * }) {}
+ * ```
+ *
+ * @example Pinned Dashboard with Tags
+ * ```typescript
+ * class PinnedDashboard extends Dashboard("PinnedDashboard", {
+ *   name: "Executive Summary",
+ *   pinned: true,
+ *   tags: ["executive", "weekly"],
+ * }) {}
+ * ```
  */
 export interface Dashboard<
   ID extends string = string,

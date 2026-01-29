@@ -72,7 +72,31 @@ export interface InsightAttrs<_Props extends Input.Resolve<InsightProps> = Input
 }
 
 /**
- * PostHog Insight resource.
+ * A PostHog Insight for querying and visualizing analytics data.
+ *
+ * @section Creating Insights
+ * @example Trends Insight
+ * ```typescript
+ * class PageviewTrend extends Insight("PageviewTrend", {
+ *   name: "Daily Pageviews",
+ *   query: {
+ *     kind: "TrendsQuery",
+ *     series: [{ kind: "EventsNode", event: "$pageview" }],
+ *   },
+ *   saved: true,
+ * }) {}
+ * ```
+ *
+ * @section Attaching to Dashboards
+ * @example Insight on a Dashboard
+ * ```typescript
+ * class DashboardInsight extends Insight("DashboardInsight", {
+ *   name: "Revenue Trend",
+ *   query: { kind: "TrendsQuery", series: [{ kind: "EventsNode", event: "purchase" }] },
+ *   dashboards: [myDashboard.id],
+ *   saved: true,
+ * }) {}
+ * ```
  */
 export interface Insight<
   ID extends string = string,

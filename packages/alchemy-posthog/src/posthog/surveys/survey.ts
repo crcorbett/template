@@ -18,6 +18,7 @@ export interface SurveyProps {
 
   /**
    * Survey type. Changing this will replace the survey.
+   * @example "popover"
    */
   type: "popover" | "widget" | "external_survey" | "api";
 
@@ -94,7 +95,40 @@ export interface SurveyAttrs<_Props extends Input.Resolve<SurveyProps> = Input.R
 }
 
 /**
- * PostHog Survey resource.
+ * A PostHog Survey for collecting user feedback.
+ *
+ * @section Creating Surveys
+ * @example Popover Survey
+ * ```typescript
+ * class NpsSurvey extends Survey("NpsSurvey", {
+ *   name: "NPS Survey",
+ *   type: "popover",
+ *   questions: [{
+ *     type: "rating",
+ *     question: "How likely are you to recommend us?",
+ *     scale: 10,
+ *   }],
+ * }) {}
+ * ```
+ *
+ * @example API Survey with Response Limit
+ * ```typescript
+ * class FeedbackSurvey extends Survey("FeedbackSurvey", {
+ *   name: "Post-Purchase Feedback",
+ *   type: "api",
+ *   responsesLimit: 1000,
+ * }) {}
+ * ```
+ *
+ * @section Linking to Feature Flags
+ * @example Survey with Feature Flag Targeting
+ * ```typescript
+ * class TargetedSurvey extends Survey("TargetedSurvey", {
+ *   name: "Beta Feedback",
+ *   type: "popover",
+ *   linkedFlagId: myFeatureFlag.id,
+ * }) {}
+ * ```
  */
 export interface Survey<
   ID extends string = string,

@@ -17,6 +17,7 @@ export interface ExperimentProps {
 
   /**
    * Associated feature flag key. Changing this will replace the experiment.
+   * @example "checkout-variant"
    */
   featureFlagKey: string;
 
@@ -102,7 +103,26 @@ export interface ExperimentAttrs<_Props extends Input.Resolve<ExperimentProps> =
 }
 
 /**
- * PostHog Experiment resource.
+ * A PostHog Experiment for A/B testing with a linked feature flag.
+ *
+ * @section Creating Experiments
+ * @example Basic A/B Test
+ * ```typescript
+ * class MyExperiment extends Experiment("MyExperiment", {
+ *   name: "Checkout Flow Test",
+ *   featureFlagKey: "checkout-flow-variant",
+ * }) {}
+ * ```
+ *
+ * @example Experiment with Date Range
+ * ```typescript
+ * class TimedExperiment extends Experiment("TimedExperiment", {
+ *   name: "Holiday Promo Test",
+ *   featureFlagKey: "holiday-promo",
+ *   startDate: "2025-12-01T00:00:00Z",
+ *   endDate: "2025-12-31T23:59:59Z",
+ * }) {}
+ * ```
  */
 export interface Experiment<
   ID extends string = string,

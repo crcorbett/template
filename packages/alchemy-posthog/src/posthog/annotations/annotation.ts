@@ -12,6 +12,7 @@ export interface AnnotationProps {
 
   /**
    * ISO date string marking the position of the annotation.
+   * @example "2025-01-15T12:00:00Z"
    */
   dateMarker?: string | null;
 
@@ -67,7 +68,27 @@ export interface AnnotationAttrs<_Props extends Input.Resolve<AnnotationProps> =
 }
 
 /**
- * PostHog Annotation resource.
+ * A PostHog Annotation for marking notable events on charts.
+ *
+ * @section Creating Annotations
+ * @example Project-wide Annotation
+ * ```typescript
+ * class DeployAnnotation extends Annotation("DeployAnnotation", {
+ *   content: "v2.0 deployed to production",
+ *   dateMarker: "2025-01-15T12:00:00Z",
+ *   scope: "project",
+ * }) {}
+ * ```
+ *
+ * @example Annotation Linked to Insight
+ * ```typescript
+ * class InsightAnnotation extends Annotation("InsightAnnotation", {
+ *   content: "Marketing campaign started",
+ *   dateMarker: "2025-03-01T00:00:00Z",
+ *   dashboardItem: myInsight.id,
+ *   scope: "dashboard_item",
+ * }) {}
+ * ```
  */
 export interface Annotation<
   ID extends string = string,

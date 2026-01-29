@@ -6,6 +6,7 @@ import { Resource } from "alchemy-effect";
 export interface FeatureFlagProps {
   /**
    * Unique feature flag key. Changing this will replace the flag.
+   * @example "enable-new-checkout"
    */
   key: string;
 
@@ -71,7 +72,38 @@ export interface FeatureFlagAttrs<_Props extends FeatureFlagProps = FeatureFlagP
 }
 
 /**
- * PostHog Feature Flag resource.
+ * A PostHog Feature Flag for controlling feature rollout.
+ *
+ * @section Creating Feature Flags
+ * @example Basic Boolean Flag
+ * ```typescript
+ * class MyFlag extends FeatureFlag("MyFlag", {
+ *   key: "enable-new-ui",
+ *   name: "Enable New UI",
+ *   active: true,
+ * }) {}
+ * ```
+ *
+ * @example Percentage Rollout
+ * ```typescript
+ * class GradualRollout extends FeatureFlag("GradualRollout", {
+ *   key: "new-checkout-flow",
+ *   name: "New Checkout Flow",
+ *   active: true,
+ *   rolloutPercentage: 25,
+ * }) {}
+ * ```
+ *
+ * @section Updating Feature Flags
+ * @example Update Rollout Percentage
+ * ```typescript
+ * class UpdatedFlag extends FeatureFlag("MyFlag", {
+ *   key: "enable-new-ui",
+ *   name: "Enable New UI",
+ *   active: true,
+ *   rolloutPercentage: 100,
+ * }) {}
+ * ```
  */
 export interface FeatureFlag<
   ID extends string = string,
