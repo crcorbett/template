@@ -136,6 +136,23 @@
         "typescript": "catalog:typescript",
       },
     },
+    "packages/attio": {
+      "name": "@packages/attio",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@effect/platform": "^0.82.0",
+        "@effect/platform-node": "0.74.0",
+        "@effect/vitest": "^0.18.0",
+        "@vitest/coverage-v8": "^3.0.0",
+        "effect": "^3.16.0",
+        "typescript": "catalog:typescript",
+        "vitest": "^3.0.0",
+      },
+      "peerDependencies": {
+        "@effect/platform": "^0.82.0",
+        "effect": "^3.16.0",
+      },
+    },
     "packages/auth": {
       "name": "@packages/auth",
       "version": "0.1.0",
@@ -763,6 +780,8 @@
     "@packages/alchemy-posthog": ["@packages/alchemy-posthog@workspace:packages/alchemy-posthog"],
 
     "@packages/api": ["@packages/api@workspace:packages/api"],
+
+    "@packages/attio": ["@packages/attio@workspace:packages/attio"],
 
     "@packages/auth": ["@packages/auth@workspace:packages/auth"],
 
@@ -2779,6 +2798,8 @@
     "@modelcontextprotocol/sdk/zod": ["zod@4.2.1", "", {}, "sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw=="],
 
     "@noble/curves/@noble/hashes": ["@noble/hashes@1.8.0", "", {}, "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="],
+
+    "@packages/attio/@effect/vitest": ["@effect/vitest@0.18.1", "", { "peerDependencies": { "effect": "^3.13.1", "vitest": "^2.0.5" } }, "sha512-aRAupCEnYIx2O6lBncw1SA/harBQEsdIgZ9dLhb2LmRnsw24pJZDq7gV5jkuMYY7fgPEgVEHTJv/GynUvM+5Nw=="],
 
     "@packages/posthog/@effect/vitest": ["@effect/vitest@0.18.1", "", { "peerDependencies": { "effect": "^3.13.1", "vitest": "^2.0.5" } }, "sha512-aRAupCEnYIx2O6lBncw1SA/harBQEsdIgZ9dLhb2LmRnsw24pJZDq7gV5jkuMYY7fgPEgVEHTJv/GynUvM+5Nw=="],
 

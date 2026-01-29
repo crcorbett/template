@@ -1,0 +1,102 @@
+import type { HttpClient } from "@effect/platform";
+import type * as Effect from "effect/Effect";
+import * as S from "effect/Schema";
+import type { Operation } from "../client/operation.js";
+import { makeClient } from "../client/api.js";
+import type { Credentials } from "../credentials.js";
+import type { Endpoint } from "../endpoint.js";
+import { COMMON_ERRORS, COMMON_ERRORS_WITH_NOT_FOUND, type AttioErrorType } from "../errors.js";
+import * as T from "../traits.js";
+
+// --- Response schemas ---
+
+/** @section Response Schemas */
+
+/** @example AttioComment */
+export class AttioComment extends S.Class<AttioComment>("AttioComment")({
+  id: S.Unknown,
+  author: S.optional(S.Unknown),
+  content_plaintext: S.optional(S.NullOr(S.String)),
+  format: S.optional(S.NullOr(S.String)),
+  created_at: S.optional(S.String),
+}) {}
+
+/** @example CommentList */
+export class CommentList extends S.Class<CommentList>("CommentList")({
+  data: S.Array(AttioComment),
+}) {}
+
+/** @example CommentResponse */
+export class CommentResponse extends S.Class<CommentResponse>("CommentResponse")({
+  data: AttioComment,
+}) {}
+
+// --- Request schemas ---
+
+/** @section Request Schemas */
+
+/** @example ListCommentsRequest */
+export class ListCommentsRequest extends S.Class<ListCommentsRequest>("ListCommentsRequest")(
+  { thread_id: S.String.pipe(T.HttpLabel()) },
+  T.all(T.Http({ method: "GET", uri: "/v2/threads/{thread_id}/comments" }), T.RestJsonProtocol())
+) {}
+
+/** @example CreateCommentRequest */
+export class CreateCommentRequest extends S.Class<CreateCommentRequest>("CreateCommentRequest")(
+  {
+    thread_id: S.String.pipe(T.HttpLabel()),
+    format: S.optional(S.String),
+    content: S.optional(S.String),
+  },
+  T.all(T.Http({ method: "POST", uri: "/v2/threads/{thread_id}/comments" }), T.RestJsonProtocol())
+) {}
+
+/** @example DeleteCommentRequest */
+export class DeleteCommentRequest extends S.Class<DeleteCommentRequest>("DeleteCommentRequest")(
+  { comment_id: S.String.pipe(T.HttpLabel()) },
+  T.all(T.Http({ method: "DELETE", uri: "/v2/comments/{comment_id}" }), T.RestJsonProtocol())
+) {}
+
+// --- Operations ---
+
+const listCommentsOp: Operation = {
+  input: ListCommentsRequest,
+  output: CommentList,
+  errors: [...COMMON_ERRORS],
+};
+
+const createCommentOp: Operation = {
+  input: CreateCommentRequest,
+  output: CommentResponse,
+  errors: [...COMMON_ERRORS],
+};
+
+const deleteCommentOp: Operation = {
+  input: DeleteCommentRequest,
+  output: S.Struct({}),
+  errors: [...COMMON_ERRORS_WITH_NOT_FOUND],
+};
+
+// --- Exports ---
+
+type Deps = HttpClient.HttpClient | Credentials | Endpoint;
+
+/** @section Client Functions */
+
+/** @example listComments */
+export const listComments: (
+  input: ListCommentsRequest
+) => Effect.Effect<CommentList, AttioErrorType, Deps> =
+  /*@__PURE__*/ /*#__PURE__*/ makeClient(listCommentsOp);
+
+/** @example createComment */
+export const createComment: (
+  input: CreateCommentRequest
+) => Effect.Effect<CommentResponse, AttioErrorType, Deps> =
+  /*@__PURE__*/ /*#__PURE__*/ makeClient(createCommentOp);
+
+/** @example deleteComment */
+export const deleteComment: (
+  input: DeleteCommentRequest
+) => Effect.Effect<{}, AttioErrorType, Deps> =
+  /*@__PURE__*/ /*#__PURE__*/ makeClient(deleteCommentOp);
