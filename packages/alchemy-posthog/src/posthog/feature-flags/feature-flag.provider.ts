@@ -29,6 +29,8 @@ function mapResponseToAttrs(
 export const featureFlagProvider = () =>
   FeatureFlagResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id", "key"] as const,
 
@@ -46,8 +48,6 @@ export const featureFlagProvider = () =>
             return undefined;
           }
 
-          const projectId = yield* Project;
-
           const result = yield* PostHogFeatureFlags.getFeatureFlag({
             project_id: projectId,
             id: output.id,
@@ -63,8 +63,6 @@ export const featureFlagProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogFeatureFlags.createFeatureFlag({
             project_id: projectId,
             key: news.key,
@@ -81,8 +79,6 @@ export const featureFlagProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogFeatureFlags.updateFeatureFlag({
             project_id: projectId,
             id: output.id,
@@ -100,8 +96,6 @@ export const featureFlagProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           yield* PostHogFeatureFlags.deleteFeatureFlag({
             project_id: projectId,
             id: output.id,

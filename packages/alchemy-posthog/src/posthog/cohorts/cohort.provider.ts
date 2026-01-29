@@ -27,6 +27,8 @@ function mapResponseToAttrs(result: PostHogCohorts.Cohort): CohortAttrs {
 export const cohortProvider = () =>
   CohortResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id"] as const,
 
@@ -41,8 +43,6 @@ export const cohortProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogCohorts.getCohort({
             project_id: projectId,
@@ -59,8 +59,6 @@ export const cohortProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogCohorts.createCohort({
             project_id: projectId,
             name: news.name,
@@ -76,8 +74,6 @@ export const cohortProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogCohorts.updateCohort({
             project_id: projectId,
             id: output.id,
@@ -93,8 +89,6 @@ export const cohortProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           yield* PostHogCohorts.deleteCohort({
             project_id: projectId,
             id: output.id,

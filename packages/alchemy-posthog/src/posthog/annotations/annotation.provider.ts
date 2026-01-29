@@ -28,6 +28,8 @@ function mapResponseToAttrs(
 export const annotationProvider = () =>
   AnnotationResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id"] as const,
 
@@ -39,8 +41,6 @@ export const annotationProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogAnnotations.getAnnotation({
             project_id: projectId,
@@ -57,8 +57,6 @@ export const annotationProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogAnnotations.createAnnotation({
             project_id: projectId,
             content: news.content,
@@ -74,8 +72,6 @@ export const annotationProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogAnnotations.updateAnnotation({
             project_id: projectId,
             id: output.id,
@@ -90,8 +86,6 @@ export const annotationProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           // PostHog annotations don't reliably support HTTP DELETE.
           // Soft-delete by patching deleted: true instead.
           yield* PostHogAnnotations.updateAnnotation({

@@ -27,6 +27,8 @@ function mapResponseToAttrs(result: PostHogInsights.Insight): InsightAttrs {
 export const insightProvider = () =>
   InsightResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id", "shortId"] as const,
 
@@ -38,8 +40,6 @@ export const insightProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogInsights.getInsight({
             project_id: projectId,
@@ -56,8 +56,6 @@ export const insightProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogInsights.createInsight({
             project_id: projectId,
             name: news.name,
@@ -72,8 +70,6 @@ export const insightProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogInsights.updateInsight({
             project_id: projectId,
             id: output.id,
@@ -89,8 +85,6 @@ export const insightProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           // Insight uses soft delete (PATCH deleted: true)
           yield* PostHogInsights.deleteInsight({
             project_id: projectId,

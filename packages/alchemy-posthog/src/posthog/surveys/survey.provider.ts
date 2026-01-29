@@ -28,6 +28,8 @@ function mapResponseToAttrs(result: PostHogSurveys.Survey): SurveyAttrs {
 export const surveyProvider = () =>
   SurveyResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id", "type"] as const,
 
@@ -42,8 +44,6 @@ export const surveyProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogSurveys.getSurvey({
             project_id: projectId,
@@ -60,8 +60,6 @@ export const surveyProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogSurveys.createSurvey({
             project_id: projectId,
             name: news.name,
@@ -81,8 +79,6 @@ export const surveyProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogSurveys.updateSurvey({
             project_id: projectId,
             id: output.id,
@@ -102,8 +98,6 @@ export const surveyProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           yield* PostHogSurveys.deleteSurvey({
             project_id: projectId,
             id: output.id,

@@ -47,6 +47,8 @@ function mapResponseToAttrs(result: PostHogActions.Action): ActionAttrs {
 export const actionProvider = () =>
   ActionResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id"] as const,
 
@@ -58,8 +60,6 @@ export const actionProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogActions.getAction({
             project_id: projectId,
@@ -76,8 +76,6 @@ export const actionProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogActions.createAction({
             project_id: projectId,
             name: news.name,
@@ -94,8 +92,6 @@ export const actionProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogActions.updateAction({
             project_id: projectId,
             id: output.id,
@@ -113,8 +109,6 @@ export const actionProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           yield* PostHogActions.deleteAction({
             project_id: projectId,
             id: output.id,

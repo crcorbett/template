@@ -30,6 +30,8 @@ function mapResponseToAttrs(
 export const experimentProvider = () =>
   ExperimentResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id", "featureFlagKey"] as const,
 
@@ -47,8 +49,6 @@ export const experimentProvider = () =>
             return undefined;
           }
 
-          const projectId = yield* Project;
-
           const result = yield* PostHogExperiments.getExperiment({
             project_id: projectId,
             id: output.id,
@@ -64,8 +64,6 @@ export const experimentProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogExperiments.createExperiment({
             project_id: projectId,
             name: news.name,
@@ -87,8 +85,6 @@ export const experimentProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogExperiments.updateExperiment({
             project_id: projectId,
             id: output.id,
@@ -109,8 +105,6 @@ export const experimentProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           // PostHog experiments don't support HTTP DELETE (returns 405).
           // Soft-delete by archiving the experiment instead.
           yield* PostHogExperiments.updateExperiment({

@@ -5,9 +5,15 @@ import * as PlatformConfigProvider from "@effect/platform/PlatformConfigProvider
 import { it } from "@effect/vitest";
 import { Endpoint } from "@packages/posthog";
 import { Credentials } from "@packages/posthog/Credentials";
-import { App, State, make as makeApp } from "alchemy-effect";
+import {
+  App,
+  DotAlchemy,
+  dotAlchemy,
+  State,
+  make as makeApp,
+} from "alchemy-effect";
+import { CLI } from "alchemy-effect/cli";
 import { Config, ConfigProvider, LogLevel } from "effect";
-import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
@@ -30,43 +36,23 @@ export const TEST_PROJECT_ID: Effect.Effect<string, Error> = Config.string(
   )
 );
 
-/**
- * CLI service mock for tests
- */
-class CLI extends Context.Tag("CLIService")<
+const testCLI = Layer.succeed(
   CLI,
-  {
-    approvePlan: (plan: unknown) => Effect.Effect<boolean>;
-    displayPlan: (plan: unknown) => Effect.Effect<void>;
-    startApplySession: (plan: unknown) => Effect.Effect<{
-      emit: (event: unknown) => Effect.Effect<void>;
-      done: () => Effect.Effect<void>;
-    }>;
-  }
->() {}
-
-const testCLI = Layer.succeed(CLI, {
-  approvePlan: () => Effect.succeed(true),
-  displayPlan: () => Effect.void,
-  startApplySession: () =>
-    Effect.succeed({
-      done: () => Effect.void,
-      emit: (event: unknown) => {
-        const e = event as {
-          kind: string;
-          status?: string;
-          id?: string;
-          type?: string;
-          message?: string;
-        };
-        return Effect.log(
-          e.kind === "status-change"
-            ? `${e.status} ${e.id}(${e.type})`
-            : `${e.id}: ${e.message}`
-        );
-      },
-    }),
-});
+  CLI.of({
+    approvePlan: () => Effect.succeed(true),
+    displayPlan: () => Effect.void,
+    startApplySession: () =>
+      Effect.succeed({
+        done: () => Effect.void,
+        emit: (event: import("alchemy-effect").ApplyEvent) =>
+          Effect.log(
+            event.kind === "status-change"
+              ? `${event.status} ${event.id}(${event.type})`
+              : `${event.id}: ${event.message}`
+          ),
+      }),
+  })
+);
 
 type Provided =
   | Scope.Scope
@@ -75,6 +61,7 @@ type Provided =
   | Path.Path
   | Credentials
   | Endpoint
+  | DotAlchemy
   | App
   | State.State;
 
@@ -107,13 +94,16 @@ export function test(
   // Create alchemy test infrastructure
   const alchemy = Layer.provideMerge(
     Layer.mergeAll(State.localFs, testCLI),
-    makeApp({
-      name: name.replace(/[^a-zA-Z0-9_]/g, "-"),
-      stage: "test",
-      config: {
-        adopt: true,
-      },
-    })
+    Layer.mergeAll(
+      makeApp({
+        name: name.replace(/[^a-zA-Z0-9_]/g, "-"),
+        stage: "test",
+        config: {
+          adopt: true,
+        },
+      }),
+      dotAlchemy
+    )
   );
 
   return it.scopedLive(

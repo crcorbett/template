@@ -12,6 +12,8 @@ export default defineConfig({
   resolve: {
     conditions: ["@packages/source", "import", "default"],
     alias: {
+      // Map @/ to src/ for test imports
+      "@/": path.resolve(__dirname, "src/"),
       // Map @packages/posthog/* to the actual source files
       "@packages/posthog/feature-flags": path.resolve(
         __dirname,

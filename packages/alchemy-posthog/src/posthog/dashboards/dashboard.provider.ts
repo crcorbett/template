@@ -28,6 +28,8 @@ function mapResponseToAttrs(
 export const dashboardProvider = () =>
   DashboardResource.provider.effect(
     Effect.gen(function* () {
+      const projectId = yield* Project;
+
       return {
         stables: ["id"] as const,
 
@@ -40,8 +42,6 @@ export const dashboardProvider = () =>
           if (!output?.id) {
             return undefined;
           }
-
-          const projectId = yield* Project;
 
           const result = yield* PostHogDashboards.getDashboard({
             project_id: projectId,
@@ -58,8 +58,6 @@ export const dashboardProvider = () =>
         }),
 
         create: Effect.fn(function* ({ news, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogDashboards.createDashboard({
             project_id: projectId,
             name: news.name,
@@ -75,8 +73,6 @@ export const dashboardProvider = () =>
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
-          const projectId = yield* Project;
-
           const result = yield* PostHogDashboards.updateDashboard({
             project_id: projectId,
             id: output.id,
@@ -93,8 +89,6 @@ export const dashboardProvider = () =>
         }),
 
         delete: Effect.fn(function* ({ output }) {
-          const projectId = yield* Project;
-
           yield* PostHogDashboards.deleteDashboard({
             project_id: projectId,
             id: output.id,
