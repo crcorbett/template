@@ -1496,8 +1496,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "testCLI is exported from test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "testCLI was already exported from test/posthog/test.ts (line 90: export const testCLI). No changes needed."
     },
     {
       "id": "CONFORM-034",

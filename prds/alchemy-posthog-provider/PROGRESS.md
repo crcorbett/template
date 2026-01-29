@@ -363,3 +363,9 @@ Resource types (PascalCase): FeatureFlag, Dashboard, Experiment, Survey, Cohort,
 Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
 
 Verification: `npx tsc --noEmit` passes. All 32 session.note() calls follow consistent format.
+
+## CONFORM-033: testCLI layer exported from test.ts
+
+Already resolved. `testCLI` is already exported from `test/posthog/test.ts` (line 90: `export const testCLI = Layer.succeed(...)`). This was addressed during CONFORM-031 which extracted shared helpers and exported testCLI as part of the refactor. No code changes needed.
+
+Verification: `npx tsc --noEmit` passes. `grep 'export const testCLI' test/posthog/test.ts` confirms export.
