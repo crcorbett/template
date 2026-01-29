@@ -1,43 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as SurveysAPI from "@packages/posthog/surveys";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
 import { Survey } from "@/posthog/surveys/index.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-class SurveyNotDeletedError extends Data.TaggedError("SurveyNotDeletedError")<{
-  readonly id: string;
-}> {}
-
-const assertSurveyDeleted = Effect.fn(function* (id: string) {
-  const projectId = yield* Project;
-  yield* SurveysAPI.getSurvey({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((survey) => {
-      if (survey.archived === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new SurveyNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertSurveyDeleted = makeAssertDeleted(
+  "Survey",
+  SurveysAPI.getSurvey,
+  (survey) => survey.archived === true,
+);
 
 test(
   "create, update, delete survey",

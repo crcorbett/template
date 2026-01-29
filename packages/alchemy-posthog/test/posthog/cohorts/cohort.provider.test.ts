@@ -1,53 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as CohortsAPI from "@packages/posthog/cohorts";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Cohort } from "@/posthog/cohorts/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when a cohort still exists when it should have been deleted.
- */
-class CohortNotDeletedError extends Data.TaggedError(
-  "CohortNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that a cohort has been (soft) deleted.
- * PostHog soft-deletes cohorts via PATCH with deleted: true.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertCohortDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* CohortsAPI.getCohort({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((cohort) => {
-      if (cohort.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new CohortNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertCohortDeleted = makeAssertDeleted(
+  "Cohort",
+  CohortsAPI.getCohort,
+  (cohort) => cohort.deleted === true,
+);
 
 test(
   "create, update, delete cohort",

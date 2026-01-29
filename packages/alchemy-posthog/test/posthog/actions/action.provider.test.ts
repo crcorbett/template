@@ -1,53 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as ActionsAPI from "@packages/posthog/actions";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Action } from "@/posthog/actions/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when an action still exists when it should have been deleted.
- */
-class ActionNotDeletedError extends Data.TaggedError(
-  "ActionNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that an action has been (soft) deleted.
- * PostHog soft-deletes actions via PATCH with deleted: true.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertActionDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* ActionsAPI.getAction({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((action) => {
-      if (action.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new ActionNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertActionDeleted = makeAssertDeleted(
+  "Action",
+  ActionsAPI.getAction,
+  (action) => action.deleted === true,
+);
 
 test(
   "create, update, delete action",

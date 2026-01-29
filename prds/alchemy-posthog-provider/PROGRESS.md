@@ -317,3 +317,28 @@ Files updated:
 - src/posthog/insights/insight.ts
 
 Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-031: Extract shared makeAssertDeleted factory into test.ts
+
+Extracted a shared `makeAssertDeleted` factory function into `test/posthog/test.ts` to eliminate duplicated assertDeleted helpers across all test files. Each test file previously defined its own TaggedError class and Effect.fn helper with identical retry/error-catching logic (~25 lines each).
+
+The factory accepts three parameters:
+- `resourceType` - human-readable name for error messages
+- `getResource` - the API get function (e.g., `FeatureFlagsAPI.getFeatureFlag`)
+- `isDeletionIndicator` - predicate to check if resource is deleted (e.g., `(r) => r.deleted === true` or `(r) => r.archived === true`)
+
+It handles NotFoundError, PostHogError with code 404, and retries with exponential backoff (5 retries, 100ms base) -- consolidating all variant behaviors into one consistent implementation.
+
+Files updated:
+- test/posthog/test.ts (added makeAssertDeleted export, exported testCLI, added Data/Schedule imports)
+- test/posthog/feature-flags/feature-flag.provider.test.ts
+- test/posthog/dashboards/dashboard.provider.test.ts
+- test/posthog/experiments/experiment.provider.test.ts
+- test/posthog/surveys/survey.provider.test.ts
+- test/posthog/cohorts/cohort.provider.test.ts
+- test/posthog/actions/action.provider.test.ts
+- test/posthog/annotations/annotation.provider.test.ts
+- test/posthog/insights/insight.provider.test.ts
+- test/posthog/posthog.smoke.test.ts
+
+Verification: `npx tsc --noEmit` passes. All 9 test files (11 tests) collect and run. Tests require POSTHOG_API_KEY (integration tests).

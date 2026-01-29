@@ -1454,8 +1454,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "assertDeleted helpers use shared utility from test.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Extracted makeAssertDeleted factory into test/posthog/test.ts. The factory accepts resourceType (for error messages), getResource API function, and isDeletionIndicator predicate. Handles NotFoundError, PostHogError 404, and retries with exponential backoff (5 recurs, 100ms base). Updated all 8 provider test files and the smoke test to use makeAssertDeleted, removing ~25 lines of duplicated boilerplate per file (TaggedError class + Effect.fn helper). Also exported testCLI from test.ts per upcoming CONFORM-033 task."
     },
     {
       "id": "CONFORM-032",

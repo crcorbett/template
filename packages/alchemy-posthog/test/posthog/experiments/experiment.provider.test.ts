@@ -1,50 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as ExperimentsAPI from "@packages/posthog/experiments";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Experiment } from "@/posthog/experiments/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when an experiment still exists when it should have been deleted.
- */
-class ExperimentNotDeletedError extends Data.TaggedError(
-  "ExperimentNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that an experiment has been (soft) deleted.
- * PostHog experiments don't support HTTP DELETE (405). Instead they are
- * archived via PATCH with archived: true.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertExperimentDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* ExperimentsAPI.getExperiment({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((experiment) => {
-      // PostHog soft-deletes experiments via archiving
-      if (experiment.archived === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new ExperimentNotDeletedError({ id }));
-    }),
-    // Also handle actual 404s (in case PostHog changes behavior)
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertExperimentDeleted = makeAssertDeleted(
+  "Experiment",
+  ExperimentsAPI.getExperiment,
+  (experiment) => experiment.archived === true,
+);
 
 test(
   "create, update, delete experiment",

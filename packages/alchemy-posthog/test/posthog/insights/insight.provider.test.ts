@@ -1,53 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as InsightsAPI from "@packages/posthog/insights";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Insight } from "@/posthog/insights/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when an insight still exists when it should have been deleted.
- */
-class InsightNotDeletedError extends Data.TaggedError(
-  "InsightNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that an insight has been (soft) deleted.
- * PostHog soft-deletes insights via PATCH deleted: true.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertInsightDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* InsightsAPI.getInsight({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((insight) => {
-      if (insight.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new InsightNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertInsightDeleted = makeAssertDeleted(
+  "Insight",
+  InsightsAPI.getInsight,
+  (insight) => insight.deleted === true,
+);
 
 test(
   "create, update, delete insight",

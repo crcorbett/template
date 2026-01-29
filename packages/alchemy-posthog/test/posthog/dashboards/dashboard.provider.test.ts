@@ -1,56 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as DashboardsAPI from "@packages/posthog/dashboards";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Dashboard } from "@/posthog/dashboards/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when a dashboard still exists when it should have been deleted.
- */
-class DashboardNotDeletedError extends Data.TaggedError(
-  "DashboardNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that a dashboard has been (soft) deleted.
- * PostHog soft-deletes dashboards and they return 404 after deletion.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertDashboardDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* DashboardsAPI.getDashboard({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((dashboard) => {
-      // If we got a response, check for deleted: true
-      if (dashboard.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new DashboardNotDeletedError({ id }));
-    }),
-    // Handle NotFoundError (typed error)
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    // Handle PostHogError with 404 code (dashboards return 404 after soft delete)
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertDashboardDeleted = makeAssertDeleted(
+  "Dashboard",
+  DashboardsAPI.getDashboard,
+  (dashboard) => dashboard.deleted === true,
+);
 
 test(
   "create, update, delete dashboard",

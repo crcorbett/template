@@ -1,49 +1,18 @@
 import { expect } from "@effect/vitest";
 import * as FeatureFlagsAPI from "@packages/posthog/feature-flags";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { FeatureFlag } from "@/posthog/feature-flags/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "../test.js";
+import { makeAssertDeleted, test } from "../test.js";
 
-/**
- * Error thrown when a feature flag still exists when it should have been deleted.
- */
-class FeatureFlagNotDeletedError extends Data.TaggedError(
-  "FeatureFlagNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-/**
- * Asserts that a feature flag has been (soft) deleted.
- * PostHog uses soft delete - the flag is marked with deleted: true.
- * Retries the check up to 5 times with exponential backoff.
- */
-const assertFeatureFlagDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* FeatureFlagsAPI.getFeatureFlag({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((flag) => {
-      // PostHog soft-deletes feature flags - check for deleted: true
-      if (flag.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new FeatureFlagNotDeletedError({ id }));
-    }),
-    // Also handle actual 404s (in case PostHog changes behavior)
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertFeatureFlagDeleted = makeAssertDeleted(
+  "FeatureFlag",
+  FeatureFlagsAPI.getFeatureFlag,
+  (flag) => flag.deleted === true,
+);
 
 test(
   "create, update, delete feature flag",

@@ -3,103 +3,32 @@ import * as AnnotationsAPI from "@packages/posthog/annotations";
 import * as DashboardsAPI from "@packages/posthog/dashboards";
 import * as FeatureFlagsAPI from "@packages/posthog/feature-flags";
 import { apply, destroy } from "alchemy-effect";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schedule from "effect/Schedule";
 
 import { Annotation } from "@/posthog/annotations/index.js";
 import { Dashboard } from "@/posthog/dashboards/index.js";
 import { FeatureFlag } from "@/posthog/feature-flags/index.js";
 import * as PostHog from "@/posthog/index.js";
 import { Project } from "@/posthog/project.js";
-import { test } from "./test.js";
+import { makeAssertDeleted, test } from "./test.js";
 
-class FeatureFlagNotDeletedError extends Data.TaggedError(
-  "FeatureFlagNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
+const assertFeatureFlagDeleted = makeAssertDeleted(
+  "FeatureFlag",
+  FeatureFlagsAPI.getFeatureFlag,
+  (flag) => flag.deleted === true,
+);
 
-class DashboardNotDeletedError extends Data.TaggedError(
-  "DashboardNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
+const assertDashboardDeleted = makeAssertDeleted(
+  "Dashboard",
+  DashboardsAPI.getDashboard,
+  (dashboard) => dashboard.deleted === true,
+);
 
-class AnnotationNotDeletedError extends Data.TaggedError(
-  "AnnotationNotDeletedError"
-)<{
-  readonly id: number;
-}> {}
-
-const assertFeatureFlagDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* FeatureFlagsAPI.getFeatureFlag({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((flag) => {
-      if (flag.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new FeatureFlagNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
-
-const assertDashboardDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* DashboardsAPI.getDashboard({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((dashboard) => {
-      if (dashboard.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new DashboardNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
-
-const assertAnnotationDeleted = Effect.fn(function* (id: number) {
-  const projectId = yield* Project;
-  yield* AnnotationsAPI.getAnnotation({
-    project_id: projectId,
-    id,
-  }).pipe(
-    Effect.flatMap((annotation) => {
-      if (annotation.deleted === true) {
-        return Effect.void;
-      }
-      return Effect.fail(new AnnotationNotDeletedError({ id }));
-    }),
-    Effect.catchTag("NotFoundError", () => Effect.void),
-    Effect.catchTag("PostHogError", (err) => {
-      if (err.code === "404") {
-        return Effect.void;
-      }
-      return Effect.fail(err);
-    }),
-    Effect.retry(
-      Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
-    )
-  );
-});
+const assertAnnotationDeleted = makeAssertDeleted(
+  "Annotation",
+  AnnotationsAPI.getAnnotation,
+  (annotation) => annotation.deleted === true,
+);
 
 test(
   "create and manage related PostHog resources",

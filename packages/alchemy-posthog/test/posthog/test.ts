@@ -13,9 +13,11 @@ import {
 } from "alchemy-effect";
 import { CLI } from "alchemy-effect/cli";
 import { Config, ConfigProvider, LogLevel } from "effect";
+import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
+import * as Schedule from "effect/Schedule";
 import * as Scope from "effect/Scope";
 import * as net from "node:net";
 import * as NodePath from "node:path";
@@ -27,7 +29,65 @@ import { Project } from "@/posthog/project.js";
  */
 net.setDefaultAutoSelectFamily(false);
 
-const testCLI = Layer.succeed(
+/**
+ * Error thrown when a resource still exists when it should have been deleted.
+ */
+class ResourceNotDeletedError extends Data.TaggedError(
+  "ResourceNotDeletedError"
+)<{
+  readonly resourceType: string;
+  readonly id: string | number;
+}> {}
+
+/**
+ * Creates an assertDeleted helper for a PostHog resource.
+ *
+ * All PostHog resources share a common deletion verification pattern:
+ * - Call the get API for the resource
+ * - Check a deletion indicator field (e.g. `deleted` or `archived`)
+ * - Treat NotFoundError or PostHogError 404 as successfully deleted
+ * - Retry with exponential backoff (5 retries, 100ms base)
+ *
+ * @param resourceType - Human-readable resource type name for error messages
+ * @param getResource - API function to fetch the resource by project_id and id
+ * @param isDeletionIndicator - Function to check if the response indicates deletion
+ *   (e.g. `(r) => r.deleted === true` or `(r) => r.archived === true`)
+ */
+export function makeAssertDeleted<Id extends string | number, R>(
+  resourceType: string,
+  getResource: (params: {
+    project_id: string;
+    id: Id;
+  }) => Effect.Effect<R, any, any>,
+  isDeletionIndicator: (resource: R) => boolean,
+) {
+  return Effect.fn(function* (id: Id) {
+    const projectId = yield* Project;
+    yield* getResource({
+      project_id: projectId,
+      id,
+    }).pipe(
+      Effect.flatMap((resource) => {
+        if (isDeletionIndicator(resource)) {
+          return Effect.void;
+        }
+        return Effect.fail(new ResourceNotDeletedError({ resourceType, id }));
+      }),
+      Effect.catchTag("NotFoundError", () => Effect.void),
+      Effect.catchTag("PostHogError", (err: { code: string }) => {
+        if (err.code === "404") {
+          return Effect.void;
+        }
+        return Effect.fail(err);
+      }),
+      Effect.retry(
+        Schedule.intersect(Schedule.recurs(5), Schedule.exponential("100 millis"))
+      )
+    );
+  });
+}
+
+export const testCLI = Layer.succeed(
   CLI,
   CLI.of({
     approvePlan: () => Effect.succeed(true),
