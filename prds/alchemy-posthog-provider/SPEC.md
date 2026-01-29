@@ -197,6 +197,8 @@ interface PostHogStageConfig {
 
 Provides PostHog project ID from stage config or `POSTHOG_PROJECT_ID` environment variable. Analogous to `AWS::AccountID` and `cloudflare/account-id`.
 
+> **Context tag naming convention:** The `Project` tag uses the `PostHog::ProjectId` convention (matching AWS's `AWS::AccountID` pattern), while core `@packages/posthog` tags use the `@posthog/Credentials` and `@posthog/Endpoint` convention. This divergence is structural: `Project` is defined in `alchemy-posthog` (provider layer) while `Credentials` and `Endpoint` are defined in `@packages/posthog` (SDK layer). Both conventions are accepted.
+
 #### 3.1.3 Credentials Bridge (`credentials.ts`)
 
 Reads API key from stage config (`posthog.apiKey`) or `POSTHOG_API_KEY` environment variable. Returns `distilled-posthog` `Credentials` Context.Tag value.
@@ -630,90 +632,162 @@ Each resource test file covers:
 
 The following issues were identified during a conformance audit comparing the alchemy-posthog provider implementation against canonical alchemy-effect providers. Issues are grouped by severity and tracked as CONFORM-001 through CONFORM-015 in PRD.json.
 
-### 8.1 High Severity
+### 8.1 Round 1 — Resolved (CONFORM-001 to CONFORM-015)
 
-#### CONFORM-001: Effect.fn for lifecycle methods
+The first conformance audit identified 15 issues. All have been addressed (some implemented, some deferred).
 
-All provider lifecycle methods (create, update, delete, read) must use `Effect.fn` instead of arrow functions returning `Effect.gen`. This is the canonical pattern across all alchemy-effect providers.
+| ID | Severity | Issue | Status |
+|----|----------|-------|--------|
+| CONFORM-001 | High | Effect.fn for lifecycle methods | Implemented |
+| CONFORM-002 | High | Effect.fn for diff methods | Implemented (via CONFORM-001) |
+| CONFORM-003 | High | Test app name must include file path | Partially implemented (see CONFORM-016) |
+| CONFORM-004 | Medium | Remove describe blocks; flat test structure | Implemented |
+| CONFORM-005 | Medium | Replace relative imports with @/ path aliases | Implemented |
+| CONFORM-006 | Medium | Use CLI.of() constructor | Implemented |
+| CONFORM-007 | Medium | Add DotAlchemy layer to test infrastructure | Implemented |
+| CONFORM-008 | Medium | Refactor assertDeleted to Effect.fn | Implemented |
+| CONFORM-009 | Low | Schedule.intersect instead of Schedule.compose | Implemented |
+| CONFORM-010 | Low | Yield Project once at provider level | Implemented |
+| CONFORM-011 | Low | Explicit return type annotations | Skipped (low value) |
+| CONFORM-012 | Low | Name-based fallback in read | Deferred (see CONFORM-023) |
+| CONFORM-013 | Low | DotAlchemy in providers() composition | Addressed via CONFORM-007 |
+| CONFORM-014 | Low | .env path resolution | Kept ../../.env (correct for monorepo) |
+| CONFORM-015 | Low | Typed NotFoundError tags | Kept PostHogError checks (necessary) |
 
-```typescript
-// Correct (alchemy-effect pattern)
-create: Effect.fn(function* ({ id, news, session }) {
-  // ...
-})
+### 8.2 Round 2 — Open (CONFORM-016 to CONFORM-037)
 
-// Incorrect (current alchemy-posthog pattern)
-create: (ctx) => Effect.gen(function* () {
-  // ...
-})
-```
+A second conformance audit identified 22 additional issues after the Round 1 fixes were applied.
 
-**Affected files:** All 8 `*.provider.ts` files.
-
-#### CONFORM-002: Effect.fn for diff methods
-
-The `diff` lifecycle method must use `Effect.fn` instead of `Effect.sync`. Even for simple synchronous logic, `Effect.fn` is the standard.
-
-```typescript
-// Correct
-diff: Effect.fn(function* (news, olds) {
-  if (news.key !== olds.key) return { action: "replace" as const };
-})
-
-// Incorrect
-diff: (news, olds) => Effect.sync(() => {
-  if (news.key !== olds.key) return { action: "replace" as const };
-})
-```
-
-**Affected files:** Providers with replacement logic (feature-flag, experiment, survey, cohort).
-
-#### CONFORM-003: Test app name must include file path
-
-The test infrastructure must include the test file path in the app name to prevent state collisions between test files with identically-named tests.
-
-```typescript
-// Correct (alchemy-effect)
-App.of({ name: `${testPathWithoutExt}-${name}` })
-
-// Incorrect (current)
-App.of({ name: `test-${name}` })
-```
-
-**Affected file:** `test/posthog/test.ts`
-
-### 8.2 Medium Severity
+#### 8.2.1 High Severity
 
 | ID | Issue | Files |
 |----|-------|-------|
-| CONFORM-004 | Remove `describe` blocks; use flat test structure | All test files |
-| CONFORM-005 | Replace relative `../src/` imports with `@/` path aliases | All test files |
-| CONFORM-006 | Use `CLI.of()` constructor instead of raw `Layer.succeed(CLI, {...})` | `test/posthog/test.ts` |
-| CONFORM-007 | Add `DotAlchemy` layer to test infrastructure | `test/posthog/test.ts` |
-| CONFORM-008 | Refactor `assertDeleted` helpers to use `Effect.fn` | All test files |
+| CONFORM-016 | Test app name still missing file path (CONFORM-003 incomplete) | `test/posthog/test.ts` |
+| CONFORM-017 | .env loading uses manual fs.exists instead of direct fromDotEnv | `test/posthog/test.ts` |
+| CONFORM-018 | Credentials/Endpoint provided inline instead of as Layer | `test/posthog/test.ts` |
+| CONFORM-019 | Missing test.state() and test.defaultState() helpers | `test/posthog/test.ts` |
+| CONFORM-020 | Missing test.skipIf() conditional skip helper | `test/posthog/test.ts` |
 
-### 8.3 Low Severity
+#### 8.2.2 Medium Severity
 
 | ID | Issue | Files |
 |----|-------|-------|
-| CONFORM-009 | Use `Schedule.intersect` instead of `Schedule.compose` for retries | All test files |
-| CONFORM-010 | Yield `Project` once at provider level, not per lifecycle method | All provider files |
-| CONFORM-011 | Add explicit return type annotations to provider functions | All provider files |
-| CONFORM-012 | Add name-based fallback lookup in `read` when output is missing | Provider files where list API is available |
-| CONFORM-013 | Verify DotAlchemy requirement in `providers()` Layer composition | `src/posthog/index.ts` |
-| CONFORM-014 | Align `.env` path resolution with alchemy-effect convention | `test/posthog/test.ts` |
-| CONFORM-015 | Replace `PostHogError` code checks with typed `NotFoundError` tags | Test assertDeleted helpers |
+| CONFORM-021 | test.skip uses property assignment instead of namespace export | `test/posthog/test.ts` |
+| CONFORM-022 | diff missing id/output destructuring | All 8 provider files |
+| CONFORM-023 | read lacks name-based fallback (revisits CONFORM-012) | Provider files with list API support |
+| CONFORM-024 | create has no idempotency handling for state persistence failure | Provider files (esp. feature-flag) |
+| CONFORM-025 | delete missing session.note() progress logging | All 8 provider files |
+| CONFORM-026 | TEST_PROJECT_ID boilerplate in every test | All test files + test.ts |
+| CONFORM-027 | Missing config() helper function in index.ts | `src/posthog/index.ts` |
+| CONFORM-028 | Missing bareProviders() separation from providers() | `src/posthog/index.ts` |
 
-### 8.4 Priority Order
+#### 8.2.3 Low Severity
 
-1. **CONFORM-001** + **CONFORM-002** — Effect.fn migration (foundational, affects all providers)
-2. **CONFORM-003** — App name collision fix (data integrity risk)
-3. **CONFORM-010** — Provider-level context (simplifies CONFORM-001 migration)
-4. **CONFORM-004** + **CONFORM-005** — Test structure cleanup
-5. **CONFORM-006** + **CONFORM-007** — Test infrastructure alignment
-6. **CONFORM-008** + **CONFORM-009** + **CONFORM-015** — assertDeleted cleanup
-7. **CONFORM-012** — Read fallback (resilience improvement)
-8. **CONFORM-011** + **CONFORM-013** + **CONFORM-014** — Minor polish
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-029 | Props not using Input<T> for cross-resource references | All 8 resource files |
+| CONFORM-030 | Attrs not parameterized by Props type | All 8 resource files |
+| CONFORM-031 | assertDeleted duplicated per file instead of shared | All test files |
+| CONFORM-032 | session.note() inconsistent message formats | All 8 provider files |
+| CONFORM-033 | testCLI not exported from test.ts | `test/posthog/test.ts` |
+| CONFORM-034 | Timeout default (60s) differs from convention | `test/posthog/test.ts` |
+| CONFORM-035 | .js extension in path alias imports | Source files |
+| CONFORM-036 | delete missing session/olds destructuring | All 8 provider files |
+| CONFORM-037 | net.setDefaultAutoSelectFamily workaround undocumented | `test/posthog/test.ts` |
+
+### 8.3 Round 2 — Resolved (CONFORM-016 to CONFORM-037)
+
+All 22 Round 2 issues have been addressed.
+
+| ID | Severity | Issue | Status |
+|----|----------|-------|--------|
+| CONFORM-016 | High | Test app name missing file path | Implemented |
+| CONFORM-017 | High | .env loading manual fs.exists guard | Implemented |
+| CONFORM-018 | High | Credentials/Endpoint inline instead of Layer | Implemented |
+| CONFORM-019 | High | Missing test.state()/test.defaultState() | Implemented |
+| CONFORM-020 | High | Missing test.skipIf() | Implemented |
+| CONFORM-021 | Medium | test.skip property assignment → namespace | Implemented (via CONFORM-019) |
+| CONFORM-022 | Medium | diff missing id/output destructuring | Implemented |
+| CONFORM-023 | Medium | read lacks name-based fallback | Implemented |
+| CONFORM-024 | Medium | create no idempotency handling | Implemented |
+| CONFORM-025 | Medium | delete missing session.note() | Implemented |
+| CONFORM-026 | Medium | TEST_PROJECT_ID boilerplate | Implemented (moved to Layer) |
+| CONFORM-027 | Medium | Missing config() helper | Implemented |
+| CONFORM-028 | Medium | Missing bareProviders() | Implemented |
+| CONFORM-029 | Low | Props not using Input\<T\> | Implemented |
+| CONFORM-030 | Low | Attrs not parameterized by Props | Implemented |
+| CONFORM-031 | Low | assertDeleted duplicated per file | Implemented (shared makeAssertDeleted) |
+| CONFORM-032 | Low | session.note() inconsistent formats | Implemented |
+| CONFORM-033 | Low | testCLI not exported | Already exported |
+| CONFORM-034 | Low | 60s timeout undocumented | Documented |
+| CONFORM-035 | Low | .js extension in imports | Removed |
+| CONFORM-036 | Low | delete missing full destructuring | Implemented |
+| CONFORM-037 | Low | net.setDefaultAutoSelectFamily undocumented | Documented |
+
+### 8.4 Round 3 — Open (CONFORM-038 to CONFORM-052)
+
+A third conformance audit compared alchemy-posthog against multiple alchemy-effect reference providers (AWS S3, Lambda, DynamoDB, VPC; Cloudflare KV) across four dimensions: provider lifecycle, resource definitions, test infrastructure, and cloud-level module structure.
+
+#### 8.4.1 Critical Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-038 | Service barrel files missing `import '../config'` for StageConfig module augmentation | All 8 `*/index.ts` barrels |
+| CONFORM-039 | Diff returns unconditional `undefined` for Action, Annotation, Insight (no change detection) | 3 provider files |
+| CONFORM-040 | No retry logic on any provider lifecycle method (no resilience to 429/5xx) | All 8 providers |
+| CONFORM-041 | Update methods return fresh object instead of merging with existing output (stable props lost) | All 8 providers |
+
+#### 8.4.2 High Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-042 | Diff methods missing `stables` return property | All 8 providers |
+| CONFORM-043 | Error handling too broad — catches all PostHogError including auth failures | All 8 providers |
+| CONFORM-044 | Missing `config()` composition function with generic Layer parameter | `src/posthog/index.ts` |
+| CONFORM-045 | Test App Layer uses `Layer.succeed` instead of `Layer.effect` for dynamic config | `test/posthog/test.ts` |
+
+#### 8.4.3 Medium Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-046 | Session notes missing intermediate context (fallback, idempotency, error recovery) | All 8 providers |
+| CONFORM-047 | Read methods return early when output.id exists — no refresh/resync from API | All 8 providers |
+| CONFORM-048 | Insight provider conditional idempotency — inconsistent with other providers | `insight.provider.ts` |
+
+#### 8.4.4 Low Severity
+
+| ID | Issue | Files |
+|----|-------|-------|
+| CONFORM-049 | Unused parameter destructuring with underscore aliases | All 8 providers |
+| CONFORM-050 | `mapResponseToAttrs` lacks generic type parameters | All 8 providers |
+| CONFORM-051 | Context tag naming inconsistency (`PostHog::` vs `@posthog/`) | `project.ts`, core library |
+| CONFORM-052 | Read method `olds` optionality not documented | All 8 providers |
+
+#### 8.4.5 Round 3 Priority Order
+
+1. **CONFORM-038** — Config imports in barrels (module augmentation correctness)
+2. **CONFORM-039** — Fix broken diff methods (Action, Annotation, Insight)
+3. **CONFORM-040** — Add retry policy for transient API failures
+4. **CONFORM-041** — Output merge in update methods
+5. **CONFORM-042** + **CONFORM-043** — Diff stables + error handling specificity
+6. **CONFORM-044** + **CONFORM-045** — config() function + test Layer.effect
+7. **CONFORM-046** + **CONFORM-047** — Session notes + read refresh
+8. **CONFORM-048** — Insight conditional idempotency
+9. **CONFORM-049** through **CONFORM-052** — Low-severity polish
+
+#### 8.4.6 Compliant Areas (Round 3 Audit)
+
+The following areas were confirmed as conformant during the Round 3 audit:
+
+- Resource class definitions, Props/Attrs interfaces, `Input<T>` usage
+- `Effect.fn` for all provider lifecycle methods
+- Test CRUD patterns (destroy → create → verify → update → verify → destroy → assert deleted)
+- Test infrastructure (namespace helpers, `makeAssertDeleted`, config provider chain)
+- JSDoc documentation on Props interfaces
+- Immutable property documentation ("Changing this will replace the resource")
+- Barrel export patterns (`export * from "./resource"` + `export * from "./resource.provider"`)
+- Attrs interfaces with Props type parameters and default values
+- Underscore convention for unused type parameters in Attrs interfaces
 
 ---
 

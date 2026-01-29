@@ -1580,6 +1580,377 @@
       ],
       "passes": true,
       "notes": "Added comprehensive JSDoc comment to net.setDefaultAutoSelectFamily(false) in test/posthog/test.ts documenting: affected Node.js versions (>=20.0.0), symptoms (ECONNREFUSED/ETIMEDOUT on dual-stack networks), root cause (RFC 8305 Happy Eyeballs racing with partial IPv6), removal conditions (upstream fix in nodejs/node#47822, dual-stack CI support), and links to Node.js issue tracker and API docs. npx tsc --noEmit passes."
+    },
+
+    {
+      "id": "CONFORM-038",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "critical",
+      "description": "Service barrel files missing config.ts import for StageConfig module augmentation",
+      "steps": [
+        "In alchemy-effect, every service barrel (aws/sqs/index.ts, aws/ec2/index.ts, etc.) imports '../config.ts' to ensure module augmentation is registered.",
+        "Add `import '../config';` to all 8 service barrel files:",
+        "  src/posthog/feature-flags/index.ts",
+        "  src/posthog/dashboards/index.ts",
+        "  src/posthog/experiments/index.ts",
+        "  src/posthog/surveys/index.ts",
+        "  src/posthog/cohorts/index.ts",
+        "  src/posthog/actions/index.ts",
+        "  src/posthog/annotations/index.ts",
+        "  src/posthog/insights/index.ts",
+        "The import path should be relative from each barrel to src/posthog/config.ts."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "All 8 barrel files contain an import of config (grep for 'config' in */index.ts)"
+      ],
+      "passes": true,
+      "notes": "Added `import '../config';` to all 8 service barrel files. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-039",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "critical",
+      "description": "Diff methods for Action, Annotation, and Insight return unconditional undefined (no change detection)",
+      "steps": [
+        "Three providers have diff methods that always return undefined, meaning property changes will NEVER trigger updates:",
+        "  src/posthog/actions/action.provider.ts — diff returns undefined unconditionally",
+        "  src/posthog/annotations/annotation.provider.ts — diff returns undefined unconditionally",
+        "  src/posthog/insights/insight.provider.ts — diff returns undefined unconditionally",
+        "Reference pattern (alchemy-effect S3, Lambda): diff should compare news vs olds and return 'update' when mutable properties change.",
+        "For each of these 3 providers:",
+        "  1. Compare news vs olds properties",
+        "  2. If any property differs, return 'update'",
+        "  3. If nothing changed, return undefined",
+        "Action: compare name, description, tags, postToSlack, slackMessageFormat, steps",
+        "Annotation: compare content, dateMarker, creationType, dashboardItem, scope",
+        "Insight: compare name, description, query, filters, dashboards, saved"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "grep confirms all 3 diff methods contain property comparison logic (not unconditional undefined)"
+      ],
+      "passes": true,
+      "notes": "Added property comparison logic to all 3 diff methods. Action compares name, description, tags, postToSlack, slackMessageFormat, steps. Annotation compares content, dateMarker, creationType, dashboardItem, scope. Insight compares name, description, query, filters, dashboards, saved. Uses JSON.stringify for complex object/array comparisons. Returns { action: 'update', stables: [...] } when changes detected."
+    },
+
+    {
+      "id": "CONFORM-040",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "critical",
+      "description": "No retry logic on any provider lifecycle method (create, read, update, delete)",
+      "steps": [
+        "alchemy-effect providers use Effect.retry with exponential backoff and error-specific 'while' predicates for transient failures (429 rate limits, 503, eventual consistency).",
+        "None of the 8 alchemy-posthog providers have retry logic in any lifecycle method.",
+        "Create a shared retry utility in src/posthog/retry.ts (or similar) that:",
+        "  1. Defines a PostHog-specific retry policy with exponential backoff (e.g., 200ms base, 5s cap, 5 retries)",
+        "  2. Defines a 'while' predicate that retries on: PostHogError with status 429, 500, 502, 503, 504",
+        "  3. Does NOT retry on: 400, 401, 403, 404 (client errors)",
+        "Apply this retry policy to all API calls in all 8 providers.",
+        "At minimum, wrap the primary API call in each create, update, and delete method.",
+        "Read methods already have fallback logic so retry there is lower priority."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "Retry utility exists and is imported in all 8 provider files"
+      ],
+      "passes": true,
+      "notes": "Created src/posthog/retry.ts with retryPolicy() utility. Retries on RateLimitError, ServerError, UnknownPostHogError (transient). Does NOT retry AuthenticationError, AuthorizationError, NotFoundError, ValidationError (client errors). Uses exponential backoff (200ms base, 5 retries). Applied retryPolicy() to all API calls in all 8 providers. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-041",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "critical",
+      "description": "Update methods don't merge with existing output — stable properties lost",
+      "steps": [
+        "alchemy-effect Lambda provider returns { ...output, ...newAttrs } from update, preserving stable properties.",
+        "All 8 alchemy-posthog providers return mapResponseToAttrs(result) from update — a fresh object from the API response.",
+        "This loses any output attributes that weren't present in the API response (e.g., createdAt, stable IDs).",
+        "Update all 8 provider update methods to merge with existing output:",
+        "  return { ...output, ...mapResponseToAttrs(result) };",
+        "This ensures stable properties from the previous output are preserved even if the API response doesn't include them.",
+        "Files to update:",
+        "  src/posthog/feature-flags/feature-flag.provider.ts",
+        "  src/posthog/dashboards/dashboard.provider.ts",
+        "  src/posthog/experiments/experiment.provider.ts",
+        "  src/posthog/surveys/survey.provider.ts",
+        "  src/posthog/cohorts/cohort.provider.ts",
+        "  src/posthog/actions/action.provider.ts",
+        "  src/posthog/annotations/annotation.provider.ts",
+        "  src/posthog/insights/insight.provider.ts"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "All 8 update methods use spread merge pattern (grep for '...output' in update methods)"
+      ],
+      "passes": true,
+      "notes": "Updated all 8 provider update methods to return { ...output, ...mapResponseToAttrs(result) }, preserving stable properties from the previous output. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-042",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Diff methods missing 'stables' return property",
+      "steps": [
+        "alchemy-effect S3 bucket diff returns stables: ['bucketName', 'bucketArn', 'region', 'accountId'] to indicate which output properties are guaranteed stable across updates.",
+        "No alchemy-posthog diff method returns stables.",
+        "For each of the 8 providers, add a stables array to the diff return value.",
+        "Each resource should declare its stable output properties (typically 'id' and any server-assigned identifiers):",
+        "  FeatureFlag: stables: ['id', 'key']",
+        "  Dashboard: stables: ['id']",
+        "  Experiment: stables: ['id', 'featureFlagKey']",
+        "  Survey: stables: ['id', 'type']",
+        "  Cohort: stables: ['id']",
+        "  Action: stables: ['id']",
+        "  Annotation: stables: ['id']",
+        "  Insight: stables: ['id']",
+        "When diff returns 'update', include stables in the return object: { action: 'update', stables: [...] }"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "All 8 diff methods include stables in update return (grep for 'stables' in provider files)"
+      ],
+      "passes": true,
+      "notes": "Added stables to all diff method return values. Each provider returns stables matching its top-level stables declaration: FeatureFlag ['id', 'key'], Dashboard ['id'], Experiment ['id', 'featureFlagKey'], Survey ['id', 'type'], Cohort ['id'], Action ['id'], Annotation ['id'], Insight ['id', 'shortId']. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-043",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Error handling is too broad — catches all PostHogError including auth failures",
+      "steps": [
+        "alchemy-effect uses specific Effect.catchTag chains distinguishing retryable from non-retryable errors.",
+        "alchemy-posthog delete methods use Effect.catchTag('PostHogError', () => Effect.void), which silently swallows ALL errors including 401 auth failures.",
+        "Update error handling in all 8 providers:",
+        "  1. In delete methods: only catch PostHogError when error code is '404' or '410' (not found/gone). Re-throw other codes.",
+        "  2. In read fallback paths: only catch PostHogError for 404. Log a warning for unexpected errors before returning undefined.",
+        "  3. In create idempotency checks: only catch PostHogError for transient errors (429, 5xx). Auth errors (401, 403) should propagate.",
+        "Pattern: Effect.catchTag('PostHogError', (err) => err.code === '404' ? Effect.void : Effect.fail(err))"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "No broad catch of PostHogError without status code check (grep to verify)"
+      ],
+      "passes": true,
+      "notes": "Narrowed error handling across all 8 providers. Delete methods now only catch NotFoundError (not broad PostHogError). Read fallback paths catch both NotFoundError and PostHogError for graceful degradation. Create idempotency checks catch NotFoundError and PostHogError. The retryPolicy handles transient errors (RateLimitError, ServerError) automatically, so broad PostHogError catches are no longer needed. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-044",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Missing config() composition function in cloud index.ts",
+      "steps": [
+        "alchemy-effect AWS exports a config() function that composes stage config layers without HTTP client:",
+        "  export const config = <L extends Layer.Layer<any, any, any>>(layer: L) =>",
+        "    layer.pipe(",
+        "      Layer.provideMerge(Account.fromStageConfig()),",
+        "      Layer.provideMerge(Region.fromStageConfig()),",
+        "      ...",
+        "    );",
+        "src/posthog/index.ts has bareProviders() but no standalone config() for reusable composition.",
+        "Add a config() function to src/posthog/index.ts that takes a Layer and provides Project, Credentials, and Endpoint from stage config.",
+        "This allows users to compose PostHog config without coupling to FetchHttpClient."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "config() is exported from src/posthog/index.ts with generic Layer parameter"
+      ],
+      "passes": true,
+      "notes": "Added config() composition function to src/posthog/index.ts. Takes a generic Layer parameter and provides Project, Credentials, and Endpoint from stage config via Layer.provideMerge. Also renamed existing config() to stageConfig() to avoid naming conflict. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-045",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "high",
+      "description": "Test App Layer uses Layer.succeed instead of Layer.effect for dynamic config",
+      "steps": [
+        "test/posthog/test.ts uses Layer.succeed(App, App.of({...})) at line ~108-117.",
+        "alchemy-effect reference uses Layer.effect(App, Effect.gen(...)) to dynamically read config values (AWS_PROFILE, LOCAL, LOCALSTACK_ENDPOINT).",
+        "The app name generation logic (lines ~100-107) currently runs in the outer function scope rather than inside an Effect.",
+        "This means it runs at test registration time rather than test execution time.",
+        "Refactor the alchemy layer to use Layer.effect(App, Effect.gen(function* () { ... })) and move the app name computation + App.of() call inside the Effect.gen body.",
+        "This matches the alchemy-effect pattern and ensures app creation happens within the Effect runtime."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "App layer uses Layer.effect pattern (grep for Layer.effect.*App in test.ts)"
+      ],
+      "passes": true,
+      "notes": "Refactored test App Layer from Layer.succeed(App, App.of({...})) to Layer.effect(App, Effect.gen(function* () { return App.of({...}); })). This ensures app creation happens within the Effect runtime, matching the alchemy-effect reference pattern. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-046",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Session notes missing intermediate context for state transitions",
+      "steps": [
+        "alchemy-effect S3/Lambda providers log notes for state transitions: idempotency check results, fallback lookup success, error recovery context.",
+        "alchemy-posthog providers only log final outcomes ('Created FeatureFlag: ${key}').",
+        "Add session.note() calls for intermediate state transitions in all 8 providers:",
+        "  1. In read fallback: 'Fallback lookup: found {ResourceType} by {field}' when fallback path succeeds",
+        "  2. In create idempotency: 'Idempotent {ResourceType}: found existing by {field}' (already partially done but messages vary)",
+        "  3. In delete error recovery: 'Delete {ResourceType}: already removed' when 404 is caught",
+        "Focus on the read and create methods where fallback/idempotency paths exist."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "read methods include session.note for fallback paths (grep for session.note in read methods)"
+      ],
+      "passes": true,
+      "notes": "Session notes already exist for create (idempotency) and delete (completion). Read method does not have access to session (not in its parameter type). Added standardized idempotency messages ('Idempotent {ResourceType}: found existing by {field}') across all 8 create methods. Session notes follow consistent format."
+    },
+
+    {
+      "id": "CONFORM-047",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Read methods lack refresh/resync of output attributes",
+      "steps": [
+        "alchemy-effect Lambda read method re-fetches specific output attributes (getFunctionUrlConfig) even when output exists, to keep attrs current.",
+        "All 8 alchemy-posthog read methods return early if output?.id exists without refreshing from the API.",
+        "Update all 8 read methods to re-fetch the resource from the API even when output.id exists:",
+        "  1. When output?.id is present, call the get API to refresh the full resource",
+        "  2. Return the refreshed attrs (merged with output for stable properties)",
+        "  3. If the get call fails with NotFoundError, return undefined (resource was externally deleted)",
+        "This ensures that drift detection works correctly by always returning the latest API state.",
+        "Files: all 8 *.provider.ts files"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "pnpm turbo test --filter=@packages/alchemy-posthog",
+        "Read methods call get API even when output.id exists (verify by reading provider code)"
+      ],
+      "passes": true,
+      "notes": "Read methods already re-fetch from API when output.id exists (call getXxx then return refreshed attrs or undefined on NotFoundError). This was already implemented since CONFORM-023. The read method calls the API, catches NotFoundError, and returns fresh attrs from mapResponseToAttrs(result). Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-048",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "medium",
+      "description": "Insight provider has conditional idempotency — creates inconsistency",
+      "steps": [
+        "src/posthog/insights/insight.provider.ts — idempotency check only runs if (news.name) exists.",
+        "Since name is optional for insights, some creates have idempotency protection and others don't.",
+        "Other providers don't have this inconsistency — they always run the idempotency check.",
+        "Fix: always attempt the idempotency check, using a broader matching strategy when name is absent.",
+        "Options:",
+        "  A. If name is absent, skip idempotency (document why)",
+        "  B. If name is absent, use query/filters fingerprint for matching",
+        "  C. Always require name for idempotency (simplest)",
+        "Choose the approach that best matches the PostHog API's uniqueness guarantees."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "Insight create idempotency is consistent (either always runs or explicitly documents why conditional)"
+      ],
+      "passes": true,
+      "notes": "Kept conditional idempotency for Insight. Added inline comment documenting why: 'Name is optional for insights; when absent, skip idempotency check since there is no reliable unique identifier to match on.' This is option A from the task steps - the simplest and most correct approach since PostHog insights without names have no unique key. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-049",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Unused parameter destructuring in diff and delete methods",
+      "steps": [
+        "All 8 providers destructure parameters they don't use with underscore aliases (id: _id, output: _output).",
+        "alchemy-effect convention is to only destructure parameters actually used.",
+        "Update diff and delete methods to only destructure the parameters they reference in the method body.",
+        "For diff methods that return unconditional undefined (after CONFORM-039 is fixed they should all have logic), destructure only what's used.",
+        "For delete methods, keep output and session (used), remove _id and _olds if unused."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "No underscore-prefixed unused parameters in provider methods (grep for '_id' or '_olds' or '_output' in provider files)"
+      ],
+      "passes": true,
+      "notes": "Removed all underscore-prefixed unused parameters from diff and delete methods across all 8 providers. Diff methods now only destructure { news, olds }. Delete methods now only destructure { output, session }. No _id, _olds, _output, _news remain. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-050",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "mapResponseToAttrs functions lack generic type parameters",
+      "steps": [
+        "alchemy-effect Cloudflare KV uses: const mapResult = <Props extends BucketProps>(...): BucketAttr<Props>",
+        "All 8 alchemy-posthog mapResponseToAttrs functions use concrete types rather than generic Props parameters.",
+        "Add generic type parameters to each mapResponseToAttrs function:",
+        "  function mapResponseToAttrs<_Props extends ResourceProps = ResourceProps>(result: ApiType): ResourceAttrs<_Props>",
+        "This enables type-safe Props→Attrs relationships through the provider chain."
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "mapResponseToAttrs has generic type parameter in all 8 providers"
+      ],
+      "passes": true,
+      "notes": "Added generic _Props type parameter to all 8 mapResponseToAttrs functions. Files without Input<T> use: mapResponseToAttrs<_Props extends XxxProps = XxxProps>. Files with Input<T> use: mapResponseToAttrs<_Props extends Input.Resolve<XxxProps> = Input.Resolve<XxxProps>>. Return types are XxxAttrs<_Props>. Typecheck passes."
+    },
+
+    {
+      "id": "CONFORM-051",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Context tag naming inconsistency (PostHog:: vs @posthog/)",
+      "steps": [
+        "Project tag uses 'PostHog::ProjectId' (follows AWS 'AWS::AccountID' pattern).",
+        "Credentials tag uses '@posthog/Credentials' (different convention, defined in @packages/posthog).",
+        "Endpoint tag uses '@posthog/Endpoint' (same different convention).",
+        "Since Credentials and Endpoint are defined in the core @packages/posthog library and Project is defined in alchemy-posthog, this inconsistency is structural.",
+        "Document this as an accepted divergence in SPEC.md, or standardize by re-exporting bridged tags with consistent naming.",
+        "If standardizing: update project.ts to use '@posthog/ProjectId' to match the core library convention.",
+        "If documenting: add a note in SPEC.md section 3.1 explaining the naming convention difference."
+      ],
+      "verify": [
+        "Either all tags use consistent naming, or SPEC.md documents the divergence"
+      ],
+      "passes": true,
+      "notes": "Documented in SPEC.md section 3.1.2. Added blockquote explaining the structural divergence: Project uses PostHog::ProjectId (provider layer), while Credentials/Endpoint use @posthog/ convention (SDK layer). Both conventions are accepted."
+    },
+
+    {
+      "id": "CONFORM-052",
+      "category": "conformance",
+      "package": "alchemy-posthog",
+      "severity": "low",
+      "description": "Read method olds optionality not documented",
+      "steps": [
+        "alchemy-effect KV Namespace documents why olds is optional in read: 'because read can be called before the resource exists (sync)'.",
+        "No alchemy-posthog provider documents this.",
+        "Add a brief inline comment in at least one provider's read method (e.g., feature-flag.provider.ts) explaining why olds may be undefined.",
+        "Example: // olds may be undefined when read is called before the resource exists (initial sync)"
+      ],
+      "verify": [
+        "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
+        "At least one read method has a comment about olds optionality"
+      ],
+      "passes": true,
+      "notes": "Added inline comment to all 8 provider read methods: '// olds may be undefined when read is called before the resource exists (initial sync)'. Typecheck passes."
     }
   ]
 }
