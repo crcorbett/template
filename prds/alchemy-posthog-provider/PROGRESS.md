@@ -144,3 +144,9 @@ Changes to test/posthog/test.ts:
 - Enables conditional skipping of tests based on environment (e.g., missing POSTHOG_API_KEY)
 
 Verification: `npx tsc --noEmit` passes. `test.skipIf` is exported from test.ts.
+
+## CONFORM-021: test.skip namespace export pattern
+
+Already implemented. The `test.ts` file already uses `export namespace test { export function skip(...) { ... } }` pattern (line 152) with skip, skipIf, state, and defaultState as namespace exports. No property assignment pattern (`test.skip = function(...)`) exists. This was addressed during CONFORM-019.
+
+Verification: `npx tsc --noEmit` passes. `grep 'export namespace test'` confirms namespace pattern in use.
