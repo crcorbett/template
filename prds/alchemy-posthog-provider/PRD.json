@@ -1578,8 +1578,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "net.setDefaultAutoSelectFamily workaround has comprehensive documentation"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added comprehensive JSDoc comment to net.setDefaultAutoSelectFamily(false) in test/posthog/test.ts documenting: affected Node.js versions (>=20.0.0), symptoms (ECONNREFUSED/ETIMEDOUT on dual-stack networks), root cause (RFC 8305 Happy Eyeballs racing with partial IPv6), removal conditions (upstream fix in nodejs/node#47822, dual-stack CI support), and links to Node.js issue tracker and API docs. npx tsc --noEmit passes."
     }
   ]
 }

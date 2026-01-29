@@ -25,7 +25,32 @@ import * as NodePath from "node:path";
 import { Project } from "@/posthog/project.js";
 
 /**
- * Workaround for Node.js 20+ "Happy Eyeballs" (RFC 8305) bug.
+ * Workaround: Disable Node.js "Happy Eyeballs" (RFC 8305) auto-select family.
+ *
+ * **Affected versions:** Node.js >= 20.0.0 (where `autoSelectFamily` defaults to `true`).
+ *
+ * **Symptoms without workaround:**
+ * - Intermittent `ECONNREFUSED` or `ETIMEDOUT` errors on outbound HTTP requests
+ *   (e.g., to `https://us.posthog.com`) when the DNS resolver returns both IPv4
+ *   and IPv6 addresses but one address family is unreachable on the host network.
+ * - Connections stall for the Happy Eyeballs timeout (~250ms per attempt) before
+ *   falling back, causing flaky CI and slow integration tests.
+ *
+ * **Root cause:**
+ * Node.js 20 enabled RFC 8305 "Happy Eyeballs" by default (`autoSelectFamily: true`),
+ * which races IPv4 and IPv6 connections. On networks/containers where IPv6 is
+ * partially configured (routable addresses but no connectivity), the racing logic
+ * can pick the broken family and fail or timeout before trying the working one.
+ *
+ * **When to remove:**
+ * This workaround can be removed once all of these conditions are met:
+ * 1. The upstream Node.js Happy Eyeballs implementation reliably handles
+ *    partial IPv6 environments (track https://github.com/nodejs/node/issues/47822).
+ * 2. CI and local development environments consistently support dual-stack networking.
+ * 3. The minimum Node.js version for this project includes the fix.
+ *
+ * @see https://github.com/nodejs/node/issues/47822 - Node.js autoSelectFamily issues
+ * @see https://nodejs.org/api/net.html#netsetdefaultautoselectfamilyvalue - API docs
  */
 net.setDefaultAutoSelectFamily(false);
 

@@ -405,3 +405,17 @@ Files updated:
 - src/posthog/insights/insight.provider.ts
 
 Verification: `npx tsc --noEmit` passes. All 8 delete methods destructure full parameter set. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-037: Document net.setDefaultAutoSelectFamily(false) workaround
+
+Added comprehensive JSDoc documentation to the `net.setDefaultAutoSelectFamily(false)` call in `test/posthog/test.ts`. The expanded comment now covers:
+- **Affected versions:** Node.js >= 20.0.0 (where autoSelectFamily defaults to true)
+- **Symptoms:** Intermittent ECONNREFUSED/ETIMEDOUT on outbound HTTP requests when IPv6 is partially configured
+- **Root cause:** RFC 8305 Happy Eyeballs races IPv4/IPv6 connections; partial IPv6 causes the racing logic to pick the broken family
+- **Removal conditions:** Upstream Node.js fix (nodejs/node#47822), dual-stack CI support, minimum Node.js version includes fix
+- **Links:** nodejs/node#47822 issue tracker, Node.js net.setDefaultAutoSelectFamily API docs
+
+Files updated:
+- test/posthog/test.ts (expanded JSDoc comment from 1 line to 25 lines)
+
+Verification: `npx tsc --noEmit` passes.
