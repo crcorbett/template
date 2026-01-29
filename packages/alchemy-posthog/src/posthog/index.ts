@@ -27,11 +27,25 @@ export {
   Surveys,
 };
 
-export const config = () =>
+/**
+ * Read the PostHog stage config from the App context.
+ */
+export const stageConfig = () =>
   Effect.gen(function* () {
     const app = yield* App;
     return app.config.posthog;
   });
+
+/**
+ * Compose a Layer with PostHog stage config layers (Project, Credentials, Endpoint).
+ * Does not include HttpClient, allowing callers to provide their own.
+ */
+export const config = <L extends Layer.Layer<any, any, any>>(layer: L) =>
+  layer.pipe(
+    Layer.provideMerge(Project.fromStageConfig()),
+    Layer.provideMerge(Credentials.fromStageConfig()),
+    Layer.provideMerge(Endpoint.fromStageConfig()),
+  );
 
 export const resources = () =>
   Layer.mergeAll(
@@ -45,12 +59,16 @@ export const resources = () =>
     Insights.insightProvider()
   );
 
-export const bareProviders = () =>
-  resources().pipe(
-    Layer.provideMerge(Project.fromStageConfig()),
-    Layer.provideMerge(Credentials.fromStageConfig()),
-    Layer.provideMerge(Endpoint.fromStageConfig())
-  );
+/**
+ * Compose all PostHog provider resources with stage config layers.
+ * Uses config() internally to avoid duplicating layer provision.
+ *
+ * NOTE: precreate is intentionally omitted from all PostHog providers because
+ * PostHog SaaS resources do not exhibit circular dependency patterns that would
+ * require pre-creation with placeholder values (unlike e.g. AWS Lambda which
+ * needs a dummy code bundle to break Lambda <-> IAM Role cycles).
+ */
+export const bareProviders = () => config(resources());
 
 export const providers = () =>
   bareProviders().pipe(Layer.provideMerge(FetchHttpClient.layer));
