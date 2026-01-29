@@ -120,7 +120,7 @@ export const insightProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           // Insight uses soft delete (PATCH deleted: true)
           yield* PostHogInsights.deleteInsight({
             project_id: projectId,
@@ -129,6 +129,8 @@ export const insightProvider = () =>
             Effect.catchTag("NotFoundError", () => Effect.void),
             Effect.catchTag("PostHogError", () => Effect.void)
           );
+
+          yield* session.note(`Deleted insight: ${output.id}`);
         }),
       };
     })

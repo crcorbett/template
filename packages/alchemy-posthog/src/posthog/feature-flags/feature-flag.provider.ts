@@ -129,11 +129,13 @@ export const featureFlagProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           yield* PostHogFeatureFlags.deleteFeatureFlag({
             project_id: projectId,
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+
+          yield* session.note(`Deleted feature flag: ${output.key}`);
         }),
       };
     })

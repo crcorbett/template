@@ -144,11 +144,13 @@ export const dashboardProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           yield* PostHogDashboards.deleteDashboard({
             project_id: projectId,
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+
+          yield* session.note(`Deleted dashboard: ${output.name}`);
         }),
       };
     })

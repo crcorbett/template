@@ -131,11 +131,13 @@ export const surveyProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           yield* PostHogSurveys.deleteSurvey({
             project_id: projectId,
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+
+          yield* session.note(`Deleted survey: ${output.name}`);
         }),
       };
     })

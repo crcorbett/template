@@ -122,11 +122,13 @@ export const cohortProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           yield* PostHogCohorts.deleteCohort({
             project_id: projectId,
             id: output.id,
           }).pipe(Effect.catchTag("NotFoundError", () => Effect.void));
+
+          yield* session.note(`Deleted cohort: ${output.name}`);
         }),
       };
     })

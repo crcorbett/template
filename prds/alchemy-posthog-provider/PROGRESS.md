@@ -205,3 +205,24 @@ All lookups catch `PostHogError` to gracefully degrade if the list API fails. Wh
 Files updated: all 8 `*.provider.ts` files in `src/posthog/`.
 
 Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-025: Add session.note() to all provider delete methods
+
+Added `session.note()` progress logging to all 8 provider delete methods, matching the alchemy-effect convention where all lifecycle methods (create, update, delete) report progress via session notes.
+
+Changes to all 8 `*.provider.ts` files:
+- Added `session` to delete method destructuring: `{ output }` -> `{ output, session }`
+- Added `yield* session.note(\`Deleted <resource>: <identifier>\`)` after the delete/archive API call
+- Identifiers used: key (FeatureFlag), name (Dashboard, Experiment, Survey, Action, Cohort), id (Insight, Annotation)
+
+Files updated:
+- src/posthog/feature-flags/feature-flag.provider.ts
+- src/posthog/dashboards/dashboard.provider.ts
+- src/posthog/experiments/experiment.provider.ts
+- src/posthog/surveys/survey.provider.ts
+- src/posthog/cohorts/cohort.provider.ts
+- src/posthog/actions/action.provider.ts
+- src/posthog/annotations/annotation.provider.ts
+- src/posthog/insights/insight.provider.ts
+
+Verification: `npx tsc --noEmit` passes. All 8 delete methods confirmed via grep. Tests require POSTHOG_API_KEY (integration tests).

@@ -127,7 +127,7 @@ export const annotationProvider = () =>
           return mapResponseToAttrs(result);
         }),
 
-        delete: Effect.fn(function* ({ output }) {
+        delete: Effect.fn(function* ({ output, session }) {
           // PostHog annotations don't reliably support HTTP DELETE.
           // Soft-delete by patching deleted: true instead.
           yield* PostHogAnnotations.updateAnnotation({
@@ -138,6 +138,8 @@ export const annotationProvider = () =>
             Effect.catchTag("NotFoundError", () => Effect.void),
             Effect.catchTag("PostHogError", () => Effect.void)
           );
+
+          yield* session.note(`Deleted annotation: ${output.id}`);
         }),
       };
     })
