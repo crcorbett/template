@@ -1370,8 +1370,8 @@
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog",
         "config() is exported from src/posthog/index.ts"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added config() helper to src/posthog/index.ts that reads app.config.posthog from the App context tag using Effect.gen. Imported App from alchemy-effect and Effect from effect/Effect. Typecheck passes."
     },
     {
       "id": "CONFORM-028",

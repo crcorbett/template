@@ -1,4 +1,6 @@
 import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
+import { App } from "alchemy-effect";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import "./config.js";
@@ -24,6 +26,12 @@ export {
   Insights,
   Surveys,
 };
+
+export const config = () =>
+  Effect.gen(function* () {
+    const app = yield* App;
+    return app.config.posthog;
+  });
 
 export const resources = () =>
   Layer.mergeAll(

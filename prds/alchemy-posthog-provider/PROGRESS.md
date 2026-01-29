@@ -254,3 +254,13 @@ Files updated:
 - test/posthog/posthog.smoke.test.ts
 
 Verification: `npx tsc --noEmit` passes. No TEST_PROJECT_ID references remain in codebase. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-027: Add config() helper function to index.ts
+
+Added `config()` helper to `src/posthog/index.ts` that reads `app.config.posthog` from the App context tag, matching the alchemy-effect convention where cloud index files export a `config()` helper for stage config composition.
+
+Changes to src/posthog/index.ts:
+- Added `import { App } from "alchemy-effect"` and `import * as Effect from "effect/Effect"`
+- Added `export const config = () => Effect.gen(function* () { const app = yield* App; return app.config.posthog; })`
+
+Verification: `npx tsc --noEmit` passes. `config()` is exported from src/posthog/index.ts.
