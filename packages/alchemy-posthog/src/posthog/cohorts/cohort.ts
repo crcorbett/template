@@ -33,7 +33,7 @@ export interface CohortProps {
 /**
  * Output attributes for a PostHog Cohort resource.
  */
-export interface CohortAttrs {
+export interface CohortAttrs<_Props extends CohortProps = CohortProps> {
   /**
    * Server-generated ID (stable).
    */
@@ -71,7 +71,7 @@ export interface CohortAttrs {
 export interface Cohort<
   ID extends string = string,
   Props extends CohortProps = CohortProps,
-> extends Resource<"PostHog.Cohorts.Cohort", ID, Props, CohortAttrs, Cohort> {}
+> extends Resource<"PostHog.Cohorts.Cohort", ID, Props, CohortAttrs<Props>, Cohort> {}
 
 export const Cohort = Resource<{
   <const ID extends string, const Props extends CohortProps>(

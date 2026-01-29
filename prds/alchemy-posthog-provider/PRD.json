@@ -1433,8 +1433,8 @@
       "verify": [
         "pnpm turbo typecheck --filter=@packages/alchemy-posthog"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Parameterized all 8 Attrs interfaces. Files without Input<T> in Props (feature-flag, dashboard, cohort, action) use pattern: XxxAttrs<_Props extends XxxProps = XxxProps>. Files with Input<T> in Props (experiment, survey, annotation, insight) use pattern: XxxAttrs<_Props extends Input.Resolve<XxxProps> = Input.Resolve<XxxProps>>. Updated Resource interface declarations to pass Props (or Input.Resolve<Props>) as the Attrs type parameter. Typecheck passes."
     },
     {
       "id": "CONFORM-031",

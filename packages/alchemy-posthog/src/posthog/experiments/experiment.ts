@@ -64,7 +64,7 @@ export interface ExperimentProps {
 /**
  * Output attributes for a PostHog Experiment resource.
  */
-export interface ExperimentAttrs {
+export interface ExperimentAttrs<_Props extends Input.Resolve<ExperimentProps> = Input.Resolve<ExperimentProps>> {
   /**
    * Server-generated ID (stable).
    */
@@ -111,7 +111,7 @@ export interface Experiment<
   "PostHog.Experiments.Experiment",
   ID,
   Props,
-  ExperimentAttrs,
+  ExperimentAttrs<Input.Resolve<Props>>,
   Experiment
 > {}
 

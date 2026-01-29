@@ -39,7 +39,7 @@ export interface AnnotationProps {
 /**
  * Output attributes for a PostHog Annotation resource.
  */
-export interface AnnotationAttrs {
+export interface AnnotationAttrs<_Props extends Input.Resolve<AnnotationProps> = Input.Resolve<AnnotationProps>> {
   /**
    * Server-generated ID (stable).
    */
@@ -76,7 +76,7 @@ export interface Annotation<
     "PostHog.Annotations.Annotation",
     ID,
     Props,
-    AnnotationAttrs,
+    AnnotationAttrs<Input.Resolve<Props>>,
     Annotation
   > {}
 

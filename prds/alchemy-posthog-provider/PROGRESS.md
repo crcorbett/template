@@ -293,3 +293,27 @@ Changes:
 Each file also received `import type { Input } from "alchemy-effect"`.
 
 Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).
+
+## CONFORM-030: Parameterize Attrs interfaces by Props type
+
+Added Props type parameter to all 8 resource Attrs interfaces, matching the alchemy-effect convention where Attrs interfaces are parameterized by the Props type to enable type-safe relationships.
+
+Two patterns used depending on whether Props contains `Input<T>` properties:
+- **Without Input<T>** (feature-flag, dashboard, cohort, action): `XxxAttrs<_Props extends XxxProps = XxxProps>`
+- **With Input<T>** (experiment, survey, annotation, insight): `XxxAttrs<_Props extends Input.Resolve<XxxProps> = Input.Resolve<XxxProps>>`
+
+Updated Resource interface declarations to pass the Props type parameter through:
+- Without Input: `XxxAttrs<Props>`
+- With Input: `XxxAttrs<Input.Resolve<Props>>`
+
+Files updated:
+- src/posthog/feature-flags/feature-flag.ts
+- src/posthog/dashboards/dashboard.ts
+- src/posthog/experiments/experiment.ts
+- src/posthog/surveys/survey.ts
+- src/posthog/cohorts/cohort.ts
+- src/posthog/actions/action.ts
+- src/posthog/annotations/annotation.ts
+- src/posthog/insights/insight.ts
+
+Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY (integration tests).

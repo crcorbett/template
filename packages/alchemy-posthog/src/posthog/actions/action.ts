@@ -54,7 +54,7 @@ export interface ActionProps {
 /**
  * Output attributes for a PostHog Action resource.
  */
-export interface ActionAttrs {
+export interface ActionAttrs<_Props extends ActionProps = ActionProps> {
   /**
    * Server-generated ID (stable).
    */
@@ -87,7 +87,7 @@ export interface ActionAttrs {
 export interface Action<
   ID extends string = string,
   Props extends ActionProps = ActionProps,
-> extends Resource<"PostHog.Actions.Action", ID, Props, ActionAttrs, Action> {}
+> extends Resource<"PostHog.Actions.Action", ID, Props, ActionAttrs<Props>, Action> {}
 
 export const Action = Resource<{
   <const ID extends string, const Props extends ActionProps>(

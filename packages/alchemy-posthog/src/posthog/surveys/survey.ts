@@ -56,7 +56,7 @@ export interface SurveyProps {
  * Output attributes for a PostHog Survey resource.
  * NOTE: Survey IDs are string UUIDs, not numbers.
  */
-export interface SurveyAttrs {
+export interface SurveyAttrs<_Props extends Input.Resolve<SurveyProps> = Input.Resolve<SurveyProps>> {
   /**
    * Server-generated UUID (stable).
    */
@@ -99,7 +99,7 @@ export interface SurveyAttrs {
 export interface Survey<
   ID extends string = string,
   Props extends SurveyProps = SurveyProps,
-> extends Resource<"PostHog.Surveys.Survey", ID, Props, SurveyAttrs, Survey> {}
+> extends Resource<"PostHog.Surveys.Survey", ID, Props, SurveyAttrs<Input.Resolve<Props>>, Survey> {}
 
 export const Survey = Resource<{
   <const ID extends string, const Props extends SurveyProps>(

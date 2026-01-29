@@ -38,7 +38,7 @@ export interface FeatureFlagProps {
 /**
  * Output attributes for a PostHog Feature Flag resource.
  */
-export interface FeatureFlagAttrs {
+export interface FeatureFlagAttrs<_Props extends FeatureFlagProps = FeatureFlagProps> {
   /**
    * Server-generated ID (stable).
    */
@@ -80,7 +80,7 @@ export interface FeatureFlag<
   "PostHog.FeatureFlags.FeatureFlag",
   ID,
   Props,
-  FeatureFlagAttrs,
+  FeatureFlagAttrs<Props>,
   FeatureFlag
 > {}
 

@@ -39,7 +39,7 @@ export interface InsightProps {
 /**
  * Output attributes for a PostHog Insight resource.
  */
-export interface InsightAttrs {
+export interface InsightAttrs<_Props extends Input.Resolve<InsightProps> = Input.Resolve<InsightProps>> {
   /**
    * Server-generated ID (stable).
    */
@@ -81,7 +81,7 @@ export interface Insight<
     "PostHog.Insights.Insight",
     ID,
     Props,
-    InsightAttrs,
+    InsightAttrs<Input.Resolve<Props>>,
     Insight
   > {}
 

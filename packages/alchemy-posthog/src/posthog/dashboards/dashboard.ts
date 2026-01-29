@@ -33,7 +33,7 @@ export interface DashboardProps {
 /**
  * Output attributes for a PostHog Dashboard resource.
  */
-export interface DashboardAttrs {
+export interface DashboardAttrs<_Props extends DashboardProps = DashboardProps> {
   /**
    * Server-generated ID (stable).
    */
@@ -70,7 +70,7 @@ export interface Dashboard<
   "PostHog.Dashboards.Dashboard",
   ID,
   Props,
-  DashboardAttrs,
+  DashboardAttrs<Props>,
   Dashboard
 > {}
 
