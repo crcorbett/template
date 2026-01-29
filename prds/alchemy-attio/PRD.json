@@ -1,0 +1,514 @@
+{
+  "feature": "Attio Distilled Client (@packages/attio)",
+  "version": "1.0.0",
+  "created": "2026-01-30",
+  "updated": "2026-01-30",
+  "buildCommands": {
+    "typeCheck": "bun tsc -b",
+    "test": "cd packages/attio && bun vitest run",
+    "testFile": "cd packages/attio && bun vitest run {file}",
+    "note": "All paths relative to the monorepo root unless otherwise noted. Each task is only complete if types pass (repo-wide via bun tsc -b), tests pass (cd packages/attio && bun vitest run), and the implementation matches SPEC.md + reference files."
+  },
+  "specFiles": {
+    "spec": "prds/alchemy-attio/SPEC.md",
+    "references": [
+      "prds/alchemy-attio/references/01-package-scaffold.md",
+      "prds/alchemy-attio/references/02-credentials-and-endpoint.md",
+      "prds/alchemy-attio/references/03-error-system.md",
+      "prds/alchemy-attio/references/04-client-infrastructure.md",
+      "prds/alchemy-attio/references/05-common-schemas.md",
+      "prds/alchemy-attio/references/06-service-authoring.md",
+      "prds/alchemy-attio/references/07-retry-and-traits.md",
+      "prds/alchemy-attio/references/08-testing.md",
+      "prds/alchemy-attio/references/09-barrel-exports.md"
+    ],
+    "research": "prds/alchemy-attio/RESEARCH.md"
+  },
+  "canonicalReference": "packages/posthog/",
+  "tasks": [
+    {
+      "id": "SCAFFOLD-001",
+      "category": "scaffold",
+      "package": "attio",
+      "description": "Create packages/attio/ directory structure, package.json, tsconfig.json, vitest.config.ts, and register in monorepo",
+      "steps": [
+        "Create directory structure: packages/attio/src/client/, packages/attio/src/services/, packages/attio/test/client/",
+        "Create packages/attio/package.json following reference 01-package-scaffold.md exactly:",
+        "  - name: '@packages/attio'",
+        "  - exports: ./* -> services, ./Credentials, ./Errors, ./Retry, . -> index",
+        "  - All exports use @packages/source condition for live types",
+        "  - peerDependencies: effect ^3.16.0, @effect/platform ^0.82.0",
+        "  - devDependencies: @effect/platform, @effect/platform-node, @effect/vitest, vitest, typescript",
+        "Create packages/attio/tsconfig.json extending ../../tsconfig.base.json",
+        "Create packages/attio/vitest.config.ts with test include pattern test/**/*.test.ts",
+        "Add { \"path\": \"./packages/attio\" } to root tsconfig.json references array",
+        "Run: bun install"
+      ],
+      "verify": [
+        "bun install completes without errors",
+        "packages/attio/package.json exists with correct exports",
+        "packages/attio/tsconfig.json exists and extends base",
+        "Root tsconfig.json references includes ./packages/attio"
+      ]
+    },
+    {
+      "id": "INFRA-001",
+      "category": "infrastructure",
+      "package": "attio",
+      "description": "Implement core infrastructure: credentials, endpoint, category, errors, retry, traits",
+      "steps": [
+        "Implement src/credentials.ts per reference 02-credentials-and-endpoint.md:",
+        "  - AttioCredentials interface with apiKey: Redacted<string>",
+        "  - Credentials Context.Tag('@attio/Credentials')",
+        "  - fromEnv() reads ATTIO_API_KEY, fromApiKey(), fromRedactedApiKey() factories",
+        "Implement src/endpoint.ts per reference 02-credentials-and-endpoint.md:",
+        "  - Endpoint Context.Tag('@attio/Endpoint') with DEFAULT = 'https://api.attio.com'",
+        "Copy packages/posthog/src/category.ts → packages/attio/src/category.ts:",
+        "  - Change Symbol.for('distilled-posthog/categories') → Symbol.for('distilled-attio/categories')",
+        "Implement src/errors.ts per reference 03-error-system.md:",
+        "  - All standard error classes: AuthenticationError, AuthorizationError, NotFoundError, ValidationError, RateLimitError, ServerError",
+        "  - Attio-specific ConflictError class with withValidationError category",
+        "  - COMMON_ERRORS, COMMON_ERRORS_WITH_NOT_FOUND, COMMON_ERRORS_WITH_CONFLICT constants",
+        "  - AttioError generic error class, AttioErrorType union type",
+        "  - MissingCredentialsError, MissingHttpTraitError",
+        "  - UnknownAttioError with errorTag, errorData, message fields",
+        "Copy packages/posthog/src/retry.ts → packages/attio/src/retry.ts:",
+        "  - Change Context.Tag('@posthog/Retry') → Context.Tag('@attio/Retry')",
+        "Copy packages/posthog/src/traits.ts → packages/attio/src/traits.ts:",
+        "  - Change const prefix = 'distilled-posthog' → const prefix = 'distilled-attio'"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All 6 files exist: credentials.ts, endpoint.ts, category.ts, errors.ts, retry.ts, traits.ts",
+        "Credentials.fromEnv() reads ATTIO_API_KEY",
+        "Endpoint.DEFAULT === 'https://api.attio.com'",
+        "errors.ts exports ConflictError and COMMON_ERRORS_WITH_CONFLICT"
+      ]
+    },
+    {
+      "id": "CLIENT-001",
+      "category": "client",
+      "package": "attio",
+      "description": "Implement client engine: operation.ts, request.ts, response.ts, request-builder.ts, response-parser.ts, api.ts with three-mode pagination",
+      "steps": [
+        "Copy packages/posthog/src/client/operation.ts → packages/attio/src/client/operation.ts:",
+        "  - Add mode?: 'url' | 'offset' | 'cursor' to pagination interface per reference 04-client-infrastructure.md",
+        "Copy packages/posthog/src/client/request.ts → packages/attio/src/client/request.ts (no changes needed)",
+        "Copy packages/posthog/src/client/response.ts → packages/attio/src/client/response.ts (no changes needed)",
+        "Copy packages/posthog/src/client/request-builder.ts → packages/attio/src/client/request-builder.ts:",
+        "  - Update error import path: from '../errors.js' (MissingHttpTraitError)",
+        "Copy packages/posthog/src/client/response-parser.ts → packages/attio/src/client/response-parser.ts:",
+        "  - Update error import: AttioError, AttioErrorType from '../errors.js'",
+        "  - Update error reference naming (PostHogError → AttioError etc.)",
+        "Adapt packages/posthog/src/client/api.ts → packages/attio/src/client/api.ts per reference 04-client-infrastructure.md:",
+        "  - Update imports: Credentials from '../credentials.js', Endpoint from '../endpoint.js', errors from '../errors.js'",
+        "  - Implement three-mode pagination in makePaginated():",
+        "    mode 'url' (default): parse next URL from response (PostHog behavior)",
+        "    mode 'offset': auto-increment offset, stop when items.length < limit",
+        "    mode 'cursor': read pagination.next_cursor from response, pass as next cursor input",
+        "  - Default items path to 'data' for Attio's response envelope"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "All 6 client files exist in src/client/",
+        "operation.ts has mode field on pagination interface",
+        "api.ts imports from ../credentials.js, ../endpoint.js, ../errors.js",
+        "api.ts makePaginated handles 'url', 'offset', and 'cursor' modes"
+      ]
+    },
+    {
+      "id": "TRACER-001",
+      "category": "tracer-bullet",
+      "package": "attio",
+      "description": "Implement Self service (simplest endpoint), minimal common.ts, and barrel index.ts to establish end-to-end through-line",
+      "steps": [
+        "Create src/common.ts with minimal schemas needed for Self service:",
+        "  - ActorReference class (type + id fields) per reference 05-common-schemas.md",
+        "  - WorkspaceMemberId class per reference 05-common-schemas.md",
+        "Implement src/services/self.ts per reference 06-service-authoring.md:",
+        "  - SelfData schema with active_scopes: S.optional(S.Array(S.String)) and other fields",
+        "  - SelfResponse schema wrapping data: SelfData (Attio envelope)",
+        "  - GetSelfRequest with T.Http({ method: 'GET', uri: '/v2/self' })",
+        "  - getSelfOp operation with COMMON_ERRORS",
+        "  - Export getSelf via makeClient(getSelfOp)",
+        "Create src/index.ts barrel per reference 09-barrel-exports.md:",
+        "  - Export Credentials, Endpoint from core modules",
+        "  - Export error classes and constants",
+        "  - Export Category, Retry, Traits as namespaces",
+        "  - Export Self as namespace from services/self.js",
+        "  - Export makePaginated from client/api.js",
+        "  - Export common schemas (just ActorReference, WorkspaceMemberId for now)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "src/services/self.ts exports getSelf",
+        "src/index.ts exports Self namespace",
+        "import { Self } from '@packages/attio' resolves correctly"
+      ]
+    },
+    {
+      "id": "TRACER-002",
+      "category": "tracer-bullet",
+      "package": "attio",
+      "description": "Implement test harness, Self service integration test, and client infrastructure unit tests — validates the full through-line against the real Attio API",
+      "steps": [
+        "Implement test/test.ts per reference 08-testing.md:",
+        "  - Import Credentials from ../src/credentials.js, Endpoint from ../src/endpoint.js, Retry from ../src/retry.js",
+        "  - Provided type: Scope | HttpClient | FileSystem | Path | Credentials | Endpoint",
+        "  - platform layer: NodeContext + FetchHttpClient + Logger.pretty",
+        "  - resolveConfigProvider reads ../../.env via PlatformConfigProvider.fromDotEnv",
+        "  - withConfigAndCredentials provides Credentials.fromEnv()",
+        "  - provideTestEnv provides Endpoint 'https://api.attio.com', test retry policy (200ms base, 2s cap, 3 retries)",
+        "  - Export test(), test.skip, run(), beforeAll(), afterAll(), withResource(), expectSnapshot()",
+        "  - net.setDefaultAutoSelectFamily(false) for IPv6 workaround",
+        "Create test/self.test.ts:",
+        "  - Test: 'should identify current token' — call getSelf({}), expect result.data to be defined",
+        "  - This test validates the entire client pipeline against the real Attio API",
+        "Create test/client/request-builder.test.ts per reference 08-testing.md:",
+        "  - Test path parameter substitution: /v2/objects/{object} with object: 'people'",
+        "  - Test multiple path params: /v2/{target}/{identifier}/attributes/{attribute}",
+        "  - Test query params with T.HttpQuery()",
+        "  - Test POST body fields (without T.HttpQuery())",
+        "  - Test PUT with query param (matching_attribute pattern)",
+        "  - Test empty request",
+        "  - Test missing HTTP trait → MissingHttpTraitError",
+        "Create test/client/response-parser.test.ts per reference 08-testing.md:",
+        "  - Test success 200 with { data: [...] } envelope",
+        "  - Test success 200 single item { data: { ... } }",
+        "  - Test empty body 204 → {}",
+        "  - Test error 400, 401, 404, 409, 429, 500 → appropriate AttioError",
+        "  - Test 429 retryAfter extraction",
+        "  - Test malformed JSON",
+        "  - Test schema mismatch"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/self.test.ts passes (requires ATTIO_API_KEY env var)",
+        "cd packages/attio && bun vitest run test/client/ passes (unit tests, no env var needed)",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-001",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Objects service (non-paginated CRUD) and integration test",
+      "steps": [
+        "Add ObjectId to src/common.ts per reference 05-common-schemas.md:",
+        "  - ObjectId class with workspace_id and object_id fields",
+        "Implement src/services/objects.ts per reference 06-service-authoring.md:",
+        "  - AttioObject schema: id (ObjectId), api_slug, singular_noun, plural_noun, created_at",
+        "  - ObjectList schema: data: S.Array(AttioObject) (response envelope)",
+        "  - ObjectResponse schema: data: AttioObject (response envelope)",
+        "  - ListObjectsRequest: GET /v2/objects (no params)",
+        "  - GetObjectRequest: GET /v2/objects/{object} with object as HttpLabel",
+        "  - CreateObjectRequest: POST /v2/objects with api_slug, singular_noun, plural_noun",
+        "  - UpdateObjectRequest: PATCH /v2/objects/{object} with optional fields",
+        "  - Operations: listObjectsOp, getObjectOp, createObjectOp, updateObjectOp",
+        "  - Exports: listObjects, getObject, createObject, updateObject via makeClient",
+        "Update src/index.ts: add Objects namespace export, add ObjectId to common exports",
+        "Create test/objects.test.ts:",
+        "  - Test: 'should list all objects' — verify data array, check 'people' and 'companies' slugs exist",
+        "  - Test: 'should get a specific object by slug' — getObject({ object: 'people' }), verify api_slug and id"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/objects.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-002",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Records service (POST-body pagination, CRUD, assert/upsert) and integration test",
+      "steps": [
+        "Add RecordId to src/common.ts: workspace_id, object_id, record_id fields",
+        "Implement src/services/records.ts per reference 06-service-authoring.md:",
+        "  - AttioRecord schema: id (RecordId), created_at, web_url, values (S.optional Record<string, Unknown>)",
+        "  - RecordList schema: data: S.Array(AttioRecord)",
+        "  - RecordResponse schema: data: AttioRecord",
+        "  - QueryRecordsRequest: POST /v2/objects/{object}/records/query — object as HttpLabel, filter/sorts/limit/offset as body fields (NOT HttpQuery)",
+        "  - CreateRecordRequest: POST /v2/objects/{object}/records — object as HttpLabel, data as body",
+        "  - GetRecordRequest: GET /v2/objects/{object}/records/{record_id} — both as HttpLabel",
+        "  - UpdateRecordRequest: PATCH /v2/objects/{object}/records/{record_id}",
+        "  - DeleteRecordRequest: DELETE /v2/objects/{object}/records/{record_id}",
+        "  - AssertRecordRequest: PUT /v2/objects/{object}/records — matching_attribute as HttpQuery, data as body",
+        "  - queryRecordsOp as PaginatedOperation with mode: 'offset', inputToken: 'offset', items: 'data', pageSize: 'limit'",
+        "  - Exports: queryRecords (makePaginated with .pages/.items), createRecord, getRecord, updateRecord, deleteRecord, assertRecord",
+        "Update src/index.ts: add Records namespace export, add RecordId to common exports",
+        "Create test/records.test.ts:",
+        "  - Test: 'should query records with limit' — queryRecords({ object: 'people', limit: 5 }), verify data array, length <= 5",
+        "  - Test: 'should stream pages of records' — queryRecords.pages({ object: 'people', limit: 2 }).pipe(Stream.take(2), Stream.runCollect)",
+        "  - Test: 'should stream individual record items' — queryRecords.items({ object: 'people', limit: 3 }).pipe(Stream.take(3), Stream.runCollect)",
+        "  - Test: 'should handle not found' — getRecord with fake UUID, expect Left"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/records.test.ts passes",
+        "Pagination mode 'offset' works correctly — pages stop when items < limit",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-003",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Lists service (non-paginated CRUD with delete) and integration test",
+      "steps": [
+        "Add ListId to src/common.ts: workspace_id, list_id fields",
+        "Implement src/services/lists.ts per reference 06-service-authoring.md:",
+        "  - AttioList schema: id (ListId), api_slug, name, parent_object, workspace_access, created_by_actor",
+        "  - ListList schema: data: S.Array(AttioList)",
+        "  - ListResponse schema: data: AttioList",
+        "  - ListListsRequest: GET /v2/lists (no params)",
+        "  - GetListRequest: GET /v2/lists/{list} with list as HttpLabel",
+        "  - CreateListRequest: POST /v2/lists with name, parent_object, etc.",
+        "  - UpdateListRequest: PATCH /v2/lists/{list}",
+        "  - DeleteListRequest: DELETE /v2/lists/{list}",
+        "  - Exports: listLists, getList, createList, updateList, deleteList via makeClient",
+        "Update src/index.ts: add Lists namespace export, add ListId to common exports",
+        "Create test/lists.test.ts:",
+        "  - Test: 'should list all lists' — verify data array exists",
+        "  - Test: 'should get a specific list' — get first list from listLists, then getList by its id"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/lists.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-004",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Entries service (POST-body pagination, CRUD, assert) and integration test",
+      "steps": [
+        "Add EntryId to src/common.ts: workspace_id, list_id, entry_id fields",
+        "Implement src/services/entries.ts per reference 06-service-authoring.md:",
+        "  - AttioEntry schema: id (EntryId), created_at, values",
+        "  - EntryList schema: data: S.Array(AttioEntry)",
+        "  - EntryResponse schema: data: AttioEntry",
+        "  - QueryEntriesRequest: POST /v2/lists/{list}/entries/query — list as HttpLabel, filter/sorts/limit/offset as body",
+        "  - CreateEntryRequest: POST /v2/lists/{list}/entries",
+        "  - GetEntryRequest: GET /v2/lists/{list}/entries/{entry_id}",
+        "  - UpdateEntryRequest: PATCH /v2/lists/{list}/entries/{entry_id}",
+        "  - DeleteEntryRequest: DELETE /v2/lists/{list}/entries/{entry_id}",
+        "  - AssertEntryRequest: PUT /v2/lists/{list}/entries — matching_attribute as HttpQuery",
+        "  - queryEntriesOp as PaginatedOperation with mode: 'offset'",
+        "  - Exports: queryEntries (makePaginated), createEntry, getEntry, updateEntry, deleteEntry, assertEntry",
+        "Update src/index.ts: add Entries namespace export, add EntryId to common exports",
+        "Create test/entries.test.ts:",
+        "  - Test: 'should query entries with limit' — get first list, queryEntries on it with limit: 5",
+        "  - Test: 'should handle not found' — getEntry with fake UUID"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/entries.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-005",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Attributes and Select Options services (multi-label paths) and integration tests",
+      "steps": [
+        "Implement src/services/attributes.ts per reference 06-service-authoring.md:",
+        "  - AttioAttribute schema: id (S.Unknown), title, description, api_slug, type, is_required, is_unique, is_multiselect, etc.",
+        "  - AttributeList schema: data: S.Array(AttioAttribute)",
+        "  - AttributeResponse schema: data: AttioAttribute",
+        "  - ListAttributesRequest: GET /v2/{target}/{identifier}/attributes — target + identifier as HttpLabel",
+        "  - CreateAttributeRequest: POST /v2/{target}/{identifier}/attributes",
+        "  - GetAttributeRequest: GET /v2/{target}/{identifier}/attributes/{attribute} — three HttpLabels",
+        "  - UpdateAttributeRequest: PATCH /v2/{target}/{identifier}/attributes/{attribute}",
+        "  - Exports: listAttributes, createAttribute, getAttribute, updateAttribute",
+        "Implement src/services/select-options.ts per reference 06-service-authoring.md:",
+        "  - SelectOption schema: id, title, is_archived",
+        "  - SelectOptionList schema: data: S.Array(SelectOption)",
+        "  - SelectOptionResponse schema: data: SelectOption",
+        "  - ListSelectOptionsRequest: GET /v2/{target}/{identifier}/attributes/{attribute}/options — three HttpLabels",
+        "  - CreateSelectOptionRequest: POST /v2/{target}/{identifier}/attributes/{attribute}/options",
+        "  - UpdateSelectOptionRequest: PATCH /v2/{target}/{identifier}/attributes/{attribute}/options/{option} — four HttpLabels",
+        "  - Exports: listSelectOptions, createSelectOption, updateSelectOption",
+        "Update src/index.ts: add Attributes and SelectOptions namespace exports",
+        "Create test/attributes.test.ts:",
+        "  - Test: 'should list attributes for people object' — listAttributes({ target: 'objects', identifier: 'people' })",
+        "  - Test: 'should get a specific attribute' — get first from list, then getAttribute by slug",
+        "Create test/select-options.test.ts:",
+        "  - Test: 'should list select options' — find a select/status attribute on people, list its options"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/attributes.test.ts passes",
+        "cd packages/attio && bun vitest run test/select-options.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-006",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Notes service (GET query param pagination, CRUD with delete) and integration test",
+      "steps": [
+        "Add NoteId and NoteTag to src/common.ts per reference 05-common-schemas.md",
+        "Implement src/services/notes.ts per reference 06-service-authoring.md:",
+        "  - AttioNote schema: id (NoteId), parent_object, parent_record_id, title, content_plaintext, format, created_by_actor, created_at",
+        "  - NoteList schema: data: S.Array(AttioNote)",
+        "  - NoteResponse schema: data: AttioNote",
+        "  - ListNotesRequest: GET /v2/notes — limit, offset, parent_object, parent_record_id as HttpQuery params",
+        "  - CreateNoteRequest: POST /v2/notes — parent_object, parent_record_id, title, format, content as body fields",
+        "  - GetNoteRequest: GET /v2/notes/{note_id}",
+        "  - UpdateNoteRequest: PATCH /v2/notes/{note_id}",
+        "  - DeleteNoteRequest: DELETE /v2/notes/{note_id}",
+        "  - listNotesOp as PaginatedOperation with mode: 'offset', inputToken: 'offset', items: 'data', pageSize: 'limit'",
+        "  - Exports: listNotes (makePaginated with .pages/.items), createNote, getNote, updateNote, deleteNote",
+        "Update src/index.ts: add Notes namespace export, add NoteId/NoteTag to common exports",
+        "Create test/notes.test.ts:",
+        "  - Test: 'should list notes' — listNotes({ limit: 5 })",
+        "  - Test: 'should perform full CRUD' — using withResource pattern: create note on a people record, read back, update title, delete"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/notes.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-007",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Tasks service (GET query param pagination, CRUD with delete) and integration test",
+      "steps": [
+        "Add TaskId and Assignee to src/common.ts per reference 05-common-schemas.md",
+        "Implement src/services/tasks.ts per reference 06-service-authoring.md:",
+        "  - AttioTask schema: id (TaskId), content_plaintext, format, deadline_at, is_completed, linked_records, assignees, created_by_actor, created_at",
+        "  - TaskList schema: data: S.Array(AttioTask)",
+        "  - TaskResponse schema: data: AttioTask",
+        "  - ListTasksRequest: GET /v2/tasks — limit, offset, linked_object, linked_record_id as HttpQuery params",
+        "  - CreateTaskRequest: POST /v2/tasks",
+        "  - GetTaskRequest: GET /v2/tasks/{task_id}",
+        "  - UpdateTaskRequest: PATCH /v2/tasks/{task_id}",
+        "  - DeleteTaskRequest: DELETE /v2/tasks/{task_id}",
+        "  - listTasksOp as PaginatedOperation with mode: 'offset'",
+        "  - Exports: listTasks (makePaginated), createTask, getTask, updateTask, deleteTask",
+        "Update src/index.ts: add Tasks namespace export, add TaskId/Assignee to common exports",
+        "Create test/tasks.test.ts:",
+        "  - Test: 'should list tasks' — listTasks({ limit: 5 })",
+        "  - Test: 'should perform full CRUD' — using withResource pattern: create task linked to a people record, read back, update, delete"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/tasks.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-008",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Comments service (non-paginated list + create + delete) and integration test",
+      "steps": [
+        "Implement src/services/comments.ts per reference 06-service-authoring.md:",
+        "  - AttioComment schema: id (S.Unknown), author, content_plaintext, format, created_at",
+        "  - CommentList schema: data: S.Array(AttioComment)",
+        "  - CommentResponse schema: data: AttioComment",
+        "  - ListCommentsRequest: GET /v2/threads/{thread_id}/comments — thread_id as HttpLabel",
+        "  - CreateCommentRequest: POST /v2/threads/{thread_id}/comments — thread_id as HttpLabel, format/content as body",
+        "  - DeleteCommentRequest: DELETE /v2/comments/{comment_id} — note different base path",
+        "  - Exports: listComments, createComment, deleteComment",
+        "Update src/index.ts: add Comments namespace export",
+        "Create test/comments.test.ts:",
+        "  - Test: 'should create and delete a comment on a note thread' — create a note first to get a thread, then create comment, then delete it"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/comments.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-009",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Webhooks service (GET query param pagination, full CRUD) and integration test",
+      "steps": [
+        "Add WebhookId and WebhookSubscription to src/common.ts per reference 05-common-schemas.md",
+        "Implement src/services/webhooks.ts per reference 06-service-authoring.md:",
+        "  - AttioWebhook schema: id (WebhookId), target_url, subscriptions (S.Array(WebhookSubscription)), status, created_at",
+        "  - WebhookList schema: data: S.Array(AttioWebhook)",
+        "  - WebhookResponse schema: data: AttioWebhook",
+        "  - ListWebhooksRequest: GET /v2/webhooks — limit, offset as HttpQuery",
+        "  - CreateWebhookRequest: POST /v2/webhooks — target_url, subscriptions as body",
+        "  - GetWebhookRequest: GET /v2/webhooks/{webhook_id}",
+        "  - UpdateWebhookRequest: PATCH /v2/webhooks/{webhook_id}",
+        "  - DeleteWebhookRequest: DELETE /v2/webhooks/{webhook_id}",
+        "  - listWebhooksOp as PaginatedOperation with mode: 'offset'",
+        "  - Exports: listWebhooks (makePaginated), createWebhook, getWebhook, updateWebhook, deleteWebhook",
+        "Update src/index.ts: add Webhooks namespace export, add WebhookId/WebhookSubscription to common exports",
+        "Create test/webhooks.test.ts:",
+        "  - Test: 'should perform full CRUD' — using withResource: create webhook with test target_url, read back, update target_url, delete"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/webhooks.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "SVC-010",
+      "category": "service",
+      "package": "attio",
+      "description": "Implement Workspace Members service (read-only list + get) and integration test",
+      "steps": [
+        "Implement src/services/workspace-members.ts per reference 06-service-authoring.md:",
+        "  - WorkspaceMember schema: id (WorkspaceMemberId), first_name, last_name, avatar_url, email_address, created_at, access_level",
+        "  - WorkspaceMemberList schema: data: S.Array(WorkspaceMember)",
+        "  - WorkspaceMemberResponse schema: data: WorkspaceMember",
+        "  - ListWorkspaceMembersRequest: GET /v2/workspace_members (no params)",
+        "  - GetWorkspaceMemberRequest: GET /v2/workspace_members/{workspace_member_id}",
+        "  - Exports: listWorkspaceMembers, getWorkspaceMember via makeClient",
+        "Update src/index.ts: add WorkspaceMembers namespace export",
+        "Create test/workspace-members.test.ts:",
+        "  - Test: 'should list workspace members' — verify data array, at least one member",
+        "  - Test: 'should get a specific member' — get first from list, then getWorkspaceMember by id"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run test/workspace-members.test.ts passes",
+        "cd packages/attio && bun vitest run passes (all tests)"
+      ]
+    },
+    {
+      "id": "FINAL-001",
+      "category": "final",
+      "package": "attio",
+      "description": "Complete common.ts with all remaining schemas, finalize barrel exports, and run full verification",
+      "steps": [
+        "Ensure src/common.ts has ALL schemas per reference 05-common-schemas.md:",
+        "  - ActorReference, ObjectId, RecordId, ListId, EntryId, NoteId, TaskId, WebhookId, WorkspaceMemberId",
+        "  - LinkedRecord, Assignee, NoteTag, WebhookSubscription",
+        "Verify src/index.ts barrel matches reference 09-barrel-exports.md exactly:",
+        "  - All 12 service namespace exports: Objects, Records, Lists, Entries, Attributes, SelectOptions, Notes, Tasks, Comments, Webhooks, WorkspaceMembers, Self",
+        "  - All common schema exports",
+        "  - All error exports including ConflictError, COMMON_ERRORS_WITH_CONFLICT",
+        "  - Category, Retry, Traits namespace exports",
+        "  - Credentials, Endpoint, makePaginated exports",
+        "Verify all package.json export entries resolve correctly",
+        "Run full verification:",
+        "  - bun tsc -b (repo-wide type check)",
+        "  - cd packages/attio && bun vitest run (all tests)",
+        "  - Verify consumer imports: import { Records, Objects } from '@packages/attio'",
+        "  - Verify direct service imports: import { queryRecords } from '@packages/attio/records'"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/attio && bun vitest run — all tests pass (15 test files)",
+        "All 12 service namespaces exported from index.ts",
+        "All common schemas exported from index.ts",
+        "Consumer barrel import works: import { Records, Objects } from '@packages/attio'",
+        "Direct service import works: import { queryRecords } from '@packages/attio/records'"
+      ]
+    }
+  ]
+}
