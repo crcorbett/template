@@ -1179,8 +1179,8 @@
         "pnpm turbo test --filter=@packages/alchemy-posthog",
         "Credentials and Endpoint provided via Layer composition, not Effect.provide/Effect.provideService inline"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Moved Credentials and Endpoint from inline Effect.provide/Effect.provideService into a `posthog` Layer via Layer.mergeAll(Credentials.fromEnv(), Layer.succeed(Endpoint, 'https://us.posthog.com')). This layer is composed into the test infrastructure via Layer.provideMerge(posthog, Layer.provideMerge(alchemy, platform)), matching the reference alchemy-effect pattern where AWS credentials/region are composed as a layer. Typecheck passes. Tests require POSTHOG_API_KEY env var (integration tests)."
     },
     {
       "id": "CONFORM-019",

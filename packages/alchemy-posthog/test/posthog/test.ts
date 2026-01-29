@@ -71,6 +71,11 @@ const platform = Layer.mergeAll(
   Logger.pretty
 );
 
+const posthog = Layer.mergeAll(
+  Credentials.fromEnv(),
+  Layer.succeed(Endpoint, "https://us.posthog.com"),
+);
+
 export function test(
   name: string,
   options: { timeout?: number },
@@ -129,12 +134,12 @@ export function test(
         );
 
         return yield* testCase.pipe(
-          Effect.provide(Credentials.fromEnv()),
           Effect.withConfigProvider(configProvider)
         );
       }).pipe(
-        Effect.provide(Layer.provideMerge(alchemy, platform)),
-        Effect.provideService(Endpoint, "https://us.posthog.com"),
+        Effect.provide(
+          Layer.provideMerge(posthog, Layer.provideMerge(alchemy, platform)),
+        ),
         Logger.withMinimumLogLevel(
           process.env["DEBUG"] ? LogLevel.Debug : LogLevel.Info
         ),

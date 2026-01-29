@@ -109,3 +109,15 @@ Changes:
 - Now uses: `ConfigProvider.orElse(yield* PlatformConfigProvider.fromDotEnv(".env"), ConfigProvider.fromEnv)`
 
 Verification: `npx tsc --noEmit` passes, no `fs.exists` call in test.ts, all 9 test files (11 tests) pass.
+
+## CONFORM-018: Move Credentials and Endpoint from inline to Layer composition
+
+Moved Credentials and Endpoint provisioning from inline `Effect.provide`/`Effect.provideService` calls into a proper `posthog` Layer, matching the alchemy-effect reference pattern where AWS credentials/region are composed as a Layer.
+
+Changes to test/posthog/test.ts:
+- Added `const posthog = Layer.mergeAll(Credentials.fromEnv(), Layer.succeed(Endpoint, "https://us.posthog.com"))` as a top-level Layer
+- Removed `Effect.provide(Credentials.fromEnv())` from inside the test runner Effect chain
+- Removed `Effect.provideService(Endpoint, "https://us.posthog.com")` from the pipe chain
+- Composed via `Layer.provideMerge(posthog, Layer.provideMerge(alchemy, platform))`
+
+Verification: `npx tsc --noEmit` passes. Tests require POSTHOG_API_KEY env var (integration tests).
