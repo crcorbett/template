@@ -700,26 +700,38 @@ Individual resource tests are independent (each creates its own prerequisites if
 
 ---
 
-## 9. Implementation Order
+## 9. Excluded Services
 
-| Phase | Tasks | Description |
-|-------|-------|-------------|
-| **Phase 1** | SETUP-001 to SETUP-004 | Package scaffold, config, credentials, endpoint, retry, index |
-| **Phase 2** | OBJ-001 to OBJ-003 | Object resource, provider, tests |
-| **Phase 3** | ATTR-001 to ATTR-003 | Attribute resource, provider, tests |
-| **Phase 4** | SELOPT-001 to SELOPT-003 | SelectOption resource, provider, tests |
-| **Phase 5** | STAT-001 to STAT-003 | Status resource, provider, tests |
-| **Phase 6** | LIST-001 to LIST-003 | List resource, provider, tests |
-| **Phase 7** | REC-001 to REC-003 | Record resource, provider, tests |
-| **Phase 8** | ENT-001 to ENT-003 | Entry resource, provider, tests |
-| **Phase 9** | HOOK-001 to HOOK-003 | Webhook resource, provider, tests |
-| **Phase 10** | NOTE-001 to NOTE-003 | Note resource, provider, tests |
-| **Phase 11** | TASK-001 to TASK-003 | Task resource, provider, tests |
-| **Phase 12** | FINAL-001 to FINAL-003 | Type check, smoke test, alchemy.run.ts example |
+The following `@packages/attio` SDK services are intentionally excluded from this provider:
+
+| Service | Reason |
+|---------|--------|
+| **Comment** | Conversational artifact — not IaC-manageable. No update API, no list endpoint. |
+| **Meeting** | Event data — not infrastructure. Create-only (no update/delete), complex sub-resources. |
+| **Thread** | Read-only (list, get). Created implicitly by comments. Not a manageable resource. |
+| **Self** | Read-only introspection (returns API key scopes). Not a resource. |
+| **WorkspaceMember** | Read-only reference data. Members managed via Attio UI, not API. |
 
 ---
 
-## 10. Reference Files
+## 10. Implementation Order (Tracer Bullet)
+
+The implementation follows a "tracer bullet" approach: get one resource fully working end-to-end
+(scaffold → infra → resource → provider → test harness → integration test against real API) before
+filling in the remaining resources. This validates the entire pipeline early.
+
+| Phase | Tasks | Description |
+|-------|-------|-------------|
+| **Scaffold** | SCAFFOLD-001 | Package scaffold, monorepo registration |
+| **Infrastructure** | INFRA-001 | Config, credentials, endpoint, retry |
+| **Tracer 1** | TRACER-001 | Object resource end-to-end: resource + provider + index + test harness + integration test |
+| **Tracer 2** | TRACER-002 | Attribute resource: validates Input<T> cross-resource bindings |
+| **Services** | SVC-001 to SVC-008 | SelectOption, Status, List, Record, Entry, Webhook, Note, Task |
+| **Final** | FINAL-001 | Type check, smoke test, alchemy.run.ts example |
+
+---
+
+## 11. Reference Files
 
 | File | Topic |
 |------|-------|
