@@ -1,0 +1,50 @@
+{
+  "name": "@packages/plg",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "@packages/source": "./src/index.ts",
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    },
+    "./events": {
+      "import": {
+        "@packages/source": "./src/events.ts",
+        "types": "./dist/src/events.d.ts",
+        "default": "./dist/src/events.js"
+      }
+    },
+    "./feature-flags": {
+      "import": {
+        "@packages/source": "./src/feature-flags.ts",
+        "types": "./dist/src/feature-flags.d.ts",
+        "default": "./dist/src/feature-flags.js"
+      }
+    },
+    "./surveys": {
+      "import": {
+        "@packages/source": "./src/surveys.ts",
+        "types": "./dist/src/surveys.d.ts",
+        "default": "./dist/src/surveys.js"
+      }
+    },
+    "./attio": {
+      "import": {
+        "@packages/source": "./src/attio.ts",
+        "types": "./dist/src/attio.d.ts",
+        "default": "./dist/src/attio.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "catalog:typescript"
+  }
+}

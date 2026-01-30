@@ -114,7 +114,10 @@
       "name": "@packages/alchemy-attio",
       "version": "0.1.0",
       "dependencies": {
+        "@packages/alchemy-posthog": "workspace:*",
         "@packages/attio": "workspace:*",
+        "@packages/plg": "workspace:*",
+        "@packages/posthog": "workspace:*",
         "alchemy-effect": "0.6.0",
       },
       "devDependencies": {
@@ -134,6 +137,7 @@
       "name": "@packages/alchemy-posthog",
       "version": "0.1.0",
       "dependencies": {
+        "@packages/plg": "workspace:*",
         "@packages/posthog": "workspace:*",
         "alchemy-effect": "0.6.0",
       },
@@ -209,6 +213,13 @@
       "devDependencies": {
         "@types/pg": "^8.15.4",
         "drizzle-kit": "^0.31.4",
+        "typescript": "catalog:typescript",
+      },
+    },
+    "packages/plg": {
+      "name": "@packages/plg",
+      "version": "0.1.0",
+      "devDependencies": {
         "typescript": "catalog:typescript",
       },
     },
@@ -813,6 +824,8 @@
     "@packages/core": ["@packages/core@workspace:packages/core"],
 
     "@packages/database": ["@packages/database@workspace:packages/database"],
+
+    "@packages/plg": ["@packages/plg@workspace:packages/plg"],
 
     "@packages/posthog": ["@packages/posthog@workspace:packages/posthog"],
 

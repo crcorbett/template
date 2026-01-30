@@ -9,9 +9,11 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": ["src/**/*", "test/**/*", "*.run.ts"],
   "exclude": ["node_modules", "dist"],
   "references": [
-    { "path": "../attio" }
+    { "path": "../attio" },
+    { "path": "../plg" },
+    { "path": "../alchemy-posthog" }
   ]
 }

@@ -97,6 +97,9 @@
   },
   "dependencies": {
     "@packages/attio": "workspace:*",
+    "@packages/plg": "workspace:*",
+    "@packages/posthog": "workspace:*",
+    "@packages/alchemy-posthog": "workspace:*",
     "alchemy-effect": "0.6.0"
   },
   "peerDependencies": {

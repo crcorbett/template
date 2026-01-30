@@ -9,6 +9,9 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "test/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "test/**/*", "*.run.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../plg" }
+  ]
 }
