@@ -188,7 +188,9 @@
         "Every constant in Surveys has a corresponding Survey resource",
         "All new resources use constants (no magic strings)",
         "All new resources are in the resources array"
-      ]
+      ],
+      "passes": true,
+      "notes": "Added 7 missing Actions (SignupStarted, OnboardingStarted, CheckoutStarted, CheckoutCompleted, AccountCancelled, PaymentFailed, TrialExpired), 2 FeatureFlags (NewNavigation, NewPricingPage both inactive at 0%), and 4 Surveys (PersonaSurvey popover, JtbdSurvey popover, SupportCsatSurvey api, TrialExitSurvey api with follow-up). All use constants, all added to resources array. Removed @pending JSDoc from feature-flags.ts and surveys.ts. SESSION_STARTED and SESSION_ENDED are passive system events, not user actions, so no Actions created for them. bun tsc -b passes clean."
     },
     {
       "id": "STACK-003",

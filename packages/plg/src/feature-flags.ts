@@ -13,7 +13,6 @@
 export const FeatureFlags = {
   // UI/UX
   DARK_MODE: "dark-mode",
-  /** @pending Not yet provisioned as a FeatureFlag resource in the PLG stack. See STACK-002. */
   NEW_NAVIGATION: "new-navigation",
 
   // Feature access
@@ -22,7 +21,6 @@ export const FeatureFlags = {
 
   // Experiments
   NEW_ONBOARDING: "new-onboarding-flow",
-  /** @pending Not yet provisioned as a FeatureFlag resource in the PLG stack. See STACK-002. */
   NEW_PRICING_PAGE: "new-pricing-page",
 } as const;
 

@@ -28,3 +28,15 @@
   - All 10 use `Events.*` constants (no magic strings), all have `saved: true`.
   - Dashboard linking via `dashboards` prop is not functional — the provider filters it out. Documented via JSDoc and descriptions reference the intended dashboard.
 - **Verified**: `bun tsc -b` passes, `alchemy plan` succeeds with all 10 Insight resources in the plan output.
+
+## STACK-002 — Add missing Action and resource definitions to close constant/IaC gaps
+- **Status**: Passed
+- **Changed**: `packages/plg/plg-stack.run.ts`, `packages/plg/src/feature-flags.ts`, `packages/plg/src/surveys.ts`
+- **Summary**: Closed all constant/IaC gaps:
+  - **7 new Actions**: SignupStartedAction, OnboardingStartedAction, CheckoutStartedAction, CheckoutCompletedAction, AccountCancelledAction, PaymentFailedAction, TrialExpiredAction. All use `Events.*` constants and appropriate tags.
+  - **2 new FeatureFlags**: NewNavigationFlag, NewPricingPageFlag — both `active: false`, `rolloutPercentage: 0`.
+  - **4 new Surveys**: PersonaSurvey (popover, single_choice for role), JtbdSurvey (popover, open question), SupportCsatSurvey (api, rating 1-5), TrialExitSurvey (api, single_choice + open follow-up).
+  - Removed `@pending` JSDoc annotations from feature-flags.ts (2) and surveys.ts (4) since resources are now provisioned.
+  - All 13 new resources added to the `resources` array.
+  - SESSION_STARTED and SESSION_ENDED are passive system events (not user actions), so no Actions created for them.
+- **Verified**: `bun tsc -b` passes cleanly. All 6/6 FeatureFlags, 8/8 Surveys, and 12/14 Events (excluding passive session events) have corresponding resources.

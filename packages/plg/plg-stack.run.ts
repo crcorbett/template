@@ -456,6 +456,61 @@ export class PlanDowngradedAction extends Action("PlanDowngradedAction", {
   steps: [{ event: Events.PLAN_DOWNGRADED }],
 }) {}
 
+export class SignupStartedAction extends Action("SignupStartedAction", {
+  name: "Signup Started",
+  description: "User initiated the signup flow",
+  tags: ["acquisition", "funnel", "managed-by-iac"],
+  steps: [{ event: Events.SIGNUP_STARTED }],
+}) {}
+
+export class OnboardingStartedAction extends Action(
+  "OnboardingStartedAction",
+  {
+    name: "Onboarding Started",
+    description: "User started the onboarding flow",
+    tags: ["activation", "funnel", "managed-by-iac"],
+    steps: [{ event: Events.ONBOARDING_STARTED }],
+  },
+) {}
+
+export class CheckoutStartedAction extends Action("CheckoutStartedAction", {
+  name: "Checkout Started",
+  description: "User initiated the checkout/payment flow",
+  tags: ["monetization", "funnel", "managed-by-iac"],
+  steps: [{ event: Events.CHECKOUT_STARTED }],
+}) {}
+
+export class CheckoutCompletedAction extends Action(
+  "CheckoutCompletedAction",
+  {
+    name: "Checkout Completed",
+    description: "User completed the checkout/payment flow",
+    tags: ["monetization", "funnel", "managed-by-iac"],
+    steps: [{ event: Events.CHECKOUT_COMPLETED }],
+  },
+) {}
+
+export class AccountCancelledAction extends Action("AccountCancelledAction", {
+  name: "Account Cancelled",
+  description: "User cancelled their account",
+  tags: ["churn", "managed-by-iac"],
+  steps: [{ event: Events.ACCOUNT_CANCELLED }],
+}) {}
+
+export class PaymentFailedAction extends Action("PaymentFailedAction", {
+  name: "Payment Failed",
+  description: "A payment attempt failed",
+  tags: ["monetization", "churn", "managed-by-iac"],
+  steps: [{ event: Events.PAYMENT_FAILED }],
+}) {}
+
+export class TrialExpiredAction extends Action("TrialExpiredAction", {
+  name: "Trial Expired",
+  description: "User's trial period expired without conversion",
+  tags: ["churn", "managed-by-iac"],
+  steps: [{ event: Events.TRIAL_EXPIRED }],
+}) {}
+
 // =============================================================================
 // POSTHOG: Cohorts
 // =============================================================================
@@ -882,6 +937,20 @@ export class AdvancedExportsFlag extends FeatureFlag("AdvancedExportsFlag", {
   rolloutPercentage: 0,
 }) {}
 
+export class NewNavigationFlag extends FeatureFlag("NewNavigationFlag", {
+  key: FeatureFlags.NEW_NAVIGATION,
+  name: "New Navigation",
+  active: false,
+  rolloutPercentage: 0,
+}) {}
+
+export class NewPricingPageFlag extends FeatureFlag("NewPricingPageFlag", {
+  key: FeatureFlags.NEW_PRICING_PAGE,
+  name: "New Pricing Page",
+  active: false,
+  rolloutPercentage: 0,
+}) {}
+
 // =============================================================================
 // POSTHOG: Surveys
 // =============================================================================
@@ -956,6 +1025,80 @@ export class ChurnExitSurvey extends Survey("ChurnExitSurvey", {
     {
       type: "open",
       question: "Is there anything we could have done better?",
+      optional: true,
+    },
+  ],
+}) {}
+
+export class PersonaSurvey extends Survey("PersonaSurvey", {
+  name: "Persona Survey",
+  type: "popover",
+  description: "Identify user role and persona for segmentation",
+  questions: [
+    {
+      type: "single_choice",
+      question: "Which best describes your role?",
+      choices: [
+        "Founder / CEO",
+        "Product Manager",
+        "Engineer / Developer",
+        "Designer",
+        "Marketing / Growth",
+        "Sales",
+        "Other",
+      ],
+    },
+  ],
+}) {}
+
+export class JtbdSurvey extends Survey("JtbdSurvey", {
+  name: "Jobs To Be Done",
+  type: "popover",
+  description: "Discover primary jobs-to-be-done for product direction",
+  questions: [
+    {
+      type: "open",
+      question:
+        "What is the main job you're trying to accomplish with our product?",
+    },
+  ],
+}) {}
+
+export class SupportCsatSurvey extends Survey("SupportCsatSurvey", {
+  name: "Support CSAT",
+  type: "api",
+  description: "CSAT survey sent after support interactions",
+  questions: [
+    {
+      type: "rating",
+      question: "How satisfied are you with the support you received?",
+      scale: 5,
+      lowerBoundLabel: "Very dissatisfied",
+      upperBoundLabel: "Very satisfied",
+    },
+  ],
+}) {}
+
+export class TrialExitSurvey extends Survey("TrialExitSurvey", {
+  name: "Trial Exit Survey",
+  type: "api",
+  description: "Survey sent when trial expires without conversion",
+  questions: [
+    {
+      type: "single_choice",
+      question: "What's the main reason you didn't convert?",
+      choices: [
+        "Too expensive",
+        "Didn't have enough time to evaluate",
+        "Missing features I need",
+        "Too complicated to set up",
+        "Chose a different solution",
+        "Other",
+      ],
+    },
+    {
+      type: "open",
+      question: "What would have convinced you to upgrade?",
       optional: true,
     },
   ],
@@ -1037,11 +1180,18 @@ const stack = defineStack({
     CompanyChangesWebhook,
 
     // === POSTHOG: Actions ===
+    SignupStartedAction,
     SignupCompletedAction,
+    OnboardingStartedAction,
     OnboardingCompletedAction,
     FeatureUsedAction,
     PlanUpgradedAction,
     PlanDowngradedAction,
+    CheckoutStartedAction,
+    CheckoutCompletedAction,
+    AccountCancelledAction,
+    PaymentFailedAction,
+    TrialExpiredAction,
 
     // === POSTHOG: Cohorts ===
     PowerUsersCohort,
@@ -1076,12 +1226,18 @@ const stack = defineStack({
     BetaFeaturesFlag,
     NewOnboardingFlag,
     AdvancedExportsFlag,
+    NewNavigationFlag,
+    NewPricingPageFlag,
 
     // === POSTHOG: Surveys ===
     PostActivationNpsSurvey,
     MonthlyNpsSurvey,
     FeatureCsatSurvey,
     ChurnExitSurvey,
+    PersonaSurvey,
+    JtbdSurvey,
+    SupportCsatSurvey,
+    TrialExitSurvey,
 
     // === POSTHOG: Experiments ===
     OnboardingFlowExperiment,
