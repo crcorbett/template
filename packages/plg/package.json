@@ -70,6 +70,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "test": "vitest run",
     "check-types": "tsc --noEmit",
     "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
   },

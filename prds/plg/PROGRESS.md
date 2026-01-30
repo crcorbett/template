@@ -121,3 +121,38 @@
 - All automation functions compose PostHog tracking and Attio CRM updates
 - Parameters are fully typed using PLG constants (EventPayloads intersection types)
 - All return `Effect<void, AttioErrorType, AttioDeps>`
+
+## TEST-001: Add type-level tests for PLG SDK and integration tests for the stack
+
+**Status**: Passed
+
+### Changes
+
+1. **Created `test/sdk/track.test.ts`** (8 tests)
+   - Runtime tests: `createPlgClient` delegates to `posthog.capture`, passes event names and properties correctly
+   - Type-level tests: `@ts-expect-error` for missing required `feature` property, missing `method`, incomplete monetization payloads, invalid `method` enum value
+
+2. **Created `test/sdk/identify.test.ts`** (7 tests)
+   - Runtime tests: `identify` delegates to `posthog.identify`, accepts partial and full `UserPropertyMap`
+   - Type-level tests: rejects invalid plan type, non-boolean `is_pql`, non-number `feature_count`, unknown property keys
+
+3. **Created `test/constants.test.ts`** (18 tests)
+   - Events: snake_case naming, no duplicates, >=10 events
+   - FeatureFlags: kebab-case naming, no duplicates
+   - Surveys: kebab-case naming, no duplicates
+   - AttioAttributes: snake_case naming, no duplicates
+   - Plans: lowercase values, >=3 tiers, no duplicates
+   - BillingIntervals: no duplicates
+   - UserProperties: snake_case naming, no duplicates, includes `plan` property
+   - Cross-constant: no overlapping values between Events/FeatureFlags and Events/Surveys
+
+4. **Infrastructure**
+   - Created `vitest.config.ts` matching monorepo pattern
+   - Added `"test": "vitest run"` to `package.json`
+   - Updated `tsconfig.json` include to `["src/**/*", "test/**/*", "plg-stack.run.ts", "vitest.config.ts"]`
+
+### Verification
+
+- `bun tsc -b` passes clean
+- `bun vitest run` — 33/33 tests pass (3 test files)
+- All imports use `@effect/vitest` (`describe`, `expect`, `it`)
