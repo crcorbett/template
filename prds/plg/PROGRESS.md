@@ -70,3 +70,29 @@
 - `bun tsc -b` passes clean
 - Type-level tests confirm: `track(FEATURE_USED, {})` fails, `track(FEATURE_USED, {feature:'x'})` passes, `track(SIGNUP_COMPLETED, {method:'invalid'})` fails
 - `identify` enforces UserPropertyMap types (PlanType, LifecycleStage, boolean for is_pql)
+
+## SDK-002: Create type-safe Attio sync helpers for CRM updates
+
+**Status**: Passed
+
+### Changes
+
+1. **Created `src/sdk/attio-sync.ts`** — 6 typed helper functions for Attio CRM updates:
+   - `updateLifecycleStage(companyId, stage: LifecycleStage)` — sets company lifecycle stage
+   - `updateChurnRisk(companyId, risk: ChurnRiskLevel)` — sets company churn risk level
+   - `updateHealthScore(companyId, score: number)` — sets company health score (0–100)
+   - `updateMrr(companyId, mrrCents: number)` — sets company MRR in cents
+   - `updateProductRole(personId, role: ProductRole)` — sets person product role
+   - `markAsPql(dealId)` — marks a deal as PQL (sets `is_pql: true`)
+
+2. **All methods use `Records.updateRecord`** from `@packages/attio` with `AttioAttributes` constants for attribute slugs
+
+3. **Each returns `Effect<void, AttioErrorType, AttioDeps>`** where `AttioDeps = HttpClient | Credentials | Endpoint`
+
+4. **Updated `src/sdk/index.ts`** — added all 6 functions to barrel export
+
+### Verification
+
+- `bun tsc -b` passes clean
+- Each method enforces correct value types via function signatures
+- All attribute slugs reference `AttioAttributes` constants (no magic strings)

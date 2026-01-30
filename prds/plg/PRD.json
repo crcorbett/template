@@ -306,7 +306,9 @@
         "updateProductRole only accepts ProductRole values",
         "updateHealthScore only accepts number (0-100)",
         "All methods use AttioAttributes constants for attribute slugs"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created sdk/attio-sync.ts with 6 typed helper functions: updateLifecycleStage (LifecycleStage), updateChurnRisk (ChurnRiskLevel), updateHealthScore (number), updateMrr (number), updateProductRole (ProductRole), markAsPql (boolean). All use Records.updateRecord from @packages/attio with AttioAttributes constants for attribute slugs. Each returns Effect<void, AttioErrorType, AttioDeps> where AttioDeps = HttpClient | Credentials | Endpoint. Exported via sdk/index.ts barrel. bun tsc -b passes clean."
     },
     {
       "id": "SDK-003",
