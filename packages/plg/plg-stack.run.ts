@@ -70,7 +70,6 @@ import { Cohort } from "@packages/alchemy-posthog/posthog/cohorts";
 import { FeatureFlag } from "@packages/alchemy-posthog/posthog/feature-flags";
 import { Survey } from "@packages/alchemy-posthog/posthog/surveys";
 import { Experiment } from "@packages/alchemy-posthog/posthog/experiments";
-import { Annotation } from "@packages/alchemy-posthog/posthog/annotations";
 import { Insight } from "@packages/alchemy-posthog/posthog/insights";
 
 // Import shared PLG constants (local to this package)
@@ -397,6 +396,16 @@ export class StatusClosedLost extends Status("StatusClosedLost", {
 // ATTIO: Webhooks
 // =============================================================================
 
+/**
+ * Webhook for deal record changes in Attio.
+ *
+ * **Placeholder URL** — replace `targetUrl` per environment to point at your
+ * ingestion endpoint. Resource class props are static, so Config cannot be
+ * used here. Set the real URL when deploying to staging/prod.
+ *
+ * @see ATTIO_DEAL_WEBHOOK_URL environment variable (future: make configurable
+ *   via a wrapper that reads Config and passes the resolved URL)
+ */
 export class DealChangesWebhook extends Webhook("DealChangesWebhook", {
   targetUrl: "https://httpbin.org/post?hook=deal-changes",
   subscriptions: [
@@ -406,6 +415,16 @@ export class DealChangesWebhook extends Webhook("DealChangesWebhook", {
   ],
 }) {}
 
+/**
+ * Webhook for company record changes in Attio.
+ *
+ * **Placeholder URL** — replace `targetUrl` per environment to point at your
+ * ingestion endpoint. Resource class props are static, so Config cannot be
+ * used here. Set the real URL when deploying to staging/prod.
+ *
+ * @see ATTIO_COMPANY_WEBHOOK_URL environment variable (future: make configurable
+ *   via a wrapper that reads Config and passes the resolved URL)
+ */
 export class CompanyChangesWebhook extends Webhook("CompanyChangesWebhook", {
   targetUrl: "https://httpbin.org/post?hook=company-changes",
   subscriptions: [
@@ -1123,12 +1142,10 @@ export class OnboardingFlowExperiment extends Experiment(
 // POSTHOG: Annotations
 // =============================================================================
 
-export class DeploymentAnnotation extends Annotation("DeploymentAnnotation", {
-  content: "PLG Stack deployed via alchemy",
-  dateMarker: new Date().toISOString(),
-  scope: "project",
-  creationType: "USR",
-}) {}
+// DeploymentAnnotation removed — annotations mark a point-in-time event (a
+// deploy) and should be created by CI at deploy time, not declared as static
+// IaC resources. Using `new Date().toISOString()` at import time caused every
+// `alchemy plan` to show drift.
 
 // =============================================================================
 // Stack Definition
@@ -1242,8 +1259,6 @@ const stack = defineStack({
     // === POSTHOG: Experiments ===
     OnboardingFlowExperiment,
 
-    // === POSTHOG: Annotations ===
-    DeploymentAnnotation,
   ],
   providers: providers(),
   tap: (outputs) =>

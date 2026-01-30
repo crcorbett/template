@@ -216,7 +216,9 @@
         "DeploymentAnnotation no longer uses new Date().toISOString() at import time",
         "Webhook URLs are either configurable via environment or clearly documented as placeholders",
         "Running alchemy plan twice in succession does not show annotation drift"
-      ]
+      ],
+      "passes": true,
+      "notes": "Chose Option C: removed DeploymentAnnotation entirely — annotations are per-deploy CI artifacts, not static IaC resources. Removed the Annotation import and the resource from the stack array. For webhooks, Config.string cannot be used in static resource class props, so kept httpbin placeholder URLs and added detailed JSDoc documenting they are placeholders that must be updated per environment, referencing ATTIO_DEAL_WEBHOOK_URL and ATTIO_COMPANY_WEBHOOK_URL env vars. bun tsc -b passes clean, alchemy plan runs without errors or annotation drift."
     },
     {
       "id": "STACK-004",

@@ -1,11 +1,26 @@
 # PLG Stack Research
 
-## CONST-001 Notes
-- Using `interface` with computed property keys (`[Events.X]: {...}`) works well for payload maps — TypeScript shows the resolved event name in error messages.
-- The `as const` assertion on `Events` ensures the computed keys are literal string types, not `string`.
+## alchemy-effect Resource Class Props Are Static
 
-## STACK-001 Notes
-- The `Insight` resource accepts a `dashboards` prop (`Input<number>[]`) but the provider's `insight.provider.ts` does **not** send it to the PostHog API — the field is filtered out during create/update. This means insights cannot be programmatically linked to dashboards via the alchemy resource model. Workaround: reference the target dashboard in the insight's `description` field and link manually in the PostHog UI, or use a separate dashboard tile API if one becomes available.
-- `RetentionQuery` uses `retentionFilter` with `targetEntity`/`returningEntity` (both have `id` = event name string, `type` = "events").
-- `FunnelsQuery` supports `funnelsFilter` with `funnelVizType: "time_to_convert"` and `funnelWindowInterval`/`funnelWindowIntervalUnit` for time-to-convert analysis.
-- `TrendsQuery` supports `trendsFilter.formula` for computed series (e.g., `"A / B * 100"`).
+Resource class definitions in alchemy-effect are plain static class declarations. Props are evaluated at class definition time (module load). This means:
+
+- **Cannot use `yield*`** — class bodies are in strict mode, `yield` is not available
+- **Cannot use `Config.string()`** — requires an Effect generator context
+- **`Input<T>` accepts `T | Output<T>`** — allows binding to other resource outputs, but not Config values
+- **Config values are only accessible** in `defineStages()` via `Effect.fn()` and in provider implementations
+
+### Implication for Webhooks
+
+Webhook `targetUrl` is typed as `string` (not `Input<string>`), so it cannot even accept an `Output<string>` binding. The URL must be a static string literal at definition time.
+
+To make webhook URLs configurable per environment, you would need to:
+1. Define a wrapper function that reads Config in an Effect generator
+2. Dynamically construct the Webhook resource class with the resolved URL
+3. Or use stage-specific stack files that import different URL constants
+
+### DeploymentAnnotation Anti-Pattern
+
+Using `new Date().toISOString()` in a resource prop is an anti-pattern because:
+- The value changes on every module load
+- Every `alchemy plan` / `alchemy diff` shows a change
+- Annotations should be created as side effects of deploys, not as declarative resources
