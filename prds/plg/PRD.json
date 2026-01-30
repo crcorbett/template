@@ -90,7 +90,9 @@
         "import { Plans, UserProperties } from '@packages/plg' resolves",
         "Plans constant has at least 3 tiers",
         "UserProperties constant covers person properties referenced in cohorts (e.g., 'plan' used in TrialEndingSoonCohort)"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created plans.ts (5 tiers: FREE, STARTER, PRO, ENTERPRISE, TRIAL + billing intervals) and user-properties.ts (7 person properties). Added both to index.ts re-exports and package.json export map. bun tsc -b passes clean."
     },
     {
       "id": "CONST-003",

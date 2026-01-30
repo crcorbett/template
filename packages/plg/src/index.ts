@@ -27,6 +27,8 @@
 export * from "./events.js";
 export * from "./feature-flags.js";
 export * from "./surveys.js";
+export * from "./plans.js";
+export * from "./user-properties.js";
 
 // Attio constants
 export * from "./attio.js";

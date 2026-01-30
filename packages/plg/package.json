@@ -39,6 +39,20 @@
         "default": "./dist/src/attio.js"
       }
     },
+    "./plans": {
+      "import": {
+        "@packages/source": "./src/plans.ts",
+        "types": "./dist/src/plans.d.ts",
+        "default": "./dist/src/plans.js"
+      }
+    },
+    "./user-properties": {
+      "import": {
+        "@packages/source": "./src/user-properties.ts",
+        "types": "./dist/src/user-properties.d.ts",
+        "default": "./dist/src/user-properties.js"
+      }
+    },
     "./plg-stack": {
       "import": {
         "@packages/source": "./plg-stack.run.ts",
