@@ -404,7 +404,9 @@
         "1:1 mapping between constants and stack resources (no orphans, no gaps)",
         "No magic strings in plg-stack.run.ts",
         "SDK imports resolve correctly from consumer packages"
-      ]
+      ],
+      "passes": true,
+      "notes": "Full audit complete. 1:1 alignment verified: 14 Events → 14 EventPayloads entries, 6 FeatureFlags → 6 FeatureFlag resources, 8 Surveys → 8 Survey resources, 11 AttioAttributes → 11 Attribute resources, 5 LifecycleStages → 5 SelectOptions, 3 IcpTiers → 3 SelectOptions, 3 ChurnRiskLevels → 3 SelectOptions, 3 ProductRoles → 3 SelectOptions, 6 DealStages → 6 Status resources. No orphans, no gaps. Only magic string is '$pageview' (PostHog built-in, documented). 78 resources plan cleanly. bun tsc -b clean, 33 vitest tests pass, alchemy plan succeeds. Package exports (./, ./events, ./feature-flags, ./surveys, ./attio, ./plans, ./user-properties, ./sdk) all resolve with @packages/source condition."
     }
   ]
 }

@@ -156,3 +156,39 @@
 - `bun tsc -b` passes clean
 - `bun vitest run` — 33/33 tests pass (3 test files)
 - All imports use `@effect/vitest` (`describe`, `expect`, `it`)
+
+## FINAL-001: Final audit — verify all constants, stack resources, and SDK types are aligned end-to-end
+
+**Status**: Passed
+
+### Alignment Audit
+
+| Constant Object | Count | Resource Type | Count | Match |
+|---|---|---|---|---|
+| Events | 14 | EventPayloads entries | 14 | ✓ |
+| FeatureFlags | 6 | FeatureFlag resources | 6 | ✓ |
+| Surveys | 8 | Survey resources | 8 | ✓ |
+| AttioAttributes | 11 | Attribute resources | 11 | ✓ |
+| LifecycleStages | 5 | SelectOption resources | 5 | ✓ |
+| IcpTiers | 3 | SelectOption resources | 3 | ✓ |
+| ChurnRiskLevels | 3 | SelectOption resources | 3 | ✓ |
+| ProductRoles | 3 | SelectOption resources | 3 | ✓ |
+| DealStages | 6 | Status resources | 6 | ✓ |
+
+No orphans. No gaps. Total stack: 78 resources.
+
+### Magic Strings
+
+- `$pageview` in `LowEngagementCohort` — PostHog built-in event, documented with comment ✓
+- `httpbin.org` placeholder URLs in webhooks — documented with JSDoc ✓
+- No other unexplained magic strings
+
+### Package Exports
+
+All 9 export entries (`.`, `./events`, `./feature-flags`, `./surveys`, `./attio`, `./plans`, `./user-properties`, `./sdk`, `./plg-stack`) resolve with `@packages/source` condition.
+
+### Verification
+
+- `bun tsc -b` — no type errors
+- `bun vitest run` — 33/33 tests pass (3 files)
+- `alchemy plan` — 78 resources plan cleanly, no errors
