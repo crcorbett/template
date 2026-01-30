@@ -1,0 +1,335 @@
+{
+  "project": "alchemy-attio-provider",
+  "version": "1.0.0",
+  "description": "Attio CRM cloud provider for alchemy-effect — manages custom objects, attributes, records, lists, entries, webhooks, notes, and tasks as Infrastructure-as-Effects",
+  "package": "@packages/alchemy-attio",
+  "sdkDependency": "@packages/attio",
+  "referenceImplementation": "@packages/alchemy-posthog",
+  "tasks": [
+    {
+      "id": "SETUP-001",
+      "title": "Package scaffold",
+      "description": "Create packages/alchemy-attio/ with package.json, tsconfig.json, vitest.config.ts, .env, .gitignore. Register in monorepo workspace. Add dependency on @packages/attio and alchemy-effect.",
+      "phase": 1,
+      "status": "pending",
+      "verification": "bun install succeeds, directory structure exists"
+    },
+    {
+      "id": "SETUP-002",
+      "title": "Stage config augmentation",
+      "description": "Create src/attio/config.ts with AttioStageConfig interface (apiKey?, endpoint?) and StageConfig module augmentation. No projectId/workspaceId needed — API key is workspace-scoped.",
+      "phase": 1,
+      "status": "pending",
+      "verification": "TypeScript compiles, StageConfig.attio is typed"
+    },
+    {
+      "id": "SETUP-003",
+      "title": "Credentials, endpoint, and retry",
+      "description": "Create credentials.ts (reads attio.apiKey or ATTIO_API_KEY env), endpoint.ts (reads attio.endpoint or defaults to https://api.attio.com), retry.ts (exponential backoff 200ms base, 5 retries, retries RateLimitError/ServerError/UnknownAttioError).",
+      "phase": 1,
+      "status": "pending",
+      "verification": "TypeScript compiles, layers resolve correctly"
+    },
+    {
+      "id": "SETUP-004",
+      "title": "Provider composition index",
+      "description": "Create src/attio/index.ts with config(), resources(), bareProviders(), providers() composition. No Project layer (unlike PostHog). Import all resource modules. Export config side-effect import.",
+      "phase": 1,
+      "status": "pending",
+      "verification": "TypeScript compiles, providers() returns correct Layer type"
+    },
+    {
+      "id": "OBJ-001",
+      "title": "Object resource definition",
+      "description": "Create src/attio/object/object.ts with ObjectProps (apiSlug, singularNoun, pluralNoun), ObjectAttrs (objectId, apiSlug, singularNoun, pluralNoun, createdAt), Object Resource('Attio.Object'). apiSlug triggers replace.",
+      "phase": 2,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "OBJ-002",
+      "title": "Object provider implementation",
+      "description": "Create src/attio/object/object.provider.ts. diff: apiSlug change → replace, noun changes → update. read: getObject by apiSlug. create: idempotent via getObject first. update: updateObject. delete: no-op with session.note warning. No Project context needed.",
+      "phase": 2,
+      "status": "pending",
+      "depends": ["OBJ-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "OBJ-003",
+      "title": "Object provider tests",
+      "description": "Create test/attio/object/object.provider.test.ts. Test create (verify via getObject), update nouns (verify ID stable), replacement (change apiSlug). Note: Objects cannot be deleted — test cleanup is limited to verification only.",
+      "phase": 2,
+      "status": "pending",
+      "depends": ["OBJ-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "ATTR-001",
+      "title": "Attribute resource definition",
+      "description": "Create src/attio/attribute/attribute.ts with AttributeProps (target, identifier as Input<string>, apiSlug, title, type, description, isRequired, isUnique, isMultiselect), AttributeAttrs (attributeId, apiSlug, title, type, etc.), Attribute Resource('Attio.Attribute').",
+      "phase": 3,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "ATTR-002",
+      "title": "Attribute provider implementation",
+      "description": "Create src/attio/attribute/attribute.provider.ts. diff: target/identifier/type/apiSlug → replace, others → update. read: getAttribute by (target, identifier, apiSlug). create: idempotent via getAttribute first. update: updateAttribute. delete: no-op with warning.",
+      "phase": 3,
+      "status": "pending",
+      "depends": ["ATTR-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "ATTR-003",
+      "title": "Attribute provider tests",
+      "description": "Create test/attio/attribute/attribute.provider.test.ts. Tests create attribute on an existing object, update title/description, verify type change triggers replacement. Requires a pre-existing test object or creates one first.",
+      "phase": 3,
+      "status": "pending",
+      "depends": ["ATTR-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "SELOPT-001",
+      "title": "SelectOption resource definition",
+      "description": "Create src/attio/select-option/select-option.ts with SelectOptionProps (target, identifier as Input<string>, attribute as Input<string>, title), SelectOptionAttrs (optionId, title, isArchived), SelectOption Resource('Attio.SelectOption').",
+      "phase": 4,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "SELOPT-002",
+      "title": "SelectOption provider implementation",
+      "description": "Create src/attio/select-option/select-option.provider.ts. diff: target/identifier/attribute → replace, title → update. read: listSelectOptions scan by title. create: idempotent via list scan (un-archive if found). delete: soft archive via updateSelectOption(is_archived: true).",
+      "phase": 4,
+      "status": "pending",
+      "depends": ["SELOPT-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "SELOPT-003",
+      "title": "SelectOption provider tests",
+      "description": "Create test/attio/select-option/select-option.provider.test.ts. Tests create option on existing select attribute, update title, verify soft archive on delete. Requires pre-existing test object + select attribute.",
+      "phase": 4,
+      "status": "pending",
+      "depends": ["SELOPT-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "STAT-001",
+      "title": "Status resource definition",
+      "description": "Create src/attio/status/status.ts with StatusProps (target, identifier, attribute, title, celebrationEnabled, targetTimeInStatus), StatusAttrs (statusId, title, isArchived, celebrationEnabled, targetTimeInStatus), Status Resource('Attio.Status').",
+      "phase": 5,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "STAT-002",
+      "title": "Status provider implementation",
+      "description": "Create src/attio/status/status.provider.ts. Same pattern as SelectOption — soft archive delete, list-based idempotency, un-archive on recreate.",
+      "phase": 5,
+      "status": "pending",
+      "depends": ["STAT-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "STAT-003",
+      "title": "Status provider tests",
+      "description": "Create test/attio/status/status.provider.test.ts. Tests create status on existing status attribute, update title/celebration, verify soft archive on delete.",
+      "phase": 5,
+      "status": "pending",
+      "depends": ["STAT-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "LIST-001",
+      "title": "List resource definition",
+      "description": "Create src/attio/list/list.ts with ListProps (name, parentObject as Input<string[]>), ListAttrs (listId, apiSlug, name, parentObject, workspaceAccess, createdByActor), List Resource('Attio.List').",
+      "phase": 6,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "LIST-002",
+      "title": "List provider implementation",
+      "description": "Create src/attio/list/list.provider.ts. diff: parentObject → replace, name → update. read: getList by listId or scan by name. create: scan listLists for name match. update: updateList. delete: hard delete via deleteList.",
+      "phase": 6,
+      "status": "pending",
+      "depends": ["LIST-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "LIST-003",
+      "title": "List provider tests",
+      "description": "Create test/attio/list/list.provider.test.ts. Tests create, update name, delete, verify hard delete via getList → NotFoundError.",
+      "phase": 6,
+      "status": "pending",
+      "depends": ["LIST-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "REC-001",
+      "title": "Record resource definition",
+      "description": "Create src/attio/record/record.ts with RecordProps (object as Input<string>, matchingAttribute, data), RecordAttrs (recordId, objectId, createdAt, webUrl, values), Record Resource('Attio.Record').",
+      "phase": 7,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "REC-002",
+      "title": "Record provider implementation",
+      "description": "Create src/attio/record/record.provider.ts. diff: object/matchingAttribute → replace, data → update. read: getRecord by recordId. create: assertRecord (API-native upsert). update: updateRecord. delete: hard delete.",
+      "phase": 7,
+      "status": "pending",
+      "depends": ["REC-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "REC-003",
+      "title": "Record provider tests",
+      "description": "Create test/attio/record/record.provider.test.ts. Tests create record on people object, update data, delete, verify idempotent create via assert.",
+      "phase": 7,
+      "status": "pending",
+      "depends": ["REC-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "ENT-001",
+      "title": "Entry resource definition",
+      "description": "Create src/attio/entry/entry.ts with EntryProps (list as Input<string>, matchingAttribute, data), EntryAttrs (entryId, listId, createdAt, values), Entry Resource('Attio.Entry').",
+      "phase": 8,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "ENT-002",
+      "title": "Entry provider implementation",
+      "description": "Create src/attio/entry/entry.provider.ts. Same assert-based idempotency as Record. diff: list/matchingAttribute → replace, data → update.",
+      "phase": 8,
+      "status": "pending",
+      "depends": ["ENT-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "ENT-003",
+      "title": "Entry provider tests",
+      "description": "Create test/attio/entry/entry.provider.test.ts. Tests create entry on test list, update data, delete.",
+      "phase": 8,
+      "status": "pending",
+      "depends": ["ENT-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "HOOK-001",
+      "title": "Webhook resource definition",
+      "description": "Create src/attio/webhook/webhook.ts with WebhookProps (targetUrl, subscriptions), WebhookAttrs (webhookId, targetUrl, subscriptions, status, createdAt), Webhook Resource('Attio.Webhook').",
+      "phase": 9,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "HOOK-002",
+      "title": "Webhook provider implementation",
+      "description": "Create src/attio/webhook/webhook.provider.ts. diff: all changes → update. read: getWebhook by webhookId or scan by targetUrl. create: paginated scan for existing targetUrl. delete: hard delete.",
+      "phase": 9,
+      "status": "pending",
+      "depends": ["HOOK-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "HOOK-003",
+      "title": "Webhook provider tests",
+      "description": "Create test/attio/webhook/webhook.provider.test.ts. Tests create, update subscriptions, delete, verify hard delete.",
+      "phase": 9,
+      "status": "pending",
+      "depends": ["HOOK-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "NOTE-001",
+      "title": "Note resource definition",
+      "description": "Create src/attio/note/note.ts with NoteProps (parentObject as Input<string>, parentRecordId as Input<string>, title, format, content), NoteAttrs (noteId, parentObject, parentRecordId, title, contentPlaintext, format, createdAt), Note Resource('Attio.Note').",
+      "phase": 10,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "NOTE-002",
+      "title": "Note provider implementation",
+      "description": "Create src/attio/note/note.provider.ts. No update method — all content changes trigger replace (delete + recreate). diff: any prop change → replace. read: getNote by noteId or scan by title. create: scan listNotes for title match. delete: hard delete.",
+      "phase": 10,
+      "status": "pending",
+      "depends": ["NOTE-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "NOTE-003",
+      "title": "Note provider tests",
+      "description": "Create test/attio/note/note.provider.test.ts. Tests create note on record, verify content change triggers replacement (new ID), delete.",
+      "phase": 10,
+      "status": "pending",
+      "depends": ["NOTE-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "TASK-001",
+      "title": "Task resource definition",
+      "description": "Create src/attio/task/task.ts with TaskProps (content, format, deadlineAt, isCompleted, linkedRecords as Input<unknown[]>, assignees), TaskAttrs (taskId, contentPlaintext, format, deadlineAt, isCompleted, linkedRecords, assignees, createdAt), Task Resource('Attio.Task').",
+      "phase": 11,
+      "status": "pending",
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Task provider implementation",
+      "description": "Create src/attio/task/task.provider.ts. diff: all changes → update. read: getTask by taskId or paginated scan. create: paginated scan by content match. update: updateTask. delete: hard delete.",
+      "phase": 11,
+      "status": "pending",
+      "depends": ["TASK-001", "SETUP-003"],
+      "verification": "TypeScript compiles"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Task provider tests",
+      "description": "Create test/attio/task/task.provider.test.ts. Tests create, update deadline/completion, delete.",
+      "phase": 11,
+      "status": "pending",
+      "depends": ["TASK-002"],
+      "verification": "bun run test passes"
+    },
+    {
+      "id": "FINAL-001",
+      "title": "Type check and build",
+      "description": "Run bun run check-types and turbo build. Fix any type errors across all 10 resources.",
+      "phase": 12,
+      "status": "pending",
+      "depends": ["TASK-003"],
+      "verification": "bun run check-types passes, turbo build clean"
+    },
+    {
+      "id": "FINAL-002",
+      "title": "Smoke test",
+      "description": "Create test/attio/attio.smoke.test.ts. Multi-resource integration: Object → Attribute → SelectOption → Record → Note → Webhook. Verify cross-resource bindings work. Apply all, verify all, destroy all, assert all deleted/archived.",
+      "phase": 12,
+      "status": "pending",
+      "depends": ["FINAL-001"],
+      "verification": "bun run test passes with all tests"
+    },
+    {
+      "id": "FINAL-003",
+      "title": "Stack definition example",
+      "description": "Create alchemy.run.ts showing a complete Attio stack with Object → Attribute → SelectOption → Record hierarchy, demonstrating cross-resource bindings via Input<T> references.",
+      "phase": 12,
+      "status": "pending",
+      "depends": ["FINAL-001"],
+      "verification": "TypeScript compiles, alchemy.run.ts is valid"
+    }
+  ],
+  "verification": {
+    "typeCheck": "cd packages/alchemy-attio && bun run check-types",
+    "build": "turbo build --filter=@packages/alchemy-attio",
+    "test": "cd packages/alchemy-attio && bun --env-file=.env vitest run",
+    "singleTest": "cd packages/alchemy-attio && bun --env-file=.env vitest run test/attio/{resource}/{resource}.provider.test.ts"
+  }
+}
