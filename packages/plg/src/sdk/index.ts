@@ -8,3 +8,17 @@ export {
   updateProductRole,
   markAsPql,
 } from "./attio-sync.js";
+export {
+  onSignupCompleted,
+  onActivation,
+  onUpgrade,
+  onDowngrade,
+  onChurnSignal,
+  onCancellation,
+  type OnSignupCompletedParams,
+  type OnActivationParams,
+  type OnUpgradeParams,
+  type OnDowngradeParams,
+  type OnChurnSignalParams,
+  type OnCancellationParams,
+} from "./automations.js";

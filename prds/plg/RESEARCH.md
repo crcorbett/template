@@ -18,6 +18,24 @@ To make webhook URLs configurable per environment, you would need to:
 2. Dynamically construct the Webhook resource class with the resolved URL
 3. Or use stage-specific stack files that import different URL constants
 
+### Interface Cannot Extend Computed Index Access Types
+
+TypeScript does not allow `interface Foo extends EventPayloads[typeof Events.SIGNUP_COMPLETED]` — the `extends` clause requires an identifier or qualified name, not a computed type expression. Use a type alias with intersection instead:
+
+```typescript
+// ✗ Fails: "An interface can only extend an identifier/qualified-name"
+interface Params extends EventPayloads[typeof Events.SIGNUP_COMPLETED] {
+  companyId: string;
+}
+
+// ✓ Works: type alias with intersection
+type Params = EventPayloads[typeof Events.SIGNUP_COMPLETED] & {
+  companyId: string;
+};
+```
+
+This is relevant when building typed parameter objects that extend event payload schemas.
+
 ### DeploymentAnnotation Anti-Pattern
 
 Using `new Date().toISOString()` in a resource prop is an anti-pattern because:

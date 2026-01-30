@@ -333,7 +333,9 @@
         "Each automation function composes PostHog tracking and Attio CRM updates",
         "Parameters are fully typed using PLG constants",
         "Functions return Effect types with proper error channels"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created sdk/automations.ts with 6 Effect-based helpers: onSignupCompleted (track + Trial stage), onActivation (track + Active stage + product role, concurrent Attio calls), onUpgrade (track + MRR + Expanding stage), onDowngrade (track + MRR + High churn risk), onChurnSignal (CRM-only: High risk + At Risk stage), onCancellation (track + Churned stage). All params use type intersections with EventPayloads for compile-time safety. All return Effect<void, AttioErrorType, AttioDeps>. Exported 6 functions + 6 param types from sdk/index.ts. bun tsc -b passes clean."
     },
     {
       "id": "TEST-001",

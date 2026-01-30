@@ -96,3 +96,28 @@
 - `bun tsc -b` passes clean
 - Each method enforces correct value types via function signatures
 - All attribute slugs reference `AttioAttributes` constants (no magic strings)
+
+## SDK-003: Create PLG automation helpers for common cross-system workflows
+
+**Status**: Passed
+
+### Changes
+
+1. **Created `src/sdk/automations.ts`** — 6 Effect-based automation functions composing PostHog tracking + Attio CRM updates:
+   - `onSignupCompleted(plg, params)` — tracks SIGNUP_COMPLETED + sets lifecycle stage to Trial
+   - `onActivation(plg, params)` — tracks ONBOARDING_COMPLETED + sets lifecycle stage to Active + assigns product role (concurrent Attio calls)
+   - `onUpgrade(plg, params)` — tracks PLAN_UPGRADED + updates MRR + sets lifecycle stage to Expanding (concurrent)
+   - `onDowngrade(plg, params)` — tracks PLAN_DOWNGRADED + updates MRR + sets churn risk to High (concurrent)
+   - `onChurnSignal(params)` — CRM-only: sets churn risk to High + lifecycle stage to At Risk (no PostHog event)
+   - `onCancellation(plg, params)` — tracks ACCOUNT_CANCELLED + sets lifecycle stage to Churned
+
+2. **Used type intersections** (`EventPayloads[typeof Events.X] & { companyId: string }`) instead of `interface extends` — TypeScript does not allow extending a computed index access type with `interface`
+
+3. **Updated `src/sdk/index.ts`** — exported all 6 functions + 6 param types
+
+### Verification
+
+- `bun tsc -b` passes clean
+- All automation functions compose PostHog tracking and Attio CRM updates
+- Parameters are fully typed using PLG constants (EventPayloads intersection types)
+- All return `Effect<void, AttioErrorType, AttioDeps>`
