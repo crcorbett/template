@@ -71,6 +71,7 @@ import { FeatureFlag } from "@packages/alchemy-posthog/posthog/feature-flags";
 import { Survey } from "@packages/alchemy-posthog/posthog/surveys";
 import { Experiment } from "@packages/alchemy-posthog/posthog/experiments";
 import { Annotation } from "@packages/alchemy-posthog/posthog/annotations";
+import { Insight } from "@packages/alchemy-posthog/posthog/insights";
 
 // Import shared PLG constants (local to this package)
 import {
@@ -599,6 +600,257 @@ export class GrowthActivationDashboard extends Dashboard(
 ) {}
 
 // =============================================================================
+// POSTHOG: Insights — Executive Dashboard
+// =============================================================================
+
+/**
+ * NOTE: The PostHog Insight API no longer accepts `dashboards` as a writable
+ * field (the provider filters it out). To associate insights with dashboards,
+ * add them manually in the PostHog UI or via a separate tile API. The
+ * `description` field notes the intended dashboard for reference.
+ */
+
+export class WeeklySignupsInsight extends Insight("WeeklySignupsInsight", {
+  name: "Weekly Signups",
+  description: "Weekly signup completions (Executive Overview)",
+  saved: true,
+  query: {
+    kind: "TrendsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.SIGNUP_COMPLETED,
+        name: "Signups",
+        math: "total",
+      },
+    ],
+    interval: "week",
+  },
+}) {}
+
+export class ActivationRateInsight extends Insight("ActivationRateInsight", {
+  name: "Activation Rate",
+  description:
+    "Weekly activation rate — onboarding_completed / signup_completed × 100 (Executive Overview)",
+  saved: true,
+  query: {
+    kind: "TrendsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.ONBOARDING_COMPLETED,
+        name: "Onboarding Completed",
+        math: "total",
+      },
+      {
+        kind: "EventsNode",
+        event: Events.SIGNUP_COMPLETED,
+        name: "Signup Completed",
+        math: "total",
+      },
+    ],
+    interval: "week",
+    trendsFilter: {
+      formula: "A / B * 100",
+    },
+  },
+}) {}
+
+export class WeeklyUpgradesInsight extends Insight("WeeklyUpgradesInsight", {
+  name: "Weekly Upgrades",
+  description: "Weekly plan upgrades (Executive Overview)",
+  saved: true,
+  query: {
+    kind: "TrendsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.PLAN_UPGRADED,
+        name: "Upgrades",
+        math: "total",
+      },
+    ],
+    interval: "week",
+  },
+}) {}
+
+export class WeeklyChurnInsight extends Insight("WeeklyChurnInsight", {
+  name: "Weekly Churn",
+  description:
+    "Weekly downgrades + cancellations (Executive Overview)",
+  saved: true,
+  query: {
+    kind: "TrendsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.PLAN_DOWNGRADED,
+        name: "Downgrades",
+        math: "total",
+      },
+      {
+        kind: "EventsNode",
+        event: Events.ACCOUNT_CANCELLED,
+        name: "Cancellations",
+        math: "total",
+      },
+    ],
+    interval: "week",
+  },
+}) {}
+
+// =============================================================================
+// POSTHOG: Insights — Product Dashboard
+// =============================================================================
+
+export class DailyActiveUsersInsight extends Insight(
+  "DailyActiveUsersInsight",
+  {
+    name: "Daily Active Users",
+    description: "DAU count (Product Metrics)",
+    saved: true,
+    query: {
+      kind: "TrendsQuery",
+      series: [
+        {
+          kind: "EventsNode",
+          event: null,
+          name: "DAU",
+          math: "dau",
+        },
+      ],
+      interval: "day",
+    },
+  },
+) {}
+
+export class FeatureAdoptionInsight extends Insight("FeatureAdoptionInsight", {
+  name: "Feature Adoption",
+  description: "Daily feature usage events (Product Metrics)",
+  saved: true,
+  query: {
+    kind: "TrendsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.FEATURE_USED,
+        name: "Feature Used",
+        math: "total",
+      },
+    ],
+    interval: "day",
+  },
+}) {}
+
+export class RetentionInsight extends Insight("RetentionInsight", {
+  name: "8-Week Retention",
+  description:
+    "8-week retention cohort based on feature usage (Product Metrics)",
+  saved: true,
+  query: {
+    kind: "RetentionQuery",
+    retentionFilter: {
+      targetEntity: {
+        id: Events.FEATURE_USED,
+        type: "events",
+      },
+      returningEntity: {
+        id: Events.FEATURE_USED,
+        type: "events",
+      },
+      period: "Week",
+      totalIntervals: 8,
+    },
+  },
+}) {}
+
+// =============================================================================
+// POSTHOG: Insights — Growth Dashboard
+// =============================================================================
+
+export class ActivationFunnelInsight extends Insight(
+  "ActivationFunnelInsight",
+  {
+    name: "Activation Funnel",
+    description:
+      "Signup → Onboarding → Feature Used funnel (Growth & Activation)",
+    saved: true,
+    query: {
+      kind: "FunnelsQuery",
+      series: [
+        {
+          kind: "EventsNode",
+          event: Events.SIGNUP_COMPLETED,
+          name: "Step 1: Signup",
+        },
+        {
+          kind: "EventsNode",
+          event: Events.ONBOARDING_COMPLETED,
+          name: "Step 2: Onboarding",
+        },
+        {
+          kind: "EventsNode",
+          event: Events.FEATURE_USED,
+          name: "Step 3: Feature Used",
+        },
+      ],
+    },
+  },
+) {}
+
+export class TimeToActivationInsight extends Insight(
+  "TimeToActivationInsight",
+  {
+    name: "Time to Activation",
+    description:
+      "Time-to-convert funnel: signup → feature used within 14 days (Growth & Activation)",
+    saved: true,
+    query: {
+      kind: "FunnelsQuery",
+      series: [
+        {
+          kind: "EventsNode",
+          event: Events.SIGNUP_COMPLETED,
+          name: "Signup",
+        },
+        {
+          kind: "EventsNode",
+          event: Events.FEATURE_USED,
+          name: "First Feature Use",
+        },
+      ],
+      funnelsFilter: {
+        funnelVizType: "time_to_convert",
+        funnelWindowInterval: 14,
+        funnelWindowIntervalUnit: "day",
+      },
+    },
+  },
+) {}
+
+export class UpgradeFunnelInsight extends Insight("UpgradeFunnelInsight", {
+  name: "Upgrade Funnel",
+  description:
+    "Onboarding → Plan Upgraded funnel (Growth & Activation)",
+  saved: true,
+  query: {
+    kind: "FunnelsQuery",
+    series: [
+      {
+        kind: "EventsNode",
+        event: Events.ONBOARDING_COMPLETED,
+        name: "Onboarding Completed",
+      },
+      {
+        kind: "EventsNode",
+        event: Events.PLAN_UPGRADED,
+        name: "Plan Upgraded",
+      },
+    ],
+  },
+}) {}
+
+// =============================================================================
 // POSTHOG: Feature Flags
 // =============================================================================
 
@@ -802,6 +1054,22 @@ const stack = defineStack({
     ExecutiveOverviewDashboard,
     ProductMetricsDashboard,
     GrowthActivationDashboard,
+
+    // === POSTHOG: Insights — Executive ===
+    WeeklySignupsInsight,
+    ActivationRateInsight,
+    WeeklyUpgradesInsight,
+    WeeklyChurnInsight,
+
+    // === POSTHOG: Insights — Product ===
+    DailyActiveUsersInsight,
+    FeatureAdoptionInsight,
+    RetentionInsight,
+
+    // === POSTHOG: Insights — Growth ===
+    ActivationFunnelInsight,
+    TimeToActivationInsight,
+    UpgradeFunnelInsight,
 
     // === POSTHOG: Feature Flags ===
     DarkModeFlag,

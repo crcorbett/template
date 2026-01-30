@@ -17,3 +17,14 @@
 - **Changed**: `packages/plg/src/feature-flags.ts`, `packages/plg/src/surveys.ts`, `packages/plg/plg-stack.run.ts`
 - **Summary**: Audited all FeatureFlags and Surveys constants against stack resources. 4 of 6 FeatureFlags have provisioned resources; annotated `NEW_NAVIGATION` and `NEW_PRICING_PAGE` with `@pending` JSDoc. 4 of 8 Surveys have provisioned resources; annotated `SUPPORT_CSAT`, `TRIAL_EXIT`, `PERSONA_SURVEY`, `JOBS_TO_BE_DONE` with `@pending` JSDoc. Added comment explaining `$pageview` is a PostHog built-in event in `LowEngagementCohort`. No other magic strings found in the stack.
 - **Verified**: `bun tsc -b` passes cleanly.
+
+## STACK-001 — Restore the 10 lost Insights and link them to Dashboards
+- **Status**: Passed
+- **Changed**: `packages/plg/plg-stack.run.ts`
+- **Summary**: Added 10 `Insight` resources organized by dashboard:
+  - **Executive** (4): WeeklySignupsInsight, ActivationRateInsight (formula A/B×100), WeeklyUpgradesInsight, WeeklyChurnInsight (downgrades + cancellations)
+  - **Product** (3): DailyActiveUsersInsight (DAU math), FeatureAdoptionInsight, RetentionInsight (8-week, RetentionQuery)
+  - **Growth** (3): ActivationFunnelInsight (3-step), TimeToActivationInsight (14-day funnelVizType: time_to_convert), UpgradeFunnelInsight
+  - All 10 use `Events.*` constants (no magic strings), all have `saved: true`.
+  - Dashboard linking via `dashboards` prop is not functional — the provider filters it out. Documented via JSDoc and descriptions reference the intended dashboard.
+- **Verified**: `bun tsc -b` passes, `alchemy plan` succeeds with all 10 Insight resources in the plan output.

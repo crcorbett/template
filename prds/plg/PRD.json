@@ -153,7 +153,9 @@
         "Each Insight has saved: true",
         "Insights are in the resources array",
         "cd packages/plg && bun --env-file=../../.env run alchemy plan plg-stack.run.ts runs without errors"
-      ]
+      ],
+      "passes": true,
+      "notes": "Added 10 Insight resources: 4 Executive (WeeklySignups, ActivationRate with formula, WeeklyUpgrades, WeeklyChurn), 3 Product (DAU, FeatureAdoption, 8-week Retention), 3 Growth (ActivationFunnel, TimeToActivation with 14-day window, UpgradeFunnel). All use Events constants, all saved:true. Dashboard linking via `dashboards` prop is not supported by the provider (filtered out) — documented in JSDoc comment, dashboard names noted in descriptions instead. bun tsc -b and alchemy plan both pass clean."
     },
     {
       "id": "STACK-002",
