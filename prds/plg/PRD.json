@@ -1,0 +1,390 @@
+{
+  "feature": "PLG Stack & SDK (@packages/plg)",
+  "version": "1.0.0",
+  "created": "2026-01-30",
+  "updated": "2026-01-30",
+  "buildCommands": {
+    "typeCheck": "bun tsc -b",
+    "test": "cd packages/plg && bun vitest run",
+    "testFile": "cd packages/plg && bun vitest run {file}",
+    "alchemyPlan": "cd packages/plg && bun --env-file=../../.env run alchemy plan plg-stack.run.ts",
+    "note": "All paths relative to the monorepo root unless otherwise noted. Each task is only complete if types pass (repo-wide via bun tsc -b), the PLG stack plans without errors, and the implementation matches the review findings."
+  },
+  "specFiles": {
+    "stack": "packages/plg/plg-stack.run.ts",
+    "constants": [
+      "packages/plg/src/events.ts",
+      "packages/plg/src/feature-flags.ts",
+      "packages/plg/src/surveys.ts",
+      "packages/plg/src/attio.ts",
+      "packages/plg/src/index.ts"
+    ],
+    "packageJson": "packages/plg/package.json",
+    "tsconfig": "packages/plg/tsconfig.json"
+  },
+  "canonicalReferences": [
+    "packages/alchemy-posthog/",
+    "packages/alchemy-attio/"
+  ],
+  "tasks": [
+    {
+      "id": "CONST-001",
+      "category": "constants",
+      "package": "plg",
+      "description": "Add typed event payload schemas to Events for PLG SDK type safety",
+      "steps": [
+        "Update packages/plg/src/events.ts:",
+        "  - Keep existing Events constant object as-is (event name strings)",
+        "  - Add EventPayloads type map that associates each EventName with its expected properties:",
+        "    SIGNUP_STARTED: { method?: 'email' | 'google' | 'github' }",
+        "    SIGNUP_COMPLETED: { method: 'email' | 'google' | 'github' }",
+        "    ONBOARDING_STARTED: {}",
+        "    ONBOARDING_COMPLETED: { steps_completed?: number }",
+        "    FEATURE_USED: { feature: string; context?: string }",
+        "    SESSION_STARTED: {}",
+        "    SESSION_ENDED: { duration_seconds?: number }",
+        "    CHECKOUT_STARTED: { plan: string }",
+        "    CHECKOUT_COMPLETED: { plan: string; amount_cents: number; currency?: string }",
+        "    PLAN_UPGRADED: { from_plan: string; to_plan: string; mrr_cents: number }",
+        "    PLAN_DOWNGRADED: { from_plan: string; to_plan: string; mrr_cents: number }",
+        "    PAYMENT_FAILED: { plan: string; reason?: string }",
+        "    ACCOUNT_CANCELLED: { reason?: string; plan: string }",
+        "    TRIAL_EXPIRED: { plan: string }",
+        "  - Export EventPayloads type for SDK consumption"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Events object unchanged (backward compatible)",
+        "EventPayloads type exported and maps every EventName to a payload shape",
+        "Feature event requires { feature: string }, monetization events require plan info"
+      ],
+      "passes": true,
+      "notes": "Added EventPayloads interface with computed property keys from Events constants. All 14 events mapped. Uses interface (not type alias) for better error messages."
+    },
+    {
+      "id": "CONST-002",
+      "category": "constants",
+      "package": "plg",
+      "description": "Add Plans/PricingTiers and UserProperties constants for PLG SDK",
+      "steps": [
+        "Create packages/plg/src/plans.ts:",
+        "  - Plans constant: FREE, STARTER, PRO, ENTERPRISE (or appropriate tier names)",
+        "  - PlanType type union from Plans values",
+        "  - BillingIntervals constant: MONTHLY, ANNUAL",
+        "  - BillingInterval type union",
+        "Create packages/plg/src/user-properties.ts:",
+        "  - UserProperties constant for PostHog person properties:",
+        "    PLAN: 'plan', COMPANY: 'company', SIGNUP_DATE: 'signup_date',",
+        "    LIFECYCLE_STAGE: 'lifecycle_stage', LAST_ACTIVE: 'last_active',",
+        "    FEATURE_COUNT: 'feature_count', IS_PQL: 'is_pql'",
+        "  - UserPropertyKey type union",
+        "Update packages/plg/src/index.ts:",
+        "  - Add export * from './plans.js'",
+        "  - Add export * from './user-properties.js'",
+        "Update packages/plg/package.json:",
+        "  - Add ./plans export entry",
+        "  - Add ./user-properties export entry"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "import { Plans, UserProperties } from '@packages/plg' resolves",
+        "Plans constant has at least 3 tiers",
+        "UserProperties constant covers person properties referenced in cohorts (e.g., 'plan' used in TrialEndingSoonCohort)"
+      ]
+    },
+    {
+      "id": "CONST-003",
+      "category": "constants",
+      "package": "plg",
+      "description": "Align feature flag and survey constants with stack resources — add missing IaC-backed constants or remove orphans",
+      "steps": [
+        "Audit packages/plg/src/feature-flags.ts:",
+        "  - NEW_NAVIGATION and NEW_PRICING_PAGE exist as constants but have no FeatureFlag resources in the stack",
+        "  - Decision: either add FeatureFlag resources for them in the stack (STACK-002) or remove them from constants",
+        "  - If keeping: mark with JSDoc indicating they are defined but not yet provisioned",
+        "Audit packages/plg/src/surveys.ts:",
+        "  - PERSONA_SURVEY, JOBS_TO_BE_DONE, SUPPORT_CSAT, TRIAL_EXIT exist as constants but have no Survey resources",
+        "  - Decision: either add Survey resources for them in the stack (STACK-002) or remove them from constants",
+        "  - If keeping: mark with JSDoc indicating they are defined but not yet provisioned",
+        "Ensure every resource in the stack that has a constant key actually references it (no magic strings)"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Every constant in FeatureFlags either has a corresponding resource in plg-stack.run.ts OR is documented as not-yet-provisioned",
+        "Every constant in Surveys either has a corresponding resource in plg-stack.run.ts OR is documented as not-yet-provisioned",
+        "No magic strings in plg-stack.run.ts — all event names, flag keys, attribute slugs use constants"
+      ]
+    },
+    {
+      "id": "STACK-001",
+      "category": "stack",
+      "package": "plg",
+      "description": "Restore the 10 lost Insights and link them to Dashboards",
+      "steps": [
+        "Add Insight import to packages/plg/plg-stack.run.ts:",
+        "  import { Insight } from '@packages/alchemy-posthog/posthog/insights';",
+        "Add Executive Dashboard Insights (4):",
+        "  - WeeklySignupsInsight: TrendsQuery, weekly, Events.SIGNUP_COMPLETED",
+        "  - ActivationRateInsight: TrendsQuery, weekly, formula A/B*100 (onboarding_completed / signup_completed)",
+        "  - WeeklyUpgradesInsight: TrendsQuery, weekly, Events.PLAN_UPGRADED",
+        "  - WeeklyChurnInsight: TrendsQuery, weekly, Events.PLAN_DOWNGRADED + Events.ACCOUNT_CANCELLED",
+        "Add Product Dashboard Insights (3):",
+        "  - DailyActiveUsersInsight: TrendsQuery, daily, event: null, math: 'dau'",
+        "  - FeatureAdoptionInsight: TrendsQuery, daily, Events.FEATURE_USED",
+        "  - RetentionInsight: RetentionQuery, Events.FEATURE_USED, 8-week retention",
+        "Add Growth Dashboard Insights (3):",
+        "  - ActivationFunnelInsight: FunnelsQuery, signup → onboarding → feature_used",
+        "  - TimeToActivationInsight: FunnelsQuery, time_to_convert, 14-day window",
+        "  - UpgradeFunnelInsight: FunnelsQuery, onboarding → plan_upgraded",
+        "Link Insights to Dashboards using dashboards property:",
+        "  - Test if dashboards: [ExecutiveOverviewDashboard.id] works with Input<number> type",
+        "  - If type mismatch: add dashboard name in description instead (document the limitation)",
+        "Add all 10 Insights to the resources array in the stack definition",
+        "All Insights should have saved: true"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "10 Insight resources exist in plg-stack.run.ts",
+        "Each Insight uses Events constants (no magic strings)",
+        "Each Insight has saved: true",
+        "Insights are in the resources array",
+        "cd packages/plg && bun --env-file=../../.env run alchemy plan plg-stack.run.ts runs without errors"
+      ]
+    },
+    {
+      "id": "STACK-002",
+      "category": "stack",
+      "package": "plg",
+      "description": "Add missing Action and resource definitions to close constant/IaC gaps",
+      "steps": [
+        "Add missing Actions for key funnel events:",
+        "  - SignupStartedAction: Events.SIGNUP_STARTED, tags: ['acquisition', 'funnel', 'managed-by-iac']",
+        "  - OnboardingStartedAction: Events.ONBOARDING_STARTED, tags: ['activation', 'funnel', 'managed-by-iac']",
+        "  - CheckoutStartedAction: Events.CHECKOUT_STARTED, tags: ['monetization', 'funnel', 'managed-by-iac']",
+        "  - CheckoutCompletedAction: Events.CHECKOUT_COMPLETED, tags: ['monetization', 'funnel', 'managed-by-iac']",
+        "  - AccountCancelledAction: Events.ACCOUNT_CANCELLED, tags: ['churn', 'managed-by-iac']",
+        "  - PaymentFailedAction: Events.PAYMENT_FAILED, tags: ['monetization', 'churn', 'managed-by-iac']",
+        "  - TrialExpiredAction: Events.TRIAL_EXPIRED, tags: ['churn', 'managed-by-iac']",
+        "Add missing FeatureFlag resources (if constants kept in CONST-003):",
+        "  - NewNavigationFlag: key: FeatureFlags.NEW_NAVIGATION, active: false, rolloutPercentage: 0",
+        "  - NewPricingPageFlag: key: FeatureFlags.NEW_PRICING_PAGE, active: false, rolloutPercentage: 0",
+        "Add missing Survey resources (if constants kept in CONST-003):",
+        "  - PersonaSurvey: type 'popover', single_choice question about user role/persona",
+        "  - JtbdSurvey: type 'popover', open question about jobs-to-be-done",
+        "  - SupportCsatSurvey: type 'api', rating question about support satisfaction",
+        "  - TrialExitSurvey: type 'api', single_choice for trial exit reason + open follow-up",
+        "Add all new resources to the resources array"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Every event in Events that represents a user action has a corresponding Action resource",
+        "Every constant in FeatureFlags has a corresponding FeatureFlag resource",
+        "Every constant in Surveys has a corresponding Survey resource",
+        "All new resources use constants (no magic strings)",
+        "All new resources are in the resources array"
+      ]
+    },
+    {
+      "id": "STACK-003",
+      "category": "stack",
+      "package": "plg",
+      "description": "Fix DeploymentAnnotation date and webhook placeholder URLs",
+      "steps": [
+        "Fix DeploymentAnnotation dateMarker:",
+        "  - Current: dateMarker: new Date().toISOString() — evaluated at module import time",
+        "  - This causes every alchemy plan/diff to show a change",
+        "  - Option A: Remove dateMarker entirely (let PostHog set it server-side)",
+        "  - Option B: Use a fixed version string like '2026-01-30T00:00:00.000Z'",
+        "  - Option C: Remove the DeploymentAnnotation entirely (annotations are better created per-deploy via CI)",
+        "  - Choose the most appropriate option",
+        "Update webhook placeholder URLs:",
+        "  - DealChangesWebhook and CompanyChangesWebhook use https://httpbin.org/post",
+        "  - Add a JSDoc comment explaining these are placeholder URLs that must be updated per environment",
+        "  - Consider using Config.string to read webhook URLs from environment variables",
+        "  - If using Config: ATTIO_DEAL_WEBHOOK_URL and ATTIO_COMPANY_WEBHOOK_URL"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "DeploymentAnnotation no longer uses new Date().toISOString() at import time",
+        "Webhook URLs are either configurable via environment or clearly documented as placeholders",
+        "Running alchemy plan twice in succession does not show annotation drift"
+      ]
+    },
+    {
+      "id": "STACK-004",
+      "category": "stack",
+      "package": "plg",
+      "description": "Ensure TrialEndingSoonCohort and other cohorts use UserProperties constants instead of magic strings",
+      "steps": [
+        "After CONST-002 provides UserProperties:",
+        "  - Update TrialEndingSoonCohort filter: change key: 'plan' to key: UserProperties.PLAN",
+        "  - Use Plans.TRIAL (or equivalent) instead of value: 'trial'",
+        "Audit all cohort filters for magic strings:",
+        "  - PowerUsersCohort: event_type references Events constant — OK",
+        "  - NewUsersCohort: event_type references Events constant — OK",
+        "  - LowEngagementCohort: uses '$pageview' — this is a PostHog built-in event, OK as magic string",
+        "  - ExpansionCandidatesCohort: event_type references Events constant — OK",
+        "Document any remaining magic strings with comments explaining they are PostHog built-in values"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "TrialEndingSoonCohort uses UserProperties.PLAN and Plans constant",
+        "No unexplained magic strings in cohort filters",
+        "PostHog built-in events like '$pageview' have comments explaining they are built-in"
+      ]
+    },
+    {
+      "id": "SDK-001",
+      "category": "sdk",
+      "package": "plg",
+      "description": "Create type-safe PLG SDK client for tracking events with PostHog",
+      "steps": [
+        "Create packages/plg/src/sdk/track.ts:",
+        "  - Define PlgClient interface with track<E extends EventName>(event: E, properties: EventPayloads[E]): void",
+        "  - The track method enforces that properties match the event's payload schema",
+        "  - Define createPlgClient(posthog: PostHogClient): PlgClient factory",
+        "  - PostHogClient interface: { capture(event: string, properties?: Record<string, unknown>): void }",
+        "  - This is a thin wrapper — the PLG SDK does not replace PostHog, it adds type safety",
+        "Create packages/plg/src/sdk/identify.ts:",
+        "  - Define identify(posthog: PostHogClient, distinctId: string, properties: Partial<UserPropertyMap>): void",
+        "  - UserPropertyMap maps UserProperties keys to their value types",
+        "  - E.g., plan: PlanType, lifecycle_stage: LifecycleStage, is_pql: boolean",
+        "Create packages/plg/src/sdk/index.ts:",
+        "  - Export createPlgClient, PlgClient, identify",
+        "Update packages/plg/src/index.ts:",
+        "  - Add export * from './sdk/index.js'",
+        "Update packages/plg/package.json:",
+        "  - Add ./sdk export entry"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "createPlgClient returns a PlgClient with type-safe track method",
+        "track(Events.FEATURE_USED, {}) fails type check (missing required 'feature' property)",
+        "track(Events.FEATURE_USED, { feature: 'export' }) passes type check",
+        "track(Events.PLAN_UPGRADED, { from_plan: 'free', to_plan: 'pro', mrr_cents: 4900 }) passes",
+        "identify enforces UserPropertyMap types"
+      ]
+    },
+    {
+      "id": "SDK-002",
+      "category": "sdk",
+      "package": "plg",
+      "description": "Create type-safe Attio sync helpers for CRM updates",
+      "steps": [
+        "Create packages/plg/src/sdk/attio-sync.ts:",
+        "  - Define AttioSyncClient interface for updating Attio records with PLG data",
+        "  - updateLifecycleStage(companyId: string, stage: LifecycleStage): Effect<void, AttioError>",
+        "  - updateChurnRisk(companyId: string, risk: ChurnRiskLevel): Effect<void, AttioError>",
+        "  - updateHealthScore(companyId: string, score: number): Effect<void, AttioError>",
+        "  - updateMrr(companyId: string, mrrCents: number): Effect<void, AttioError>",
+        "  - updateProductRole(personId: string, role: ProductRole): Effect<void, AttioError>",
+        "  - markAsPql(dealId: string): Effect<void, AttioError>",
+        "  - These helpers use the @packages/attio client under the hood",
+        "  - Each method uses the correct AttioAttributes constant for the attribute slug",
+        "  - Each method enforces the correct value type (LifecycleStage, ChurnRiskLevel, etc.)",
+        "Update packages/plg/src/sdk/index.ts:",
+        "  - Add AttioSyncClient export"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "updateLifecycleStage only accepts LifecycleStage values",
+        "updateChurnRisk only accepts ChurnRiskLevel values",
+        "updateProductRole only accepts ProductRole values",
+        "updateHealthScore only accepts number (0-100)",
+        "All methods use AttioAttributes constants for attribute slugs"
+      ]
+    },
+    {
+      "id": "SDK-003",
+      "category": "sdk",
+      "package": "plg",
+      "description": "Create PLG automation helpers for common cross-system workflows",
+      "steps": [
+        "Create packages/plg/src/sdk/automations.ts:",
+        "  - onSignupCompleted: track PostHog event + set Attio lifecycle_stage to Trial",
+        "  - onActivation: track PostHog event + set Attio lifecycle_stage to Active + update product_role",
+        "  - onUpgrade: track PostHog event + update Attio MRR + set lifecycle_stage to Active/Expanding",
+        "  - onDowngrade: track PostHog event + update Attio MRR + set churn_risk to High",
+        "  - onChurnSignal: update Attio churn_risk + lifecycle_stage to At Risk",
+        "  - onCancellation: track PostHog event + set Attio lifecycle_stage to Churned",
+        "  - These are Effect-based functions that compose track + attio-sync",
+        "  - Each function takes typed parameters matching EventPayloads",
+        "Update packages/plg/src/sdk/index.ts:",
+        "  - Add automations exports"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "Each automation function composes PostHog tracking and Attio CRM updates",
+        "Parameters are fully typed using PLG constants",
+        "Functions return Effect types with proper error channels"
+      ]
+    },
+    {
+      "id": "TEST-001",
+      "category": "testing",
+      "package": "plg",
+      "description": "Add type-level tests for PLG SDK and integration tests for the stack",
+      "steps": [
+        "Create packages/plg/test/sdk/track.test.ts:",
+        "  - Type-level tests using expectTypeOf or ts-expect-error comments",
+        "  - Verify track(Events.FEATURE_USED, { feature: 'x' }) compiles",
+        "  - Verify track(Events.FEATURE_USED, {}) fails (missing required property)",
+        "  - Verify track(Events.PLAN_UPGRADED, { from_plan: 'free', to_plan: 'pro', mrr_cents: 100 }) compiles",
+        "  - Verify track(Events.SIGNUP_COMPLETED, { method: 'invalid' }) fails",
+        "Create packages/plg/test/sdk/identify.test.ts:",
+        "  - Verify identify with valid UserPropertyMap compiles",
+        "  - Verify identify with invalid property key fails",
+        "Create packages/plg/test/constants.test.ts:",
+        "  - Verify all Events values are lowercase snake_case strings",
+        "  - Verify all FeatureFlags values are kebab-case strings",
+        "  - Verify all AttioAttributes values are lowercase snake_case strings",
+        "  - Verify no duplicate values across constant objects",
+        "Update packages/plg/tsconfig.json:",
+        "  - Ensure include covers test/**/* if needed",
+        "Create packages/plg/vitest.config.ts if not exists",
+        "Update packages/plg/package.json: add test script"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/plg && bun vitest run passes all tests",
+        "Type-level tests catch incorrect event payloads at compile time",
+        "Constant tests verify naming conventions"
+      ]
+    },
+    {
+      "id": "FINAL-001",
+      "category": "final",
+      "package": "plg",
+      "description": "Final audit — verify all constants, stack resources, and SDK types are aligned end-to-end",
+      "steps": [
+        "Run full alignment audit:",
+        "  - Every EventName in Events has a corresponding EventPayloads entry",
+        "  - Every FeatureFlagKey in FeatureFlags has a FeatureFlag resource in plg-stack.run.ts",
+        "  - Every SurveyId in Surveys has a Survey resource in plg-stack.run.ts",
+        "  - Every AttioAttribute in AttioAttributes has an Attribute resource in plg-stack.run.ts",
+        "  - Every LifecycleStage has a SelectOption resource",
+        "  - Every IcpTier has a SelectOption resource",
+        "  - Every ChurnRiskLevel has a SelectOption resource",
+        "  - Every ProductRole has a SelectOption resource",
+        "  - Every DealStage has a Status resource",
+        "Verify no magic strings remain in plg-stack.run.ts (except PostHog built-ins like '$pageview')",
+        "Verify all package.json exports resolve correctly with @packages/source condition",
+        "Run full verification:",
+        "  - bun tsc -b (repo-wide type check)",
+        "  - cd packages/plg && bun vitest run (all tests)",
+        "  - cd packages/plg && bun --env-file=../../.env run alchemy plan plg-stack.run.ts (stack plans cleanly)",
+        "Verify SDK consumer experience:",
+        "  - import { createPlgClient, Events, Plans } from '@packages/plg' resolves",
+        "  - import { AttioSyncClient } from '@packages/plg/sdk' resolves"
+      ],
+      "verify": [
+        "bun tsc -b passes with no type errors",
+        "cd packages/plg && bun vitest run — all tests pass",
+        "cd packages/plg && bun --env-file=../../.env run alchemy plan plg-stack.run.ts — plans without errors",
+        "1:1 mapping between constants and stack resources (no orphans, no gaps)",
+        "No magic strings in plg-stack.run.ts",
+        "SDK imports resolve correctly from consumer packages"
+      ]
+    }
+  ]
+}

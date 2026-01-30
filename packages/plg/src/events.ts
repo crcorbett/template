@@ -35,3 +35,47 @@ export const Events = {
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];
+
+/**
+ * Typed payload schemas for each PLG event.
+ *
+ * Use with the PLG SDK to get compile-time safety on event properties:
+ * ```typescript
+ * import type { EventPayloads } from "@packages/plg/events";
+ * ```
+ */
+export interface EventPayloads {
+  // Acquisition funnel
+  [Events.SIGNUP_STARTED]: { method?: "email" | "google" | "github" };
+  [Events.SIGNUP_COMPLETED]: { method: "email" | "google" | "github" };
+  [Events.ONBOARDING_STARTED]: {};
+  [Events.ONBOARDING_COMPLETED]: { steps_completed?: number };
+
+  // Engagement / Usage
+  [Events.FEATURE_USED]: { feature: string; context?: string };
+  [Events.SESSION_STARTED]: {};
+  [Events.SESSION_ENDED]: { duration_seconds?: number };
+
+  // Monetization
+  [Events.CHECKOUT_STARTED]: { plan: string };
+  [Events.CHECKOUT_COMPLETED]: {
+    plan: string;
+    amount_cents: number;
+    currency?: string;
+  };
+  [Events.PLAN_UPGRADED]: {
+    from_plan: string;
+    to_plan: string;
+    mrr_cents: number;
+  };
+  [Events.PLAN_DOWNGRADED]: {
+    from_plan: string;
+    to_plan: string;
+    mrr_cents: number;
+  };
+  [Events.PAYMENT_FAILED]: { plan: string; reason?: string };
+
+  // Churn signals
+  [Events.ACCOUNT_CANCELLED]: { reason?: string; plan: string };
+  [Events.TRIAL_EXPIRED]: { plan: string };
+}
