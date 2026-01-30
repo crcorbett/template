@@ -1,9 +1,8 @@
 /**
- * Combined PLG Stack - Attio CRM + PostHog Analytics
+ * PLG Stack - Combined Attio CRM + PostHog Analytics Infrastructure
  *
  * This alchemy script provisions a complete product-led growth infrastructure
- * spanning both Attio CRM and PostHog analytics. Use this when you need both
- * systems configured together with shared naming conventions.
+ * spanning both Attio CRM and PostHog analytics.
  *
  * ## Architecture
  *
@@ -42,7 +41,7 @@
  * @example
  * ```bash
  * # Deploy both systems
- * ATTIO_API_KEY=... POSTHOG_PROJECT_ID=... POSTHOG_API_KEY=... bun run plg-stack.run.ts
+ * bun --env-file=../../.env run alchemy plan plg-stack.run.ts
  * ```
  */
 
@@ -57,11 +56,11 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 // Attio resources
-import * as Attio from "./src/attio/index.js";
-import { Attribute } from "./src/attio/attribute/index.js";
-import { SelectOption } from "./src/attio/select-option/index.js";
-import { Status } from "./src/attio/status/index.js";
-import { Webhook } from "./src/attio/webhook/index.js";
+import * as Attio from "@packages/alchemy-attio";
+import { Attribute } from "@packages/alchemy-attio/attio/attribute";
+import { SelectOption } from "@packages/alchemy-attio/attio/select-option";
+import { Status } from "@packages/alchemy-attio/attio/status";
+import { Webhook } from "@packages/alchemy-attio/attio/webhook";
 
 // PostHog resources
 import * as PostHog from "@packages/alchemy-posthog";
@@ -73,7 +72,7 @@ import { Survey } from "@packages/alchemy-posthog/posthog/surveys";
 import { Experiment } from "@packages/alchemy-posthog/posthog/experiments";
 import { Annotation } from "@packages/alchemy-posthog/posthog/annotations";
 
-// Import shared PLG constants
+// Import shared PLG constants (local to this package)
 import {
   Events,
   FeatureFlags,
@@ -83,7 +82,7 @@ import {
   ChurnRiskLevels,
   ProductRoles,
   DealStages,
-} from "@packages/plg";
+} from "./src/index.js";
 
 // Re-export for convenience
 export {
@@ -729,7 +728,7 @@ export class OnboardingFlowExperiment extends Experiment(
 // =============================================================================
 
 export class DeploymentAnnotation extends Annotation("DeploymentAnnotation", {
-  content: "PLG Combined Stack deployed via alchemy",
+  content: "PLG Stack deployed via alchemy",
   dateMarker: new Date().toISOString(),
   scope: "project",
   creationType: "USR",
@@ -740,7 +739,7 @@ export class DeploymentAnnotation extends Annotation("DeploymentAnnotation", {
 // =============================================================================
 
 const stack = defineStack({
-  name: "plg-combined-stack",
+  name: "plg-stack",
   stages,
   resources: [
     // === ATTIO: Attributes ===
@@ -824,7 +823,7 @@ const stack = defineStack({
   providers: providers(),
   tap: (outputs) =>
     Effect.log(
-      `PLG Combined Stack deployed: ${Object.keys(outputs).length} resources`,
+      `PLG Stack deployed: ${Object.keys(outputs).length} resources`,
     ),
 });
 
@@ -832,8 +831,8 @@ const stack = defineStack({
 // Stage References
 // =============================================================================
 
-export const PLGCombinedStack = stages
-  .ref<typeof stack>("plg-combined-stack")
+export const PLGStack = stages
+  .ref<typeof stack>("plg-stack")
   .as({
     prod: "prod",
     staging: "staging",

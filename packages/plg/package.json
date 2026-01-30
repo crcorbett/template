@@ -38,13 +38,35 @@
         "types": "./dist/src/attio.d.ts",
         "default": "./dist/src/attio.js"
       }
+    },
+    "./plg-stack": {
+      "import": {
+        "@packages/source": "./plg-stack.run.ts",
+        "types": "./dist/plg-stack.run.d.ts",
+        "default": "./dist/plg-stack.run.js"
+      }
     }
   },
   "scripts": {
     "build": "tsc",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
+  },
+  "dependencies": {
+    "@packages/alchemy-attio": "workspace:*",
+    "@packages/alchemy-posthog": "workspace:*",
+    "@packages/attio": "workspace:*",
+    "@packages/posthog": "workspace:*",
+    "alchemy-effect": "0.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.16.0",
+    "@effect/platform": "^0.82.0"
   },
   "devDependencies": {
+    "@effect/platform": "^0.82.0",
+    "@effect/platform-node": "^0.74.0",
+    "effect": "^3.16.0",
     "typescript": "catalog:typescript"
   }
 }

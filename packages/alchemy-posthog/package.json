@@ -73,13 +73,6 @@
         "types": "./dist/src/posthog/insights/index.d.ts",
         "default": "./dist/src/posthog/insights/index.js"
       }
-    },
-    "./plg-stack": {
-      "import": {
-        "@packages/source": "./plg-stack.run.ts",
-        "types": "./dist/plg-stack.run.d.ts",
-        "default": "./dist/plg-stack.run.js"
-      }
     }
   },
   "scripts": {
@@ -89,7 +82,6 @@
     "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
   },
   "dependencies": {
-    "@packages/plg": "workspace:*",
     "@packages/posthog": "workspace:*",
     "alchemy-effect": "0.6.0"
   },

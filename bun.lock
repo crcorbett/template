@@ -116,7 +116,6 @@
       "dependencies": {
         "@packages/alchemy-posthog": "workspace:*",
         "@packages/attio": "workspace:*",
-        "@packages/plg": "workspace:*",
         "@packages/posthog": "workspace:*",
         "alchemy-effect": "0.6.0",
       },
@@ -137,7 +136,6 @@
       "name": "@packages/alchemy-posthog",
       "version": "0.1.0",
       "dependencies": {
-        "@packages/plg": "workspace:*",
         "@packages/posthog": "workspace:*",
         "alchemy-effect": "0.6.0",
       },
@@ -219,8 +217,22 @@
     "packages/plg": {
       "name": "@packages/plg",
       "version": "0.1.0",
+      "dependencies": {
+        "@packages/alchemy-attio": "workspace:*",
+        "@packages/alchemy-posthog": "workspace:*",
+        "@packages/attio": "workspace:*",
+        "@packages/posthog": "workspace:*",
+        "alchemy-effect": "0.6.0",
+      },
       "devDependencies": {
+        "@effect/platform": "^0.82.0",
+        "@effect/platform-node": "^0.74.0",
+        "effect": "^3.16.0",
         "typescript": "catalog:typescript",
+      },
+      "peerDependencies": {
+        "@effect/platform": "^0.82.0",
+        "effect": "^3.16.0",
       },
     },
     "packages/posthog": {
