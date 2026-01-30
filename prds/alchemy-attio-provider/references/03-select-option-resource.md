@@ -255,13 +255,16 @@ export const selectOptionProvider = () =>
           return { ...output, ...mapResponseToAttrs(result.data) };
         }),
 
-        delete: Effect.fn(function* ({ news, output, session }) {
+        // IMPORTANT: delete handler receives { olds, output, session } — NOT news.
+        // Use olds.* for parent identifiers (target, identifier, attribute)
+        // since these are the old Props values.
+        delete: Effect.fn(function* ({ olds, output, session }) {
           // Soft delete via archive
           yield* retryPolicy(
             AttioSelectOptions.updateSelectOption({
-              target: news.target,
-              identifier: news.identifier,
-              attribute: news.attribute,
+              target: olds.target,
+              identifier: olds.identifier,
+              attribute: olds.attribute,
               option: String(output.optionId),
               is_archived: true,
             }),
@@ -296,3 +299,13 @@ rather than creating duplicates.
 SelectOptions lack a direct get-by-ID endpoint. The `read` handler must scan
 `listSelectOptions(...)` and match by ID or title. The list is not paginated
 (returns all options for the attribute).
+
+### Option ID Serialization
+
+The `SelectOption.id` field is typed as `S.Unknown` in the distilled client. When
+passing the ID as a path parameter (e.g., in `updateSelectOption`), `String(id)` is used.
+If the API returns a simple string UUID, this works correctly. If the ID is a composite
+object (like other Attio IDs), `JSON.stringify(id)` should be used instead. The `read`
+handler uses `JSON.stringify()` for comparison, while `update`/`delete` handlers use
+`String()` for the path parameter — verify the actual ID shape during implementation
+and adjust accordingly.

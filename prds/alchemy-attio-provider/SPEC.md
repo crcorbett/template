@@ -186,7 +186,7 @@ packages/alchemy-attio/
 | `description` | `string \| null` | No | No | No | Description |
 | `isRequired` | `boolean` | No | No | No | Whether required |
 | `isUnique` | `boolean` | No | No | No | Whether unique |
-| `isMultiselect` | `boolean` | No | No | No | Whether multiselect |
+| `isMultiselect` | `boolean` | No | No | Yes | Whether multiselect (immutable after creation) |
 
 **Attrs:**
 
@@ -201,7 +201,7 @@ packages/alchemy-attio/
 | `isUnique` | `boolean` | No | Whether unique |
 | `isMultiselect` | `boolean` | No | Whether multiselect |
 
-**Diff:** `target`, `identifier`, `type`, `apiSlug` change → `replace`. Title, description, flags → `update`.
+**Diff:** `target`, `identifier`, `type`, `apiSlug`, `isMultiselect` change → `replace`. Title, description, `isRequired`, `isUnique` → `update`.
 
 **Provider Notes:**
 - `delete` handler is a no-op (log warning)
@@ -333,6 +333,7 @@ packages/alchemy-attio/
 |-----------|------|--------|-------------|
 | `recordId` | `string` | Yes | Extracted from composite RecordId |
 | `objectId` | `string` | Yes | Parent object ID |
+| `object` | `string` | No | Parent object slug (stored for delete handler) |
 | `createdAt` | `string` | No | ISO creation timestamp |
 | `webUrl` | `string` | No | Attio web URL |
 | `values` | `Record<string, unknown>` | No | Current attribute values |
@@ -369,6 +370,7 @@ packages/alchemy-attio/
 |-----------|------|--------|-------------|
 | `entryId` | `string` | Yes | Extracted from composite EntryId |
 | `listId` | `string` | Yes | Parent list ID |
+| `list` | `string` | No | Parent list slug (stored for delete handler) |
 | `createdAt` | `string` | No | ISO creation timestamp |
 | `values` | `Record<string, unknown>` | No | Current attribute values |
 

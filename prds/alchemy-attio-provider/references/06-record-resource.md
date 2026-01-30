@@ -45,6 +45,9 @@ export interface RecordAttrs<
   /** Parent object ID extracted from composite RecordId. */
   objectId: string;
 
+  /** Parent object slug — stored for delete handler (which only has output, not news). */
+  object: string;
+
   /** ISO creation timestamp. */
   createdAt: string;
 
@@ -117,10 +120,12 @@ import { Record as RecordResource } from "./record";
 
 function mapResponseToAttrs(
   result: typeof AttioRecords.AttioRecord.Type,
+  object: string,
 ): RecordAttrs {
   return {
     recordId: result.id.record_id,
     objectId: result.id.object_id,
+    object,
     createdAt: result.created_at,
     webUrl: result.web_url,
     values: result.values as Record<string, unknown> | undefined,
@@ -147,10 +152,11 @@ export const recordProvider = () =>
         }),
 
         read: Effect.fn(function* ({ olds, output }) {
-          if (output?.recordId && olds?.object) {
+          if (output?.recordId && (output?.object || olds?.object)) {
+            const object = output.object ?? olds!.object;
             const result = yield* retryPolicy(
               AttioRecords.getRecord({
-                object: olds.object,
+                object,
                 record_id: output.recordId,
               }),
             ).pipe(
@@ -160,7 +166,7 @@ export const recordProvider = () =>
             );
 
             if (result) {
-              return mapResponseToAttrs(result.data);
+              return mapResponseToAttrs(result.data, object);
             }
           }
 
@@ -170,6 +176,8 @@ export const recordProvider = () =>
         create: Effect.fn(function* ({ news, session }) {
           // Use Attio's native assert (upsert) for idempotent creation.
           // assertRecord finds-or-creates by matching_attribute.
+          // Note: assertRecord may return ConflictError (409) on unique
+          // constraint violation — let it propagate as a fatal error.
           const result = yield* retryPolicy(
             AttioRecords.assertRecord({
               object: news.object,
@@ -182,7 +190,7 @@ export const recordProvider = () =>
             `Asserted Record on ${news.object} (matching: ${news.matchingAttribute})`,
           );
 
-          return mapResponseToAttrs(result.data);
+          return mapResponseToAttrs(result.data, news.object);
         }),
 
         update: Effect.fn(function* ({ news, output, session }) {
@@ -198,13 +206,15 @@ export const recordProvider = () =>
             `Updated Record ${output.recordId} on ${news.object}`,
           );
 
-          return { ...output, ...mapResponseToAttrs(result.data) };
+          return { ...output, ...mapResponseToAttrs(result.data, news.object) };
         }),
 
-        delete: Effect.fn(function* ({ news, output, session }) {
+        // IMPORTANT: delete handler receives { olds, output, session } — NOT news.
+        // The object slug is stored in output.object for this reason.
+        delete: Effect.fn(function* ({ olds, output, session }) {
           yield* retryPolicy(
             AttioRecords.deleteRecord({
-              object: news.object,
+              object: output.object,
               record_id: output.recordId,
             }),
           ).pipe(
@@ -212,7 +222,7 @@ export const recordProvider = () =>
           );
 
           yield* session.note(
-            `Deleted Record ${output.recordId} from ${news.object}`,
+            `Deleted Record ${output.recordId} from ${output.object}`,
           );
         }),
       };
@@ -241,6 +251,14 @@ This eliminates the need for pagination-based duplicate detection in the create 
 
 ### Object Parameter in Delete
 
-The `delete` handler needs the `object` slug to construct the API path. This comes from
-`news` (the current props), not `output` (which only stores attrs). This is necessary
-because Attio's delete endpoint is `DELETE /v2/objects/{object}/records/{record_id}`.
+The `delete` handler needs the `object` slug to construct the API path. Since the delete
+handler only receives `{ olds, output, session }` (NOT `news`), the `object` slug is
+stored in `RecordAttrs.object` during create/update. This is necessary because Attio's
+delete endpoint is `DELETE /v2/objects/{object}/records/{record_id}`.
+
+### ConflictError from assertRecord
+
+The `assertRecord` operation uses `COMMON_ERRORS_WITH_CONFLICT` in the distilled client,
+meaning it can return a `ConflictError` (HTTP 409) when unique constraint violations occur.
+This error should propagate as fatal — it indicates a data integrity issue that cannot be
+resolved by retry.

@@ -119,7 +119,7 @@ Same pattern as SelectOption provider:
 - `read`: scan `listStatuses(...)`, match by statusId then by title
 - `create`: idempotent via list scan; un-archive if found archived
 - `update`: `updateStatus(...)` with title, celebration_enabled, target_time_in_status
-- `delete`: soft archive via `updateStatus({ is_archived: true })`
+- `delete`: soft archive via `updateStatus({ is_archived: true })` — uses `olds.*` for parent identifiers (target, identifier, attribute) since delete handler receives `{ olds, output, session }` NOT `news`
 
 ```typescript
 function mapResponseToAttrs(

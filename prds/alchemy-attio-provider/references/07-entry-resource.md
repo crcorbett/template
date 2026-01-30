@@ -41,6 +41,9 @@ export interface EntryAttrs<
   /** Parent list ID extracted from composite EntryId. */
   listId: string;
 
+  /** Parent list slug — stored for delete handler (which only has output, not news). */
+  list: string;
+
   /** ISO creation timestamp. */
   createdAt: string;
 
@@ -87,6 +90,10 @@ export const Entry = Resource<{
 ## Provider Notes
 
 Same assert-based idempotency pattern as Record:
-- `create` uses `assertEntry({ list, matching_attribute, data })`
+- `stables: ["entryId", "listId"]`
+- `create` uses `assertEntry({ list, matching_attribute, data })` — may return ConflictError (409)
 - `update` uses `updateEntry({ list, entry_id, data })`
 - `delete` uses `deleteEntry({ list, entry_id })` + catch NotFoundError
+- `mapResponseToAttrs` accepts `list` slug as second parameter to store in output
+- **CRITICAL**: delete handler receives `{ olds, output, session }` NOT `news` —
+  uses `output.list` (stored during create/update) for the API path

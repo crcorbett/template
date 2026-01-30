@@ -177,21 +177,25 @@ export const attributeProvider = () =>
         stables: ["attributeId", "apiSlug", "type"] as const,
 
         diff: Effect.fnUntraced(function* ({ news, olds }) {
-          // Replacement triggers: structural changes
+          // Replacement triggers: structural changes (not updatable via API)
           if (news.target !== olds.target) return { action: "replace" };
           if (news.identifier !== olds.identifier) return { action: "replace" };
           if (news.type !== olds.type) return { action: "replace" };
           if (news.apiSlug !== undefined && news.apiSlug !== olds.apiSlug) {
             return { action: "replace" };
           }
+          // isMultiselect is immutable after creation — UpdateAttributeRequest
+          // does NOT support is_multiselect, so changing it requires replacement
+          if (news.isMultiselect !== olds.isMultiselect) {
+            return { action: "replace" };
+          }
 
-          // Update triggers
+          // Update triggers (fields supported by UpdateAttributeRequest)
           if (
             news.title !== olds.title ||
             news.description !== olds.description ||
             news.isRequired !== olds.isRequired ||
-            news.isUnique !== olds.isUnique ||
-            news.isMultiselect !== olds.isMultiselect
+            news.isUnique !== olds.isUnique
           ) {
             return { action: "update" };
           }
@@ -281,6 +285,10 @@ export const attributeProvider = () =>
             return output;
           }
 
+          // NOTE: UpdateAttributeRequest only supports title, description,
+          // is_required, is_unique. is_multiselect is NOT updatable —
+          // it can only be set at creation time. If isMultiselect changes,
+          // the diff handler returns "replace" (not "update").
           const result = yield* retryPolicy(
             AttioAttributes.updateAttribute({
               target: news.target,
