@@ -509,6 +509,7 @@ export class LowEngagementCohort extends Cohort("LowEngagementCohort", {
         {
           type: "behavioral",
           value: "performed_event",
+          // "$pageview" is a PostHog built-in event, not a custom PLG event
           event_type: "$pageview",
           negation: true,
           time_value: 7,

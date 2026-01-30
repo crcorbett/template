@@ -115,7 +115,9 @@
         "Every constant in FeatureFlags either has a corresponding resource in plg-stack.run.ts OR is documented as not-yet-provisioned",
         "Every constant in Surveys either has a corresponding resource in plg-stack.run.ts OR is documented as not-yet-provisioned",
         "No magic strings in plg-stack.run.ts — all event names, flag keys, attribute slugs use constants"
-      ]
+      ],
+      "passes": true,
+      "notes": "Kept all constants; annotated 2 FeatureFlags (NEW_NAVIGATION, NEW_PRICING_PAGE) and 4 Surveys (SUPPORT_CSAT, TRIAL_EXIT, PERSONA_SURVEY, JOBS_TO_BE_DONE) with @pending JSDoc for STACK-002. Added comment for $pageview built-in in LowEngagementCohort. No magic strings found — stack uses Events.*, FeatureFlags.*, AttioAttributes.*, and option constants throughout."
     },
     {
       "id": "STACK-001",
