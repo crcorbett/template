@@ -62,6 +62,7 @@ export class CreateAttributeRequest extends S.Class<CreateAttributeRequest>("Cre
     is_unique: S.optional(S.Boolean),
     is_multiselect: S.optional(S.Boolean),
     api_slug: S.optional(S.String),
+    config: S.optional(S.Record({ key: S.String, value: S.Unknown })),
   },
   T.all(
     T.Http({ method: "POST", uri: "/v2/{target}/{identifier}/attributes", dataWrapper: true }),

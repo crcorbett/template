@@ -1,0 +1,114 @@
+{
+  "name": "@packages/alchemy-attio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "@packages/source": "./src/attio/index.ts",
+        "types": "./dist/src/attio/index.d.ts",
+        "default": "./dist/src/attio/index.js"
+      }
+    },
+    "./attio": {
+      "import": {
+        "@packages/source": "./src/attio/index.ts",
+        "types": "./dist/src/attio/index.d.ts",
+        "default": "./dist/src/attio/index.js"
+      }
+    },
+    "./attio/object": {
+      "import": {
+        "@packages/source": "./src/attio/object/index.ts",
+        "types": "./dist/src/attio/object/index.d.ts",
+        "default": "./dist/src/attio/object/index.js"
+      }
+    },
+    "./attio/attribute": {
+      "import": {
+        "@packages/source": "./src/attio/attribute/index.ts",
+        "types": "./dist/src/attio/attribute/index.d.ts",
+        "default": "./dist/src/attio/attribute/index.js"
+      }
+    },
+    "./attio/select-option": {
+      "import": {
+        "@packages/source": "./src/attio/select-option/index.ts",
+        "types": "./dist/src/attio/select-option/index.d.ts",
+        "default": "./dist/src/attio/select-option/index.js"
+      }
+    },
+    "./attio/status": {
+      "import": {
+        "@packages/source": "./src/attio/status/index.ts",
+        "types": "./dist/src/attio/status/index.d.ts",
+        "default": "./dist/src/attio/status/index.js"
+      }
+    },
+    "./attio/list": {
+      "import": {
+        "@packages/source": "./src/attio/list/index.ts",
+        "types": "./dist/src/attio/list/index.d.ts",
+        "default": "./dist/src/attio/list/index.js"
+      }
+    },
+    "./attio/record": {
+      "import": {
+        "@packages/source": "./src/attio/record/index.ts",
+        "types": "./dist/src/attio/record/index.d.ts",
+        "default": "./dist/src/attio/record/index.js"
+      }
+    },
+    "./attio/entry": {
+      "import": {
+        "@packages/source": "./src/attio/entry/index.ts",
+        "types": "./dist/src/attio/entry/index.d.ts",
+        "default": "./dist/src/attio/entry/index.js"
+      }
+    },
+    "./attio/webhook": {
+      "import": {
+        "@packages/source": "./src/attio/webhook/index.ts",
+        "types": "./dist/src/attio/webhook/index.d.ts",
+        "default": "./dist/src/attio/webhook/index.js"
+      }
+    },
+    "./attio/note": {
+      "import": {
+        "@packages/source": "./src/attio/note/index.ts",
+        "types": "./dist/src/attio/note/index.d.ts",
+        "default": "./dist/src/attio/note/index.js"
+      }
+    },
+    "./attio/task": {
+      "import": {
+        "@packages/source": "./src/attio/task/index.ts",
+        "types": "./dist/src/attio/task/index.d.ts",
+        "default": "./dist/src/attio/task/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "test": "bun --env-file=.env vitest run",
+    "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
+  },
+  "dependencies": {
+    "@packages/attio": "workspace:*",
+    "alchemy-effect": "0.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.16.0",
+    "@effect/platform": "^0.82.0"
+  },
+  "devDependencies": {
+    "@effect/platform": "^0.82.0",
+    "@effect/platform-node": "^0.74.0",
+    "@effect/vitest": "^0.27.0",
+    "effect": "^3.16.0",
+    "typescript": "catalog:typescript",
+    "vitest": "^3.2.4"
+  }
+}

@@ -53,7 +53,10 @@ export class GetListRequest extends S.Class<GetListRequest>("GetListRequest")(
 export class CreateListRequest extends S.Class<CreateListRequest>("CreateListRequest")(
   {
     name: S.String,
-    parent_object: S.optional(S.Array(S.String)),
+    api_slug: S.String,
+    parent_object: S.String,
+    workspace_access: S.NullOr(S.String),
+    workspace_member_access: S.Array(S.Unknown),
   },
   T.all(T.Http({ method: "POST", uri: "/v2/lists", dataWrapper: true }), T.RestJsonProtocol())
 ) {}
