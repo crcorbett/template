@@ -17,7 +17,7 @@ import * as Attio from "@/attio/index";
 
 beforeAll(async () => {
   await Effect.runPromise(
-    cleanupStaleWebhooks(/example\.com\/webhooks\/attio-smoke/),
+    cleanupStaleWebhooks(/httpbin\.org\/post\?test=attio-smoke/),
   );
 });
 
@@ -72,7 +72,7 @@ test("smoke: multi-resource apply and destroy", { timeout: 180_000 },
     // -- Tier 3: Supporting resources --
 
     class TestWebhook extends Webhook("TestWebhook", {
-      targetUrl: "https://example.com/webhooks/attio-smoke-test",
+      targetUrl: "https://httpbin.org/post?test=attio-smoke",
       subscriptions: [{ event_type: "record.created", filter: { "$and": [] } }],
     }) {}
 
@@ -105,7 +105,7 @@ test("smoke: multi-resource apply and destroy", { timeout: 180_000 },
       webhook_id: tier2.TestWebhook.webhookId,
     });
     expect(hook.data.target_url).toBe(
-      "https://example.com/webhooks/attio-smoke-test",
+      "https://httpbin.org/post?test=attio-smoke",
     );
 
     // Tier 3: Record (depends on Object + its attributes being ready)

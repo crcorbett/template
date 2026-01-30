@@ -111,7 +111,7 @@ describe("PostHog Me Service", () => {
         );
 
         expect(error).toBeDefined();
-        expect(error._tag).toBe("PostHogError");
+        expect(error._tag).toBe("AuthenticationError");
       })
     );
   });

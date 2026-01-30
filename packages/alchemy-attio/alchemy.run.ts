@@ -110,7 +110,7 @@ export class AcmeDeal extends Record("AcmeDeal", {
 
 // Webhook for deal changes
 export class DealChanges extends Webhook("DealChanges", {
-  targetUrl: "https://example.com/webhooks/deal-changes",
+  targetUrl: "https://httpbin.org/post?hook=deal-changes",
   subscriptions: [
     { event_type: "record.created" },
     { event_type: "record.updated" },

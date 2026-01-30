@@ -6,16 +6,15 @@ import type { Operation } from "../../src/client/operation.js";
 import type { Response } from "../../src/client/response.js";
 
 import { makeResponseParser } from "../../src/client/response-parser.js";
-import { AttioError, type AttioErrorType } from "../../src/errors.js";
-
-/**
- * Typed assertion helper that narrows AttioErrorType to AttioError
- */
-const assertAttioError = (error: AttioErrorType): AttioError => {
-  expect(error._tag).toBe("AttioError");
-  if (error._tag !== "AttioError") throw new Error("Expected AttioError");
-  return error;
-};
+import {
+  AttioError,
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+  RateLimitError,
+  ServerError,
+  ValidationError,
+} from "../../src/errors.js";
 
 const createMockResponse = (
   status: number,
@@ -128,7 +127,7 @@ describe("makeResponseParser", () => {
       errors: [],
     };
 
-    it.effect("should return AttioError for 400 status", () =>
+    it.effect("should return ValidationError for 400 status", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, {
@@ -136,13 +135,14 @@ describe("makeResponseParser", () => {
           type: "validation_error",
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("400");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("ValidationError");
+        expect(error).toBeInstanceOf(ValidationError);
         expect(error.message).toBe("Invalid request");
       })
     );
 
-    it.effect("should return AttioError for 401 status", () =>
+    it.effect("should return AuthenticationError for 401 status", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(401, {
@@ -150,12 +150,13 @@ describe("makeResponseParser", () => {
           type: "unauthorized_error",
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("401");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("AuthenticationError");
+        expect(error).toBeInstanceOf(AuthenticationError);
       })
     );
 
-    it.effect("should return AttioError for 404 status", () =>
+    it.effect("should return NotFoundError for 404 status", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(404, {
@@ -163,13 +164,14 @@ describe("makeResponseParser", () => {
           type: "not_found_error",
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("404");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("NotFoundError");
+        expect(error).toBeInstanceOf(NotFoundError);
         expect(error.message).toBe("Not found");
       })
     );
 
-    it.effect("should return AttioError for 409 status", () =>
+    it.effect("should return ConflictError for 409 status", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(409, {
@@ -177,12 +179,13 @@ describe("makeResponseParser", () => {
           type: "conflict_error",
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("409");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("ConflictError");
+        expect(error).toBeInstanceOf(ConflictError);
       })
     );
 
-    it.effect("should return AttioError for 429 with retryAfter", () =>
+    it.effect("should return RateLimitError for 429 with retryAfter", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(
@@ -191,13 +194,14 @@ describe("makeResponseParser", () => {
           { "retry-after": "5" }
         );
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("429");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("RateLimitError");
+        expect(error).toBeInstanceOf(RateLimitError);
         expect(error.message).toBe("Rate limit exceeded");
       })
     );
 
-    it.effect("should return AttioError for 500 status", () =>
+    it.effect("should return ServerError for 500 status", () =>
       Effect.gen(function* () {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(500, {
@@ -205,8 +209,9 @@ describe("makeResponseParser", () => {
           type: "server_error",
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("500");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("ServerError");
+        expect(error).toBeInstanceOf(ServerError);
       })
     );
   });
@@ -225,8 +230,9 @@ describe("makeResponseParser", () => {
         const parser = makeResponseParser(operation);
         const response = createMockResponse(400, "not valid json {{{");
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error._tag).toBe("AttioError");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("ValidationError");
+        expect(error).toBeInstanceOf(ValidationError);
       })
     );
   });
@@ -249,8 +255,12 @@ describe("makeResponseParser", () => {
           data: [{ id: "not-a-number" }],
         });
 
-        const error = assertAttioError(yield* Effect.flip(parser(response)));
-        expect(error.code).toBe("PARSE_ERROR");
+        const error = yield* Effect.flip(parser(response));
+        expect(error._tag).toBe("AttioError");
+        expect(error).toBeInstanceOf(AttioError);
+        if (error._tag === "AttioError") {
+          expect(error.code).toBe("PARSE_ERROR");
+        }
       })
     );
   });

@@ -9,7 +9,7 @@ import * as Attio from "@/attio/index";
 
 beforeAll(async () => {
   await Effect.runPromise(
-    cleanupStaleWebhooks(/example\.com\/webhooks\/attio-test/),
+    cleanupStaleWebhooks(/httpbin\.org\/post\?test=webhook-provider/),
   );
 });
 
@@ -24,7 +24,7 @@ test("create, update, delete webhook", { timeout: 120_000 },
     yield* destroy();
 
     class TestWebhook extends Webhook("TestWebhook", {
-      targetUrl: "https://example.com/webhooks/attio-test",
+      targetUrl: "https://httpbin.org/post?test=webhook-provider",
       subscriptions: [{ event_type: "record.created", filter: { "$and": [] } }],
     }) {}
 
@@ -35,11 +35,11 @@ test("create, update, delete webhook", { timeout: 120_000 },
     const fetched = yield* AttioWebhooks.getWebhook({
       webhook_id: stack.TestWebhook.webhookId,
     });
-    expect(fetched.data.target_url).toBe("https://example.com/webhooks/attio-test");
+    expect(fetched.data.target_url).toBe("https://httpbin.org/post?test=webhook-provider");
 
     // Update
     class UpdatedWebhook extends Webhook("TestWebhook", {
-      targetUrl: "https://example.com/webhooks/attio-test",
+      targetUrl: "https://httpbin.org/post?test=webhook-provider",
       subscriptions: [
         { event_type: "record.created", filter: { "$and": [] } },
         { event_type: "record.deleted", filter: { "$and": [] } },
