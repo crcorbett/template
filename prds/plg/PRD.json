@@ -275,7 +275,9 @@
         "track(Events.FEATURE_USED, { feature: 'export' }) passes type check",
         "track(Events.PLAN_UPGRADED, { from_plan: 'free', to_plan: 'pro', mrr_cents: 4900 }) passes",
         "identify enforces UserPropertyMap types"
-      ]
+      ],
+      "passes": true,
+      "notes": "Created sdk/track.ts (PlgClient interface with generic track<E> method, createPlgClient factory wrapping PostHogClient), sdk/identify.ts (UserPropertyMap with typed properties for plan/lifecycle_stage/is_pql/etc, identify function using PostHogIdentifyClient), and sdk/index.ts barrel. Added export * from './sdk/index.js' to src/index.ts and ./sdk export entry to package.json. Type-level verification confirms: track(FEATURE_USED, {}) fails, track(FEATURE_USED, {feature:'x'}) passes, track(SIGNUP_COMPLETED, {method:'invalid'}) fails. bun tsc -b passes clean."
     },
     {
       "id": "SDK-002",

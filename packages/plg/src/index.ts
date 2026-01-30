@@ -32,3 +32,6 @@ export * from "./user-properties.js";
 
 // Attio constants
 export * from "./attio.js";
+
+// SDK
+export * from "./sdk/index.js";

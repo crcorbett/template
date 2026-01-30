@@ -53,6 +53,13 @@
         "default": "./dist/src/user-properties.js"
       }
     },
+    "./sdk": {
+      "import": {
+        "@packages/source": "./src/sdk/index.ts",
+        "types": "./dist/src/sdk/index.d.ts",
+        "default": "./dist/src/sdk/index.js"
+      }
+    },
     "./plg-stack": {
       "import": {
         "@packages/source": "./plg-stack.run.ts",

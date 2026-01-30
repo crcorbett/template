@@ -42,3 +42,31 @@
 
 - `bun tsc -b` passes clean
 - All cohort filters use constants or documented built-ins
+
+## SDK-001: Create type-safe PLG SDK client for tracking events with PostHog
+
+**Status**: Passed
+
+### Changes
+
+1. **Created `src/sdk/track.ts`**
+   - `PostHogClient` interface: minimal contract requiring `capture(event, properties)`
+   - `PlgClient` interface: generic `track<E extends EventName>(event, properties: EventPayloads[E])` enforces payload shape at compile time
+   - `createPlgClient(posthog)` factory wraps capture with type safety
+
+2. **Created `src/sdk/identify.ts`**
+   - `UserPropertyMap` interface: maps person property keys to typed values (plan → PlanType, lifecycle_stage → LifecycleStage, is_pql → boolean, etc.)
+   - `PostHogIdentifyClient` interface: minimal contract requiring `identify(distinctId, properties)`
+   - `identify(posthog, distinctId, properties)` function enforces Partial<UserPropertyMap>
+
+3. **Created `src/sdk/index.ts`** — barrel export for all SDK types and functions
+
+4. **Updated `src/index.ts`** — added `export * from "./sdk/index.js"`
+
+5. **Updated `package.json`** — added `./sdk` export entry with source/types/default conditions
+
+### Verification
+
+- `bun tsc -b` passes clean
+- Type-level tests confirm: `track(FEATURE_USED, {})` fails, `track(FEATURE_USED, {feature:'x'})` passes, `track(SIGNUP_COMPLETED, {method:'invalid'})` fails
+- `identify` enforces UserPropertyMap types (PlanType, LifecycleStage, boolean for is_pql)
