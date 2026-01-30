@@ -82,6 +82,8 @@ import {
   ChurnRiskLevels,
   ProductRoles,
   DealStages,
+  Plans,
+  UserProperties,
 } from "./src/index.js";
 
 // Re-export for convenience
@@ -94,6 +96,8 @@ export {
   ChurnRiskLevels,
   ProductRoles,
   DealStages,
+  Plans,
+  UserProperties,
 };
 
 // =============================================================================
@@ -604,9 +608,9 @@ export class TrialEndingSoonCohort extends Cohort("TrialEndingSoonCohort", {
       values: [
         {
           type: "person",
-          key: "plan",
+          key: UserProperties.PLAN,
           operator: "exact",
-          value: "trial",
+          value: Plans.TRIAL,
         },
       ],
     },

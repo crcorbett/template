@@ -241,7 +241,9 @@
         "TrialEndingSoonCohort uses UserProperties.PLAN and Plans constant",
         "No unexplained magic strings in cohort filters",
         "PostHog built-in events like '$pageview' have comments explaining they are built-in"
-      ]
+      ],
+      "passes": true,
+      "notes": "Imported Plans and UserProperties into plg-stack.run.ts. Replaced key: 'plan' with UserProperties.PLAN and value: 'trial' with Plans.TRIAL in TrialEndingSoonCohort. Audited all other cohorts: PowerUsersCohort, NewUsersCohort, ExpansionCandidatesCohort all use Events constants; LowEngagementCohort uses '$pageview' which is a PostHog built-in (already documented with comment). No unexplained magic strings remain. bun tsc -b passes clean."
     },
     {
       "id": "SDK-001",

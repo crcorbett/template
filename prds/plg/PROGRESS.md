@@ -21,3 +21,24 @@
 - `bun tsc -b` passes clean
 - `alchemy plan` runs without errors
 - No annotation drift on repeated plan runs
+
+## STACK-004: Ensure cohorts use UserProperties/Plans constants instead of magic strings
+
+**Status**: Passed
+
+### Changes
+
+1. **Imported `Plans` and `UserProperties`** into `plg-stack.run.ts` from `./src/index.js`
+2. **Replaced magic strings in `TrialEndingSoonCohort`**:
+   - `key: "plan"` → `key: UserProperties.PLAN`
+   - `value: "trial"` → `value: Plans.TRIAL`
+3. **Audited all other cohorts** — no remaining unexplained magic strings:
+   - `PowerUsersCohort`: uses `Events.FEATURE_USED` ✓
+   - `NewUsersCohort`: uses `Events.SIGNUP_COMPLETED` ✓
+   - `LowEngagementCohort`: uses `"$pageview"` (PostHog built-in, documented with comment) ✓
+   - `ExpansionCandidatesCohort`: uses `Events.FEATURE_USED` ✓
+
+### Verification
+
+- `bun tsc -b` passes clean
+- All cohort filters use constants or documented built-ins
