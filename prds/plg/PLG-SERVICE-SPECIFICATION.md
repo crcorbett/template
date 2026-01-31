@@ -10,11 +10,74 @@
 
 ## 1. Executive Summary
 
-This specification defines a **PLG (Product-Led Growth) Service** — an abstract, pluggable service layer built on Effect TypeScript that provides a unified interface over multiple PLG tool providers. The service enables consuming applications to define their PLG stack once using abstract representations, then swap or compose concrete provider implementations (PostHog, Attio, LaunchDarkly, Amplitude, Segment, etc.) via Effect Layers.
+This specification defines a **PLG (Product-Led Growth) Service** — a complete system for building, configuring, deploying, and operating product-led growth tooling in TypeScript applications. It spans five major workstreams:
 
-The PLG service is distributed via a **ShadCN registry**, allowing consumers to scaffold customized PLG stacks into their projects using the `shadcn` CLI. An **interactive PLG Builder** (modeled after Better T Stack) lets developers visually compose their stack — selecting analytics, feature flags, experiments, surveys, CRM, pricing, and IaC providers — then generates typed constants, SDK wrappers, and a `shadcn` CLI command from their selections.
+1. **Abstract Service Layer** — Six Effect TypeScript services (Analytics, FeatureFlags, Experiments, Surveys, Customers, Dashboards) with branded types and Effect Schemas providing type-safe, provider-agnostic PLG capabilities (Sections 4–6).
 
-Infrastructure for each provider is deployed via **alchemy-effect** IaC providers, which are also composable and distributable through the same registry system.
+2. **Provider Implementations** — Concrete Effect Layers for each SaaS provider (PostHog, Attio, and future providers like LaunchDarkly, Amplitude, GrowthBook, Segment) that implement the abstract services. Each provider has a typed SDK client, an IaC resource layer for infrastructure provisioning, and cross-system automation pipelines (Sections 6–8, 11).
+
+3. **Interactive PLG Builder** — A web application (TanStack Start + Fumadocs) and CLI (`@effect/cli`) that let developers visually compose their PLG stack across 11 categories (analytics, feature flags, experiments, surveys, CRM, pricing, IaC, hosting, auth, payments, email). An XState v5 state machine enforces a dependency constraint graph (11 hard constraints, 7 soft constraints, 5 cascade rules) as composable guards. User selections — including dynamic inputs like custom feature flags, pricing tiers, and survey questions — are validated by Effect Schemas and fed into a code generation pipeline that produces typed TypeScript constants, SDK wrappers, and IaC stacks (Sections 17–22).
+
+4. **Distribution via ShadCN Registry** — Generated PLG stacks are packaged as ShadCN registry items and installed via `npx shadcn add @plg/...`. A plugin system allows community-contributed providers and registry items (Sections 9–10).
+
+5. **Application Shell** — A TanStack Start app with Fumadocs documentation, housing the interactive builder, generated docs, and a dynamic registry endpoint. The builder's web UI uses effect-atom for reactive state management; the CLI uses `@effect/cli` with Options.withFallbackPrompt for hybrid flag/wizard mode. Both interfaces share a `plg-builder-core` package (Section 23).
+
+### 1.1 Project Scope at a Glance
+
+| Workstream | Packages | Key Technologies |
+|---|---|---|
+| Abstract services & branded types | `@plg/core` | Effect Context.Tag, Schema, branded types |
+| Provider implementations | `@plg/posthog`, `@plg/attio`, ... | Effect Layer, typed SDK clients |
+| IaC provisioning | `@packages/alchemy-posthog`, `@packages/alchemy-attio` | alchemy-effect resources |
+| Builder core (shared logic) | `packages/plg-builder-core` | Effect Schema, XState v5, Effect Graph (experimental) |
+| Builder web UI | `apps/plg` | TanStack Start, Fumadocs, effect-atom, React |
+| Builder CLI | `packages/plg-cli` | @effect/cli Commands, Options, Prompts |
+| Registry distribution | Hosted registry endpoint | ShadCN registry protocol |
+
+### 1.2 What This Spec Covers vs. Does Not Cover
+
+**In scope:**
+- Abstract service contracts and branded type taxonomy
+- Provider implementation architecture (with PostHog and Attio as reference implementations)
+- Dependency constraint graph and constraint enforcement (XState guards + Effect Graph DAG)
+- Dynamic user input handling: custom feature flags, pricing tiers, survey questions, event catalogs
+- Code generation pipeline (Effect Schema → validated config → TypeScript source)
+- Builder presets (Minimal, Growth, Full, Enterprise, Self-Hosted)
+- Dual-interface architecture (web + CLI) with shared core
+- ShadCN registry distribution model
+- IaC integration via alchemy-effect
+- Application architecture (TanStack Start + Fumadocs)
+- Plugin system for community providers
+
+**Out of scope (for now):**
+- Concrete implementations beyond PostHog and Attio
+- Production deployment infrastructure for the builder app itself
+- Billing/payment integration within the builder
+- Multi-tenant hosted PLG service (this is a developer toolkit, not a SaaS platform)
+- Runtime PLG orchestration (this spec covers setup-time tooling, not a runtime PLG engine)
+
+### 1.3 Research Foundation
+
+This specification is backed by 16 research documents covering technology choices, prior art, and architectural patterns. See [Appendix B](#appendix-b-research-documents) for the full list, or the summary below:
+
+| Research Area | Document | Key Findings |
+|---|---|---|
+| Existing codebase | [`research-codebase.md`](./research-codebase.md) | Monorepo structure, existing packages, patterns in use |
+| Effect patterns | [`research-effect-patterns.md`](./research-effect-patterns.md) | Layer/Service/Schema patterns, branded types |
+| PLG domain | [`research-plg-domain.md`](./research-plg-domain.md) | AARRR metrics, 6 abstract service capabilities |
+| ShadCN registry | [`research-shadcn-registry.md`](./research-shadcn-registry.md) | Registry protocol, registry-item JSON, distribution model |
+| Alchemy providers | [`research-alchemy-providers.md`](./research-alchemy-providers.md) | IaC resource patterns, provider lifecycle |
+| Better T Stack | [`research-better-t-stack-builder.md`](./research-better-t-stack-builder.md) | URL-as-state (nuqs), TECH_OPTIONS, two-layer constraints |
+| Effect Graph/State | [`research-effect-graph-state.md`](./research-effect-graph-state.md) | Graph module (experimental), SubscriptionRef, 3-layer architecture |
+| Code generation | [`research-codegen-patterns.md`](./research-codegen-patterns.md) | 5 approaches evaluated; string interpolation recommended |
+| Builder options | [`research-plg-builder-options.md`](./research-plg-builder-options.md) | 11 categories, 28+ constraints, 5 presets |
+| XState + typeonce.dev | [`research-xstate-typeonce.md`](./research-xstate-typeonce.md) | fromPromise + Effect.runPromise, guards as constraints |
+| XState + Effect hybrid | [`research-xstate-effect.md`](./research-xstate-effect.md) | Composable guards (and/or/not), always transitions for cascading |
+| Dynamic codegen | [`research-effect-dynamic-codegen.md`](./research-effect-dynamic-codegen.md) | Schema validation, tagged unions, AST introspection, round-trip |
+| Dynamic builder UX | [`research-dynamic-builder-ux.md`](./research-dynamic-builder-ux.md) | Production UIs (Stripe, PostHog, Vercel), name-to-key derivation |
+| @effect/cli | [`research-effect-cli.md`](./research-effect-cli.md) | Commands, Options.withFallbackPrompt, wizard flows |
+| effect-atom | [`research-effect-atom.md`](./research-effect-atom.md) | Jotai-style atoms for Effect + React, Atom.searchParam |
+| TanStack + Fumadocs | [`research-tanstack-fumadocs-app.md`](./research-tanstack-fumadocs-app.md) | File-based routing, Fumadocs integration, vite plugin stack |
 
 ---
 
@@ -2386,27 +2449,81 @@ export { Analytics, Customers } from "@plg/core"
 
 ---
 
-## 16. Open Questions
+## 16. Decisions & Open Questions
 
-1. **Event Schema Enforcement** — Should the abstract Analytics service enforce event schemas at the type level (requiring consumers to define their event catalog), or accept arbitrary string event names?
+### 16.1 Resolved Decisions
 
-2. ~~**IaC Coupling**~~ — **Resolved.** IaC is distributed as separate companion registry items (`@plg/posthog-iac`, `@plg/attio-iac`), keeping runtime and IaC decoupled. See Section 8.
+| # | Decision | Resolution | Context |
+|---|---|---|---|
+| D1 | **Target audience** | Both external developers and internal team. This is an open-source tool that the internal team also uses. | Affects UX depth, documentation, and distribution model |
+| D2 | **IaC coupling** | IaC is distributed as separate companion registry items (`@plg/posthog-iac`, `@plg/attio-iac`), keeping runtime and IaC decoupled. See Section 8. | — |
+| D3 | **Registry hosting** | Dynamic server. The `apps/plg` TanStack Start app serves registry-item JSON on-the-fly from the `/r/$` endpoint based on URL params. | No static pre-generation needed |
+| D4 | **Credential management** | Per-provider config. Each provider Layer accepts its own config (API key, project ID) via Effect ConfigProvider. No unified credential store. | Simpler, more composable |
+| D5 | **Builder output** | Two channels: (1) Web UI generates a `npx shadcn add <url>` command pointing to the dynamic registry endpoint; (2) CLI writes generated files directly to a target directory. No zip download. | — |
+| D6 | **URL state** | URL is the primary persistence strategy. Full builder config encoded in URL search params (via nuqs / `Atom.searchParam`). Users can share and bookmark builder links. | Modeled after Better T Stack |
+| D7 | **Builder dynamic vs static** | Dynamic only. The deployed app generates registry JSON per-request from URL params. | See D3 |
+| D8 | **Tracer bullet scope** | Analytics + Feature Flags with PostHog only. Smallest vertical slice that exercises the full pipeline: abstract service → provider → builder → codegen → shadcn registry. | See Section 16.3 |
+| D9 | **Builder hosting / repo** | Start in this template monorepo as `apps/plg`. The repo will be cloned into its own standalone repo for independent development and deployment. | Not extracted — cloned |
+| D10 | **Effect Graph stability** | Depend directly on `@effect/experimental` Graph module. Accept upstream churn risk; less code to maintain. | Tim Smart maintains both effect-atom and @effect/experimental |
+| D11 | **Docs content** | The `/docs` route serves documentation about the PLG builder itself — usage guides, provider references, configuration docs. Not per-user generated docs. | — |
 
-3. **Registry Hosting** — Should the ShadCN registry be hosted as a static site (GitHub Pages), a Next.js app, or via npm? The builder (Section 17) may need a dynamic backend to generate registry-item JSON from user selections.
+| D12 | **Event schema enforcement** | Typed catalog. Consumers define their events as an Effect Schema union — only declared events are trackable. Maximum type safety. | The Analytics service generic parameter constrains allowed event names |
+| D13 | **Real-time vs batch** | Defer. Start with real-time only for the tracer bullet; add batch submission later if needed (e.g. server-side ingestion). | — |
+| D14 | **Provider conflicts** | Explicit selection. The builder/consumer must pick exactly one provider per capability — no ambiguity, enforced by the constraint graph. | No primary/fallback pattern |
+| D15 | **Next provider after tracer bullet** | Attio CRM. Already have `@packages/attio` and `alchemy-attio` — exercises cross-provider composition (PostHog + Attio). | — |
+| D16 | **Builder authentication** | Defer. Start with URL-as-state for sharing; add optional accounts later if users request it. | — |
+| D17 | **Plugin system priority** | Design now, build later. Define the plugin interface/contract in the spec (Section 10), but don't implement until after the tracer bullet. | — |
 
-4. **Credential Management** — Should each provider manage its own credentials, or should there be a unified PLG credential store?
+| D18 | **Event catalog DX** | Builder-generated. The PLG builder generates the typed event catalog from user inputs (event names, properties) and outputs a typed `Events` Effect Schema. Consumers don't write it by hand. | The generic parameter on Analytics is still available for consumers who want to extend/override |
+| D19 | **Feature flag sync direction** | Push for tracer bullet. Builder is source of truth — generated flags are pushed to PostHog via alchemy-posthog IaC resources. Pull/import from PostHog deferred to later phase. | — |
+| D20 | **Registry URL scheme** | Query params. `plg.example.com/r?analytics=posthog&flags=posthog&events=signup,purchase` — flat query string matching nuqs URL state. Stable contract for `npx shadcn add`. | — |
 
-5. **Real-time vs Batch** — Should the Analytics service support both real-time tracking and batch event submission?
+### 16.2 Remaining Open Questions
 
-6. **Provider Priority** — When multiple providers implement the same capability (e.g., PostHog and LaunchDarkly both provide FeatureFlags), how should conflicts be resolved? First-wins? Explicit priority? Merge?
+No blocking open questions remain. All architectural decisions have been resolved. Implementation-level questions will be addressed during the tracer bullet build.
 
-7. **Builder Dynamic vs Static Registry** — Should the builder generate a single dynamic registry-item JSON per user configuration (served via URL with query params), or pre-build all permutations as static registry items? Dynamic is more flexible; static is simpler to host.
+### 16.3 Tracer Bullet Strategy
 
-8. **Non-PostHog Provider Implementations** — Sections 17-20 define the builder categories and constraints for multiple providers (Amplitude, Mixpanel, LaunchDarkly, GrowthBook, etc.), but only PostHog and Attio have concrete implementations. Which providers should be prioritized next?
+The first deliverable follows a **tracer bullet** approach — a thin vertical slice through all layers of the system, end-to-end, for a minimal surface area. This validates the architecture before expanding horizontally.
 
-9. **Builder Hosting** — Should the PLG builder web app be part of the monorepo (e.g., `apps/plg-builder/`), a standalone site, or integrated into the registry's homepage?
+**Tracer bullet scope: PostHog Analytics + Feature Flags**
 
-10. **Effect Graph Stability** — The Effect `Graph` module used for constraint resolution (Section 18.1) is experimental. Should we vendor a copy, or depend directly on the Effect package and track upstream changes?
+```
+Layer 0: @plg/core          → Analytics service + FeatureFlags service (abstract)
+                              → Branded types: DistinctId, EventName, FlagKey, etc.
+                              → Effect Schemas for events, flags
+
+Layer 1: @plg/posthog        → PostHogAnalytics Layer (implements Analytics)
+                              → PostHogFlags Layer (implements FeatureFlags)
+
+Layer 2: @packages/posthog   → Typed PostHog SDK client (already exists)
+
+Layer 3: alchemy-posthog     → PostHog feature flag IaC resources (already exists)
+
+Builder: plg-builder-core    → Schemas for analytics + flags categories only
+                              → Constraint subset (PostHog-specific)
+                              → Code generators: events.ts, feature-flags.ts, barrel.ts
+
+Web UI: apps/plg             → TanStack Start app with builder route
+                              → Analytics + flags selection UI
+                              → Code preview + shadcn command output
+                              → Dynamic registry endpoint
+
+CLI: packages/plg-cli        → `create-plg-stack` command
+                              → --analytics posthog --flags posthog
+                              → Wizard mode for interactive selection
+
+Registry: /r/$               → Dynamic registry-item JSON from builder config
+```
+
+**What is deferred:**
+- Experiments, Surveys, Customers, Dashboards services
+- All providers beyond PostHog (Attio, LaunchDarkly, Amplitude, etc.)
+- Builder categories beyond analytics + flags (CRM, pricing, auth, payments, email, hosting, IaC provider selection)
+- Full constraint graph (only PostHog-specific constraints for tracer bullet)
+- Presets beyond a single "PostHog Starter" preset
+- Plugin system
+- Cross-system automations
 
 ---
 
@@ -4240,19 +4357,23 @@ packages/plg-cli/
 
 ## Appendix B: Research Documents
 
-- `prds/plg/research-codebase.md` — Existing codebase structure and patterns
-- `prds/plg/research-effect-patterns.md` — Effect Layer/Service/Schema patterns + branded types
-- `prds/plg/research-plg-domain.md` — PLG domain entities with Effect Schema definitions
-- `prds/plg/research-shadcn-registry.md` — ShadCN registry distribution approach
-- `prds/plg/research-alchemy-providers.md` — Alchemy-effect resource patterns
-- `prds/plg/research-better-t-stack-builder.md` — Better T Stack builder architecture analysis
-- `prds/plg/research-effect-graph-state.md` — Effect Graph/SubscriptionRef/Match primitives
-- `prds/plg/research-codegen-patterns.md` — Code generation approaches and recommendations
-- `prds/plg/research-plg-builder-options.md` — Builder categories, constraints, and presets
-- `prds/plg/research-xstate-typeonce.md` — Typeonce.dev XState + Effect integration patterns
-- `prds/plg/research-xstate-effect.md` — XState v5 guards, always transitions, and Effect hybrid architecture
-- `prds/plg/research-effect-dynamic-codegen.md` — Effect Schema for dynamic user input validation and code generation
-- `prds/plg/research-dynamic-builder-ux.md` — Dynamic builder UX patterns from production tools
-- `prds/plg/research-effect-cli.md` — @effect/cli package: Commands, Options, Prompts, wizard flows
-- `prds/plg/research-effect-atom.md` — effect-atom (Tim Smart): atomic reactive state for Effect + React
-- `prds/plg/research-tanstack-fumadocs-app.md` — TanStack Start + Fumadocs app patterns from existing apps/docs
+All research files are located in `prds/plg/` alongside this specification.
+
+| # | File | Topic | Key Takeaway |
+|---|---|---|---|
+| 1 | [`research-codebase.md`](./research-codebase.md) | Existing monorepo structure | Established patterns: Effect services, alchemy-effect IaC, distilled SDK clients, TanStack Start apps |
+| 2 | [`research-effect-patterns.md`](./research-effect-patterns.md) | Effect Layer/Service/Schema | Context.Tag for services, Layer for DI, Schema.brand() for nominal types |
+| 3 | [`research-plg-domain.md`](./research-plg-domain.md) | PLG domain modeling | AARRR pirate metrics → 6 abstract services (Analytics, Flags, Experiments, Surveys, Customers, Dashboards) |
+| 4 | [`research-shadcn-registry.md`](./research-shadcn-registry.md) | ShadCN registry protocol | registry-item JSON schema, `registryDependencies`, dynamic vs. static hosting |
+| 5 | [`research-alchemy-providers.md`](./research-alchemy-providers.md) | Alchemy-effect IaC | Resource definitions with diff/read/create/update/delete lifecycle, defineStack composition |
+| 6 | [`research-better-t-stack-builder.md`](./research-better-t-stack-builder.md) | Better T Stack builder | URL-as-state via nuqs, TECH_OPTIONS flat array, two-layer constraint model, CLI command generation |
+| 7 | [`research-effect-graph-state.md`](./research-effect-graph-state.md) | Effect Graph & state primitives | Graph.directed + topo (Kahn's), SubscriptionRef for reactive state, 3-layer architecture recommended |
+| 8 | [`research-codegen-patterns.md`](./research-codegen-patterns.md) | Code generation approaches | 5 strategies evaluated; string interpolation with Prettier post-processing recommended over ts-morph/AST |
+| 9 | [`research-plg-builder-options.md`](./research-plg-builder-options.md) | Builder categories & constraints | 11 categories, 11 hard constraints, 7 soft constraints, 5 cascade rules, 5 presets |
+| 10 | [`research-xstate-typeonce.md`](./research-xstate-typeonce.md) | Typeonce.dev patterns | fromPromise + Effect.runPromise to bridge XState actors with Effect, guards for validation |
+| 11 | [`research-xstate-effect.md`](./research-xstate-effect.md) | XState v5 + Effect hybrid | Composable guards (and/or/not), `always` transitions for cascading, state.can() for UI |
+| 12 | [`research-effect-dynamic-codegen.md`](./research-effect-dynamic-codegen.md) | Dynamic input & codegen | Schema.Union with \_tag discriminators, encode/decode round-trip, ArrayFormatter for errors |
+| 13 | [`research-dynamic-builder-ux.md`](./research-dynamic-builder-ux.md) | Production builder UX | Stripe, PostHog, Vercel, LaunchDarkly patterns; name-to-key derivation; code preview with Shiki |
+| 14 | [`research-effect-cli.md`](./research-effect-cli.md) | @effect/cli | Commands, Options.withFallbackPrompt for hybrid flag/wizard, built-in --wizard, Effect.gen flows |
+| 15 | [`research-effect-atom.md`](./research-effect-atom.md) | effect-atom (Tim Smart) | Jotai-style atoms, Atom.searchParam for URL state, Atom.runtime for Effect Layer bridging |
+| 16 | [`research-tanstack-fumadocs-app.md`](./research-tanstack-fumadocs-app.md) | TanStack Start + Fumadocs | File-based routing, splat routes, fumadocs-mdx vite plugin, RootProvider, clientLoader pattern |
