@@ -14,7 +14,16 @@ import * as Stream from "effect/Stream";
 import type { Operation } from "./operation.js";
 import type { Response } from "./response.js";
 
-import { PostHogError, type PostHogErrorType } from "../errors.js";
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  PostHogError,
+  type PostHogErrorType,
+  RateLimitError,
+  ServerError,
+  ValidationError,
+} from "../errors.js";
 
 /**
  * Parse the response body as JSON using Effect primitives.
@@ -86,7 +95,8 @@ export const makeResponseParser = (
   _options?: ResponseParserOptions
 ) => {
   const outputSchema = operation.output;
-  const errorSchemas = _options?.errorSchemas ?? operation.errors ?? [];
+  // Error schemas available for future use; status-code matching is used instead.
+  void (_options?.errorSchemas ?? operation.errors ?? []);
 
   // Return a function that parses responses
   return (
@@ -104,32 +114,40 @@ export const makeResponseParser = (
           )
         );
 
-        // Try to match against known error schemas
-        for (const errorSchema of errorSchemas) {
-          const decoded = yield* S.decodeUnknown(errorSchema)(errorBody).pipe(
-            Effect.option
-          );
+        // Match errors by HTTP status code and return typed errors
+        const msg = getErrorMessage(errorBody) || response.statusText;
+        const errInfo = isRecord(errorBody) ? {
+          message: msg,
+          detail: typeof errorBody["detail"] === "string" ? errorBody["detail"] : undefined,
+        } : { message: msg };
 
-          if (decoded._tag === "Some") {
-            // Return the typed error
+        switch (response.status) {
+          case 401:
+            return yield* Effect.fail(new AuthenticationError(errInfo));
+          case 403:
+            return yield* Effect.fail(new AuthorizationError(errInfo));
+          case 404:
+            return yield* Effect.fail(new NotFoundError(errInfo));
+          case 400:
+            return yield* Effect.fail(new ValidationError(errInfo));
+          case 429: {
+            const retryAfter = isRecord(errorBody) && typeof errorBody["retry_after"] === "number"
+              ? errorBody["retry_after"] as number
+              : undefined;
+            return yield* Effect.fail(new RateLimitError({ ...errInfo, retryAfter }));
+          }
+          default:
+            if (response.status >= 500) {
+              return yield* Effect.fail(new ServerError(errInfo));
+            }
             return yield* Effect.fail(
               new PostHogError({
                 code: String(response.status),
-                message: getErrorMessage(decoded.value),
-                details: decoded.value,
+                message: msg,
+                details: errorBody,
               })
             );
-          }
         }
-
-        // Default error for unrecognized error responses
-        return yield* Effect.fail(
-          new PostHogError({
-            code: String(response.status),
-            message: getErrorMessage(errorBody) || response.statusText,
-            details: errorBody,
-          })
-        );
       }
 
       // Success response - parse the body

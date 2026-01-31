@@ -1,0 +1,94 @@
+{
+  "name": "@packages/plg",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "@packages/source": "./src/index.ts",
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    },
+    "./events": {
+      "import": {
+        "@packages/source": "./src/events.ts",
+        "types": "./dist/src/events.d.ts",
+        "default": "./dist/src/events.js"
+      }
+    },
+    "./feature-flags": {
+      "import": {
+        "@packages/source": "./src/feature-flags.ts",
+        "types": "./dist/src/feature-flags.d.ts",
+        "default": "./dist/src/feature-flags.js"
+      }
+    },
+    "./surveys": {
+      "import": {
+        "@packages/source": "./src/surveys.ts",
+        "types": "./dist/src/surveys.d.ts",
+        "default": "./dist/src/surveys.js"
+      }
+    },
+    "./attio": {
+      "import": {
+        "@packages/source": "./src/attio.ts",
+        "types": "./dist/src/attio.d.ts",
+        "default": "./dist/src/attio.js"
+      }
+    },
+    "./plans": {
+      "import": {
+        "@packages/source": "./src/plans.ts",
+        "types": "./dist/src/plans.d.ts",
+        "default": "./dist/src/plans.js"
+      }
+    },
+    "./user-properties": {
+      "import": {
+        "@packages/source": "./src/user-properties.ts",
+        "types": "./dist/src/user-properties.d.ts",
+        "default": "./dist/src/user-properties.js"
+      }
+    },
+    "./sdk": {
+      "import": {
+        "@packages/source": "./src/sdk/index.ts",
+        "types": "./dist/src/sdk/index.d.ts",
+        "default": "./dist/src/sdk/index.js"
+      }
+    },
+    "./plg-stack": {
+      "import": {
+        "@packages/source": "./plg-stack.run.ts",
+        "types": "./dist/plg-stack.run.d.ts",
+        "default": "./dist/plg-stack.run.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check-types": "tsc --noEmit",
+    "alchemy": "bun --conditions @packages/source node_modules/.bin/alchemy-effect"
+  },
+  "dependencies": {
+    "@packages/alchemy-attio": "workspace:*",
+    "@packages/alchemy-posthog": "workspace:*",
+    "@packages/attio": "workspace:*",
+    "@packages/posthog": "workspace:*",
+    "alchemy-effect": "0.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.16.0",
+    "@effect/platform": "^0.82.0"
+  },
+  "devDependencies": {
+    "@effect/platform": "^0.82.0",
+    "@effect/platform-node": "^0.74.0",
+    "effect": "^3.16.0",
+    "typescript": "catalog:typescript"
+  }
+}

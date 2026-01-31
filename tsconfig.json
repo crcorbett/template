@@ -14,6 +14,10 @@
     { "path": "./packages/ui" },
     { "path": "./packages/types" },
     { "path": "./packages/database" },
-    { "path": "./packages/alchemy-posthog" }
+    { "path": "./packages/plg" },
+    { "path": "./packages/posthog" },
+    { "path": "./packages/alchemy-posthog" },
+    { "path": "./packages/attio" },
+    { "path": "./packages/alchemy-attio" }
   ]
 }
